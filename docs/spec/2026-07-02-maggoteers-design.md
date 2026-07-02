@@ -105,6 +105,7 @@
 - **跳过/延长 = 全员（冒险模式玩家）投票同意**。
 - **奖励项可自定义 `icon`**（原生物品图标）。
 - **奖励三类**：属性强化（存 PlayerState）、武器（ItemCreator）、补给（ItemCreator 消耗品）。
+- **开局职业选择**（CLAUDE.md §9.4）：玩家进图无装备；先发**全员初始装备**（`config.yml` `initial_equipment`，ItemCreator id 列表），再从**职业池**（`reward_pools.class`，`cost: 0` 免费）随机 3 选 1——**复用奖励池 + 解锁系统**（`requires_unlock`/`unique` 可见性过滤原样套用）；全员选完（倒计时兜底）后开局。加职业 = 配置加 option，零代码。
 
 ---
 

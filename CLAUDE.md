@@ -82,7 +82,7 @@ MenuFacade.registerMenu("maggoteers_shop", ShopMenu.class);   // 供 /menu 或 N
 | Hook | 我们做什么 |
 |---|---|
 | `onGameInit()` | 第一个玩家加入等待时：**异步**启动 `RunPlanner`（生成剧本）+ **异步预读 NBT**。⚠️ **不在这里建世界**——`WorldCreator.createWorld()` 必须主线程，建世界的调度放在 `onGameStart` 的就绪门闩内（见下）。返回 true。 |
-| `onGameStart()` | ⚠️ **此方法返回 `void`、不能阻塞**（MGC 调完立即置 `RUNNING`）。故这里**只启动一个"就绪门闩"** `runTaskTimer`：轮询 `RunPlan` 是否就绪（异步产物）；**一旦就绪，由该门闩任务在主线程执行** `WorldService.createWorld()` + 粘贴 Act 1 的 4 象限 → 传送玩家到 Act 1 `playerSpawn` → 初始化各 `PlayerState`（`reviveCount=config.lives.default`、冒险模式）→ 发初始物资 → `PoolBuilder` 合并解锁 → 启动 `WaveScheduler`。门闩未就绪期间玩家暂留等待点。**建世界的主线程责任唯一落在 onGameStart 门闩内（G4），避免 init/start 双触发。** |
+| `onGameStart()` | ⚠️ **此方法返回 `void`、不能阻塞**（MGC 调完立即置 `RUNNING`）。故这里**只启动一个"就绪门闩"** `runTaskTimer`：轮询 `RunPlan` 是否就绪（异步产物）；**一旦就绪，由该门闩任务在主线程执行** `WorldService.createWorld()` + 粘贴 Act 1 的 4 象限 → 传送玩家到 Act 1 `playerSpawn` → 初始化各 `PlayerState`（`reviveCount=config.lives.default`、冒险模式）→ `PoolBuilder` 合并解锁（含职业池）→ 发全员初始装备（§9.4）→ 为每人开 `ClassSelectMenu`，**全员选完（或倒计时兜底）后** → 启动 `WaveScheduler`。门闩未就绪期间玩家暂留等待点。**建世界的主线程责任唯一落在 onGameStart 门闩内（G4），避免 init/start 双触发。** |
 | `onGameEnd()` | 胜利：记通关时间榜 + 结算账户货币；失败：按进度结算（少额）。统一走 `cleanup()`。 |
 | `onGameAbort()` | 运行中全员退出：直接 `cleanup()`。 |
 | `onGameCancel()` | 等待阶段取消（未开局）：取消异步任务、删半成品世界。 |
@@ -117,7 +117,7 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
 玩家满员 → onGameStart
   → 异步准备：RunPlanner 种子化生成 RunPlan + 预读 NBT
   → 回主线程：WorldService.createWorld() + 粘贴 Act1（懒粘贴）
-  → （就绪门闩）→ 传送 → 初始化 PlayerState → PoolBuilder 合并解锁
+  → （就绪门闩）→ 传送 → 初始化 PlayerState → PoolBuilder 合并解锁 → 发初始装备 → ClassSelectMenu（全员选完）
   → WaveScheduler 循环：
        WaveEngine 执行当波（刷怪策略时间轴：按 delaySec 分批刷）
        → 清空：发通关奖励 → 30s 休整（升级菜单：普通/Boss奖励/跳过/延长）
@@ -135,7 +135,7 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
 | `plan/` | `RunPlanner`（异步种子化）、`RunPlan`、`SeededRng` |
 | `wave/` | `WaveEngine`、`WaveScheduler`（单可暂停状态机）、`WaveRuntime`、模型 `WaveSpec/SpawnStep` |
 | `mob/` | `MobFactory`（原版实体+系数+词缀+装备）、`AffixService` |
-| `reward/` | `RewardService`（3 选 1 抽取/扣费/应用）、`PickMenu`、模型 `RewardPool/RewardOption` |
+| `reward/` | `RewardService`（3 选 1 抽取/扣费/应用）、`PickMenu`、`ClassSelectMenu`（开局职业选）、模型 `RewardPool/RewardOption` |
 | `currency/` | `CurrencyService`（普通/Boss 货币 PDC 识别 + 掉落） |
 | `shop/` | `ShopMenu`（局外商店） |
 | `state/` | `PlayerState`（本局真相源）、`PlayerStateManager`、`EffectService`（apply/resync/expire） |
@@ -271,6 +271,7 @@ waves_per_act:
   act2: { weak: 4, strong: 3 }
   act3: { weak: 4, strong: 3 }
 lives: { default: 2 }                   # 复活次数
+initial_equipment: [maggoteers:wooden_sword, maggoteers:leather_helmet]  # 全员初始装备(ItemCreator id),开局发每人
 rest: { duration_sec: 30, extend_sec: 15, extend_max: 2 }
 settlement:
   win_flat: 100
@@ -308,6 +309,10 @@ world: { cleanup_orphans_on_enable: true }
 
 ### 9.3 跳过 / 延长 = 投票
 需**全员（冒险模式的玩家）同意**才生效；延长每次 `rest.extend_sec` 秒，上限 `rest.extend_max` 次。投票状态实时显示。
+
+### 9.4 开局职业选择（复用奖励池 + 解锁系统）
+玩家进图时**无装备**。`onGameStart` 门闩就绪后：先发**全员相同初始装备**（`config.yml` `initial_equipment`，ItemCreator id 列表，走 `ItemService` + `giveItem(ItemStack)`）；再为每人开 `ClassSelectMenu`——从**职业池**（`rewards.yml` 里 `reward_pools.class`，`cost: 0` 免费）**随机抽 3 个**（同样走可见性过滤 `requires_unlock`/`unique`，**解锁系统原样复用**）→ 选 1 → 应用（属性/武器/补给，与普通奖励同路径）；**等全员选完**（倒计时兜底，超时随机自动选）→ 启动 `WaveScheduler`。
+> 加职业 = `rewards.yml` 职业池加一个 option（`category` 任意、可 `requires_unlock: true` 走商店解锁）。**零代码**。借前代 `ClassSelectMenu` 已验证的「全员选完 → 开局」套路。
 
 ---
 

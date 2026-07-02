@@ -5,6 +5,19 @@
 
 ---
 
+## 2026-07-02 — 设计补充：开局职业选择
+
+### 做了什么
+- 需求方补充：玩家进图无装备，需**开局职业选择 + 全员初始装备**。已写入 CLAUDE.md §9.4 / §2.3 / §4.1 / §7.6、spec §8。
+
+### 决策
+- **复用奖励池 + 解锁**：职业池 = `reward_pools.class`（`cost: 0` 免费），option 即标准 `RewardOption`（STAT/WEAPON/SUPPLY，支持 `requires_unlock`/`unique`）。开局每人 3 选 1，可见性过滤原样复用——零新概念。
+- **初始装备**：`config.yml` `initial_equipment`（ItemCreator id 列表），开局发全员，走 `ItemService` + `giveItem(ItemStack)`（遵守 G2）。
+- **开局门闩**：`onGameStart` 门闩就绪后 → 发初始装备 → 开 `ClassSelectMenu` → 全员选完（倒计时兜底）→ 启动 `WaveScheduler`。借前代 VampireSurvivor `ClassSelectMenu` / `onAllClassesChosen` 已验证套路。
+- 加职业 = 配置加 option，**零代码**。
+
+---
+
 ## 2026-07-02 — 第三轮接入契约复核（§G 整改）
 
 ### 做了什么
