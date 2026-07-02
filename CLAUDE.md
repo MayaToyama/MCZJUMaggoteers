@@ -67,6 +67,7 @@
   - **不实现 `MidGameJoinable`**（不允许中途加入；人数缩放开局锁定）
   - 重写生命周期 hook（见 §2.3）
 - **`MaggoteersRoom extends JsonGameRoom`**：每局自建世界，房间字段几乎不用，留空占位即可（MGC 要求"必须有房间类"）。
+- > ⚠️ **房间实例是 join 前置（G1）**：`registerGame` 只注册类；MGC 还会从 `plugins/MCZJUGameCore/rooms/maggoteers/*.json` 加载**房间实例**（`JsonGameRoom.getFilePath()`）。`/mgc join maggoteers` → `createGame` → `getRandomLeisureGameRoom`，**无 READY 房间则返回 null**（提示"无空闲房间"）。**故 `onEnable` 里先（若缺失）写出默认 `rooms/maggoteers/default.json`，再 `registerGame`**（MGC 此时才会加载到它）；或运维 `/mgcop room create maggoteers default`。room 只是 MGC 调度壳、**局末置回 READY 可复用**；**每局仍自建独立虚空世界**，与 room 无关。
 
 ### 2.2 注册（`onEnable`）
 ```java
@@ -80,8 +81,8 @@ MenuFacade.registerMenu("maggoteers_shop", ShopMenu.class);   // 供 /menu 或 N
 ### 2.3 生命周期 hook
 | Hook | 我们做什么 |
 |---|---|
-| `onGameInit()` | 第一个玩家加入等待时：**异步**启动 `RunPlanner`（生成剧本）+ **异步预读 NBT**。⚠️ **世界 `WorldCreator.createWorld()` 必须在主线程**（Bukkit 限制），不能放进异步线程；异步只负责纯计算/读文件/删目录。返回 true。 |
-| `onGameStart()` | ⚠️ **此方法返回 `void`、不能阻塞等待异步结果**（MGC 调完立即置 `RUNNING`）。故这里**只设一个"就绪门闩"**：用 `runTaskTimer` 轮询"世界已建 + RunPlan 就绪"，**就绪后**才执行：粘贴 Act 1 的 4 象限 → 传送玩家到 Act 1 `playerSpawn` → 初始化各 `PlayerState`（`reviveCount=config.lives.default`、冒险模式）→ 发初始物资 → `PoolBuilder` 合并解锁 → 启动 `WaveScheduler`。门闩未就绪期间玩家暂留等待点。 |
+| `onGameInit()` | 第一个玩家加入等待时：**异步**启动 `RunPlanner`（生成剧本）+ **异步预读 NBT**。⚠️ **不在这里建世界**——`WorldCreator.createWorld()` 必须主线程，建世界的调度放在 `onGameStart` 的就绪门闩内（见下）。返回 true。 |
+| `onGameStart()` | ⚠️ **此方法返回 `void`、不能阻塞**（MGC 调完立即置 `RUNNING`）。故这里**只启动一个"就绪门闩"** `runTaskTimer`：轮询 `RunPlan` 是否就绪（异步产物）；**一旦就绪，由该门闩任务在主线程执行** `WorldService.createWorld()` + 粘贴 Act 1 的 4 象限 → 传送玩家到 Act 1 `playerSpawn` → 初始化各 `PlayerState`（`reviveCount=config.lives.default`、冒险模式）→ 发初始物资 → `PoolBuilder` 合并解锁 → 启动 `WaveScheduler`。门闩未就绪期间玩家暂留等待点。**建世界的主线程责任唯一落在 onGameStart 门闩内（G4），避免 init/start 双触发。** |
 | `onGameEnd()` | 胜利：记通关时间榜 + 结算账户货币；失败：按进度结算（少额）。统一走 `cleanup()`。 |
 | `onGameAbort()` | 运行中全员退出：直接 `cleanup()`。 |
 | `onGameCancel()` | 等待阶段取消（未开局）：取消异步任务、删半成品世界。 |
@@ -105,6 +106,7 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
 ```
 - **物品配置位置**：`plugins/Maggoteers/items/*.yml`（本插件目录，配置集中）。启动时用 `parseYamlToItems` 解析缓存；运行时按 id 取。
 - **货币/复活币/未来武器**都是 ItemCreator 物品 + PDC `maggoteers:id` 供本插件识别。
+- > ⚠️ **发放规则（G2）**：`PlayerExt.giveItem(String id)` 走 **MGC ItemManager**（**不是** ItemCreator）。本插件物品发放一律 `ItemStack is = ItemService.createItem(id); player.giveItem(is);`（`giveItem(ItemStack)` 走背包，满则丢脚边）——**绝不**对 ItemCreator id 调 `giveItem(String)`。`clearReward`、3 选 1 武器/补给、货币掉落均遵守此规则。
 
 ---
 
@@ -176,10 +178,12 @@ plugins/Maggoteers/maps/
 ```yaml
 playerSpawn: { x: 12.5, y: 65, z: 8.5 }
 spawnPoints:
-  1: { x: 4,  y: 65, z: 4 }
-  9: { x: -8, y: 65, z: 10 }
+  1:   { x: 4,  y: 65, z: 4 }
+  9:   { x: -8, y: 65, z: 10 }
+  boss: { x: 0,  y: 65, z: 0 }      # Boss 刷怪点（waves.yml 里 point: boss 引用它）
 ```
 > 所有坐标相对该图原点；运行时绝对坐标 = `act_origins[act] + 相对值`。**绝对坐标绝不出现在配置里。**
+> **刷怪点校验（G3）**：`waves.yml` 里 `steps[].point` 用到的每个编号（含 `boss`）**必须**在该图 `points.yml` 有定义；`RunPlanner` 解析时校验，缺失则启动/reload 报错指到具体 strategy。
 
 ### 5.3 抽图
 `RunPlanner` 每层从 `maps/actN/` 随机抽 1 张 → 读 `points.yml` + `special_waves.yml` → 把专属波次并入该层对应池。
@@ -482,6 +486,12 @@ MCZJUGameCore.getLeaderboardManager()
 - **本地无 JDK 时**：Windows IntelliJ 构建，或 WSL 内安装 JDK21 + Maven 后构建。
 - **资产**：首次启动释放 `plugins/Maggoteers/{items,maps}/...` 默认样例。
 - **测试服**：`E:\MCpaper`（Windows）；WSL 下 `/mnt/e/MCpaper`。
+
+### 16.1 首测前部署清单（plan 阶段 0 须覆盖）
+- [ ] 测试服 MGC **1.0.4 → 1.0.5**（对齐设计基线；1.0.4 已含 PlayerData API，升级为稳妥）。
+- [ ] `plugins/MCZJUGameCore/rooms/maggoteers/default.json` 存在（由本插件 `onEnable` 自动释放，或 `/mgcop room create maggoteers default`）——否则 `/mgc join maggoteers` 无房间（G1）。
+- [ ] `plugins/Maggoteers/{items,maps}/...` 资产就位（首次启动释放默认样例）。
+- [ ] `MCZJUItemCreator` 已装（否则物品缺失，仅警告不崩）。
 
 ---
 
