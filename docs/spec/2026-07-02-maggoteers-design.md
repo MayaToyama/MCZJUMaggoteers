@@ -38,7 +38,7 @@
 | 世界 | 每局新建虚空世界，局末卸载+删除 | 多房间共用一图无法并发；多世界实例天然支持并行 |
 | 结构粘贴 | Paper `Structure` API（`loadStructure(File)`） | 不依赖 WorldEdit；方法已被前代插件验证 |
 | 构建工具 | Maven | 与 MGC/ItemCreator 一致、jitpack 友好 |
-| 账户货币 | 自建（`balance`+`totalEarned`） | **MGC 的 `ScoreManager`/`HistoryScoreManager` 当前是空壳**，无可用积分系统 |
+| 账户货币 | 自建（`balance`+`totalEarned`，载体 MGC `JsonPlayerData`） | `ScoreManager`/`HistoryScoreManager` 是空壳；**`JsonPlayerData` 仅 GitHub 最新版 ≥1.0.5 提供，旧版服务器须升级** |
 | 效果生命周期 | **事件到期**（trigger 驱动），PlayerState 为真相源 | 挂钟计时无法跨死亡复活存活 |
 | 缩放锁定 | 开局快照 + 不允许中途加入 | 动态人数会让预生成失效、调试困难 |
 
@@ -64,7 +64,7 @@
 
 详见 `CLAUDE.md` §5。关键设计：
 
-- **一局 = 一个新世界**（`maggoteers_<seedhex>`，虚空 `VoidGenerator`），三阶段全粘贴进**同一世界**、位于按层硬编码的不同原点；跨层=传送，不重建世界。
+- **一局 = 一个新世界**（`maggoteers_<seedhex>`，虚空 `VoidGenerator`），三阶段全粘贴进**同一世界**、位于按层硬编码的不同原点；跨层=传送，不重建世界。⚠️ `createWorld()` 必须主线程（异步只做 NBT 预读/删目录）；`onGameStart` 不能阻塞，用"就绪门闩"轮询世界+剧本就绪后再传送/启动。
 - **地图 = 4 个结构方块 NBT（NW/SW/NE/SE）拼接**；每层从 `maps/actN/` 随机抽 1 张。
 - **懒粘贴**：进哪层粘哪层 4 象限，减开局卡顿。
 - **坐标**：图内 `points.yml` 用相对坐标（`playerSpawn` + `spawnPoints{编号}`）；绝对坐标 = `act_origins[act] + 相对`，**绝不入配置**。

@@ -33,6 +33,8 @@
 | 软依赖 | `MCZJUItemCreator`（`softdepend`；缺失时仅警告，不崩） |
 | 其他 | 无（**不引入** WorldEdit / MythicMobs / InfernalMobs） |
 
+> ⚠️ **版本基线（最高优先级）**：本设计以 **MGC GitHub 最新版（pom `1.0.5`）为准**——只有该版才有 `JsonPlayerData` / `getPlayerDataManager()` / `PlayerExt.getData()` / `PlayerDataLeaderboard`（§13 持久化、商店、排行榜整章依赖它们）。**测试服当前装的是旧版 MGC，缺这些 API，必须先升级到 GitHub 最新版**，否则编译不过。核对清单 `docs/review/2026-07-02-接入契约核对清单.md` 中 §A/§B1/§B2 的"不存在"结论就是基于那份过时本地源码得出的，**已证伪**（见 dev-log 2026-07-02 复核处置条）。
+
 ### 1.3 依赖坐标（pom.xml）
 ```xml
 <dependency>
@@ -47,7 +49,7 @@
   <version>1.0.5</version>
   <scope>provided</scope>
 </dependency>
-<!-- MCZJUItemCreator：通过 jitpack 引入，版本号以该仓库 pom 为准（接手时核实） -->
+<!-- MCZJUItemCreator：jitpack 引入（同组织 com.github.mczju-ops，已被前代 VampireSurvivor/build.gradle 验证）；版本号以该仓库 pom 为准 -->
 ```
 仓库：`https://repo.papermc.io/repository/maven-public/` 与 `https://jitpack.io`。
 
@@ -77,8 +79,8 @@ MenuFacade.registerMenu("maggoteers_shop", ShopMenu.class);   // 供 /menu 或 N
 ### 2.3 生命周期 hook
 | Hook | 我们做什么 |
 |---|---|
-| `onGameInit()` | 第一个玩家加入等待时：**异步**启动 `RunPlanner`（生成剧本）+ `WorldService.createAsync`（建世界）。返回 true。 |
-| `onGameStart()` | 等待世界/剧本就绪 → 粘贴 Act 1 的 4 象限 → 传送玩家到 Act 1 `playerSpawn` → 初始化各 `PlayerState`（`reviveCount=config.lives.default`、冒险模式）→ 发初始物资 → `PoolBuilder` 为每人合并解锁到个人奖励池 → 启动 `WaveScheduler` 从 Act 1 首波开始。 |
+| `onGameInit()` | 第一个玩家加入等待时：**异步**启动 `RunPlanner`（生成剧本）+ **异步预读 NBT**。⚠️ **世界 `WorldCreator.createWorld()` 必须在主线程**（Bukkit 限制），不能放进异步线程；异步只负责纯计算/读文件/删目录。返回 true。 |
+| `onGameStart()` | ⚠️ **此方法返回 `void`、不能阻塞等待异步结果**（MGC 调完立即置 `RUNNING`）。故这里**只设一个"就绪门闩"**：用 `runTaskTimer` 轮询"世界已建 + RunPlan 就绪"，**就绪后**才执行：粘贴 Act 1 的 4 象限 → 传送玩家到 Act 1 `playerSpawn` → 初始化各 `PlayerState`（`reviveCount=config.lives.default`、冒险模式）→ 发初始物资 → `PoolBuilder` 合并解锁 → 启动 `WaveScheduler`。门闩未就绪期间玩家暂留等待点。 |
 | `onGameEnd()` | 胜利：记通关时间榜 + 结算账户货币；失败：按进度结算（少额）。统一走 `cleanup()`。 |
 | `onGameAbort()` | 运行中全员退出：直接 `cleanup()`。 |
 | `onGameCancel()` | 等待阶段取消（未开局）：取消异步任务、删半成品世界。 |
@@ -110,8 +112,9 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
 ### 4.1 数据流（一次对局骨架）
 ```
 玩家满员 → onGameStart
-  → WorldService 建世界（异步） + RunPlanner 异步种子化生成 RunPlan
-  → 粘贴 Act1（懒粘贴）→ 传送 → 初始化 PlayerState → PoolBuilder 合并解锁
+  → 异步准备：RunPlanner 种子化生成 RunPlan + 预读 NBT
+  → 回主线程：WorldService.createWorld() + 粘贴 Act1（懒粘贴）
+  → （就绪门闩）→ 传送 → 初始化 PlayerState → PoolBuilder 合并解锁
   → WaveScheduler 循环：
        WaveEngine 执行当波（刷怪策略时间轴：按 delaySec 分批刷）
        → 清空：发通关奖励 → 30s 休整（升级菜单：普通/Boss奖励/跳过/延长）
@@ -146,7 +149,7 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
 
 ### 5.1 世界生命周期（`WorldService`，复用并扩展 `MCZJUvampireSurvivor/WorldManager` 已验证实现）
 - 世界名 `maggoteers_<8位hex>`（hex 来自 seed）。
-- `new WorldCreator(name).environment(NORMAL).generator(new VoidGenerator()).createWorld()`。
+- `new WorldCreator(name).environment(NORMAL).generator(new VoidGenerator()).createWorld()`——**必须在主线程调用**（Bukkit 限制；前代 VampireSurvivor 也是同步建世界，仅删目录走异步）。
 - `VoidGenerator`：所有 `shouldGenerate*()` 返回 false、`generateSurface` 空实现 → 纯虚空。
 - GameRule：`DO_DAYLIGHT_CYCLE=false`、`DO_WEATHER_CYCLE=false`、`NATURAL_REGENERATION=false`、`MOB_GRIEFING=false`、`DO_MOB_SPAWNING=false`；`Difficulty.HARD`。
 - **结构粘贴（已验证可行）**：
@@ -256,7 +259,7 @@ affixes:
 scaling:
   mob_hp:        [1.0, 1.3, 1.6, 2.0]   # 1–4 人
   mob_damage:    [1.0, 1.15, 1.3, 1.5]
-  mob_count:     [1.0, 1.0, 1.2, 1.5]   # 向下取整 + 概率补 1
+  mob_count:     [1.0, 1.0, 1.2, 1.5]   # 向下取整 + 概率补 1；⚠️ 补 1 的随机必须走 RunPlanner 种子 RNG（D6，保确定性/可重放）
   currency_drop: [1.0, 1.4, 1.8, 2.2]
 waves_per_act:
   act1: { weak: 3, strong: 2 }          # M, N → 每层 M+N+1 波
@@ -318,7 +321,7 @@ world: { cleanup_orphans_on_enable: true }
 
 ### 10.2 Effect 目录（5 种，够用）
 `ADD_ATTRIBUTE`（`op: PERCENT | FLAT`）、`ADD_POTION`、`HEAL`、`DAMAGE_AREA`、`GRANT_REVIVE`。
-> **净化用 `ADD_POTION` 技巧**：免疫凋零 = 持续给 0 秒 255 级凋零抵消。
+> **净化**：首选 `ADD_POTION` 技巧（免疫凋零 = 持续给 0 秒 255 级凋零抵消）；⚠️ **该技巧实现期须实测**（D1），若 MC 不认则 fallback = 监听 `EntityDamageEvent` 按 `DamageCause` cancel（作为 `ADD_POTION` 的免疫子能力实现）。
 
 ### 10.3 生命周期模型（**事件到期，非挂钟计时**）
 ```
@@ -332,7 +335,7 @@ PlayerEffect {
   cooldown_sec: int?              // 仅物品交互门禁用
 }
 ```
-- **常驻型**（`fireTrigger=null`，如 +10% 伤害）：写进 PlayerState → 重算 Bukkit 属性/药水。
+- **常驻型**（`fireTrigger=null`，如 +10% 伤害）：写进 PlayerState → 重算 Bukkit 属性/药水。⚠️ **`stack: ADD` 多层叠加时，每层 `AttributeModifier` 必须用唯一 `NamespacedKey`**（D5）——1.21 起同 key 重复添加会抛异常；按"效果 id + 层数"生成 key。
 - **触发型**（`fireTrigger=ON_KILL`，如嗜血）：命中触发时执行 effect。
 - **限时 = 事件到期**（不是定时器）：
   - "持续到波次结束" → `expiry={ON_WAVE_CLEAR, -1}`
@@ -340,7 +343,7 @@ PlayerEffect {
   - "本层有效" → `expiry={ON_ACT_ENTER, -1}`
   - "每 5s 下次攻击 +50%" → `recurring={interval_sec:5, spawn: <上面那个一次性>}`
 - **跨死亡复活存活**：效果存在 PlayerState（不依赖 Bukkit 实时药水）。玩家复活后 `EffectService.resync(player)` 把所有常驻型重新施加——死亡清掉的药水会被补回。✓
-- **CD（物品门禁）**：物品配置 `cooldown_sec`；`ItemInteractRouter` 分发前查 CD（Bukkit `setCooldown` 或时间戳表）→ 在 CD 则拦截，否则执行并计 CD。**有限时长药水**（如 5s 力量）走原版药水 `duration_ticks`，瞬时、不存 PlayerState。
+- **CD（物品门禁）**：物品配置 `cooldown_sec`；`ItemInteractRouter` 分发前查 CD → 在 CD 则拦截，否则执行并计 CD。⚠️ **不要用 `HumanEntity.setCooldown(Material,ticks)`**（D2）——粒度是材质，同材质不同 PDC 武器会串 CD；**默认走"按 PDC id 的时间戳表"**（`Map<UUID, Map<pdcId, expireMillis>>`）。**有限时长药水**（如 5s 力量）走原版药水 `duration_ticks`，瞬时、不存 PlayerState。
 - **无实时计时**（除 `ON_TICK_1S` 本身）；过期靠各 trigger 触发时扫一遍到期项。
 
 ### 10.4 物品交互统一路由（`ItemInteractRouter`）
@@ -399,7 +402,7 @@ reward_pools:
 | `display` | MiniMessage 显示文本 |
 | `requires_unlock` / `unlock_cost` | true = 需局外商店解锁才能 roll 到；unlock_cost = 商店售价 |
 | `unique` | true = 本局该玩家只能选一次，选后移出其池 |
-| `stack` | 重复获得的合并策略（见 §10.3） |
+| `stack` | 重复获得的合并策略（见 §10.3）。**触发型被动默认 `IGNORE`**（D7：重复拿到同一条被动不叠加/不刷新，除非显式声明 `ADD`/`REFRESH`） |
 
 ### 12.2 3 选 1 可见性判定
 ```
@@ -407,6 +410,7 @@ reward_pools:
     (!option.requires_unlock || player.持久.unlocks.contains(option.id))
  && (!option.unique         || !player.本局.acquiredUnique.contains(option.id))
 ```
+> **不足 3 个可见选项时的 fallback（D3）**：按实际可见数开格，**不足位灰显空位**——不补凑、不重复；可见数为 0 则该池按钮禁用并提示。保证"见到的都是真选项"。
 
 ---
 
@@ -423,6 +427,7 @@ public class MaggoteersPlayerData extends JsonPlayerData {
 MGC 自动落盘到 `players/maggoteers/<uuid>.json`（每 5 分钟 + 退出 + 关服）。**改完 `setModified(true)`。**
 
 ### 13.2 结算
+- ⚠️ 胜利与失败**都走** `endGame`→`onGameEnd`，须在游戏状态里存**显式 `outcome`（`WIN`/`FAIL`）标志**（D4），`onGameEnd` 据此分支结算。
 - 胜利：`grant = config.settlement.win_flat`。
 - 失败：`grant = fail_per_act × 已过层数 + fail_per_wave × 当前层已过波数`。
 - `balance += grant; totalEarned += grant; setModified(true)`。
@@ -495,6 +500,10 @@ MGC 自动落盘到 `players/maggoteers/<uuid>.json`（每 5 分钟 + 退出 + �
 - **ItemCreator 版本**：jitpack 版本号接手时核实。
 - **ItemCreator 物品来源**：默认读它自己 `items/`；我们用 `parseYamlToItems` 解析本插件目录下的物品。
 - **PlayerData 改动忘 `setModified(true)`**：不会落盘——封装一层 setter 提醒。
+- **MGC 版本（最高优先级）**：服务器必须装 GitHub 最新版（≥1.0.5）；旧版无 `JsonPlayerData` 等 API，持久化整章失效。
+- **净化技巧待实测（D1）**：`ADD_POTION` 0 秒 255 级抵消不一定成立；fallback 走 damage-cancel。
+- **结构粘贴主线程掉帧（D8）**：4 象限粘贴主线程瞬时完成会掉几 tick；接受。已改为"进层时粘该层"（非开局一次性粘 12 个）摊薄。
+- **缩放开局锁定（D8）**：人数中途减少时仍按开局人数算难度（偏难）；接受。
 
 ---
 
