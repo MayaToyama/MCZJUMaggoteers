@@ -1,0 +1,23 @@
+# Maven
+target/
+
+# IntelliJ
+*.iml
+.idea/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.class
+build/
+out/
+
+# Claude Code local
+.claude/settings.local.json
