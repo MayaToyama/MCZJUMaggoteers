@@ -38,7 +38,7 @@
 | 世界 | 每局新建虚空世界，局末卸载+删除 | 多房间共用一图无法并发；多世界实例天然支持并行 |
 | 结构粘贴 | Paper `Structure` API（`loadStructure(File)`） | 不依赖 WorldEdit；方法已被前代插件验证 |
 | 构建工具 | Maven | 与 MGC/ItemCreator 一致、jitpack 友好 |
-| 账户货币 | 自建（`balance`+`totalEarned`，载体 MGC `JsonPlayerData`） | `ScoreManager`/`HistoryScoreManager` 是空壳；**`JsonPlayerData` 仅 GitHub 最新版 ≥1.0.5 提供，旧版服务器须升级** |
+| 账户货币 | 自建（`balance`+`totalEarned`，载体 MGC `JsonPlayerData`） | `ScoreManager`/`HistoryScoreManager` 是空壳；`JsonPlayerData` 从 1.0.4 起即有，设计基线 1.0.5 |
 | 效果生命周期 | **事件到期**（trigger 驱动），PlayerState 为真相源 | 挂钟计时无法跨死亡复活存活 |
 | 缩放锁定 | 开局快照 + 不允许中途加入 | 动态人数会让预生成失效、调试困难 |
 
@@ -52,8 +52,8 @@
 
 详见 `CLAUDE.md` §2.3。要点：
 
-- `onGameInit`：**异步**启动 `RunPlanner` + `WorldService.createAsync`，等待阶段就把重活干完。
-- `onGameStart`：等世界/剧本就绪 → 懒粘贴 Act1 → 传送 → 初始化 `PlayerState` → `PoolBuilder` 合并解锁 → 启动 `WaveScheduler`。
+- `onGameInit`：**异步**启动 `RunPlanner` + 异步预读 NBT（⚠️ `createWorld()` 必须主线程，不能放进异步）。
+- `onGameStart`：⚠️ 返回 `void`、不能阻塞等待异步结果 → 设"就绪门闩"（`runTaskTimer` 轮询世界+剧本就绪），**就绪后**再：懒粘贴 Act1 → 传送 → 初始化 `PlayerState` → `PoolBuilder` 合并解锁 → 启动 `WaveScheduler`。
 - `onGameEnd/Abort/Cancel`：统一 `cleanup()`（清实体、卸载+删世界、profile 切回大厅）。结束对局调 `getGameManager().endGame(game)`。
 
 **失败奖励**（需求方补充）：失败也按"已过层数×层权重 + 当前层已过波数×波权重"发少量账户货币。
@@ -114,13 +114,13 @@
 
 - **触发→效果解耦**：少量监听器（onKill/onDamageDealt/...）统一分发到 `EffectService`；一个监听器服务多种被动，一个 Effect 被多途径复用（heal 用于嗜血/治疗药剂/群抬）。
 - **触发目录（v1 全实现）**：生命周期（`ON_WAVE_CLEAR/ON_ACT_ENTER/ON_GAME_END`）+ 战斗（`ON_KILL/ON_DAMAGE_DEALT/ON_DAMAGE_TAKEN`）+ 玩家状态（`ON_REVIVE/ON_DEATH/ON_TICK_1S`）+ 物品交互（`ON_INTERACT`+UseType，驱动 PDC 物品 GUI）。
-- **Effect 目录（5 种）**：`ADD_ATTRIBUTE`（`PERCENT|FLAT`）、`ADD_POTION`、`HEAL`、`DAMAGE_AREA`、`GRANT_REVIVE`。净化用 `ADD_POTION`（0 秒 255 级抵消）技巧。
+- **Effect 目录（5 种）**：`ADD_ATTRIBUTE`（`PERCENT|FLAT`）、`ADD_POTION`、`HEAL`、`DAMAGE_AREA`、`GRANT_REVIVE`。净化首选 `ADD_POTION`（0 秒 255 级抵消）技巧，**实现期实测**，不成立则 fallback 走 damage-cancel。
 - **生命周期 = 事件到期，非挂钟计时**（需求方关键修正）：
   - 限时道具限的不是"实际时间"，而是"波次结束/层级结束/下一次攻击/下一次复活"等触发条件。
   - 死亡复活后效果须继续生效 → 不能靠原版药水 infinite 时长。
   - → `PlayerEffect{fireTrigger, expiry{trigger,charges}, recurring, stack}`；PlayerState 为真相源，复活后 `resync` 重施加。**删除前代 `BuffInstance` 的实时计时**。
 - **CD 与堆叠**（需求方追问后补齐）：
-  - 道具 CD = 物品门禁（`cooldown_sec` + Bukkit `setCooldown`）；有限时长药水走原版 `duration_ticks`。
+  - 道具 CD = 物品门禁（`cooldown_sec`，走**按 PDC id 的时间戳表**，不用 `setCooldown(Material)` 以免同材质串 CD）；有限时长药水走原版 `duration_ticks`。
   - 周期 buff = `recurring{interval_sec, spawn}`（由 `ON_TICK_1S` 累计）。
   - 堆叠/升级 = `stack: ADD | UPGRADE_LEVEL{max} | REFRESH | REPLACE | IGNORE`（如抗性 I→II→III）。
 - **唯一被动**：选项 `unique: true` → 选一次后从该玩家本局池移除（`acquiredUnique` 集，本局作用域）。
@@ -158,7 +158,7 @@ plugins/Maggoteers/
   rewards.yml           # 奖励池 + 选项(含 requires_unlock/unlock_cost/unique/stack/icon)
   items/*.yml           # ItemCreator 物品（parseYamlToItems 自解析）；含货币/复活币(PDC)
   maps/actN/<mapId>/    # 4 nbt + points.yml + special_waves.yml
-  players/maggoteers/<uuid>.json   # MGC 管理，禁手编辑
+# 持久化由 MGC 管理（不在本插件目录）：plugins/MCZJUGameCore/player_data/maggoteers/<uuid>.json
 ```
 
 **三条不变量**（`CLAUDE.md` §0）：绝对坐标不入配置；定义唯一处；内容增删零代码。

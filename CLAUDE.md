@@ -33,7 +33,7 @@
 | 软依赖 | `MCZJUItemCreator`（`softdepend`；缺失时仅警告，不崩） |
 | 其他 | 无（**不引入** WorldEdit / MythicMobs / InfernalMobs） |
 
-> ⚠️ **版本基线（最高优先级）**：本设计以 **MGC GitHub 最新版（pom `1.0.5`）为准**——只有该版才有 `JsonPlayerData` / `getPlayerDataManager()` / `PlayerExt.getData()` / `PlayerDataLeaderboard`（§13 持久化、商店、排行榜整章依赖它们）。**测试服当前装的是旧版 MGC，缺这些 API，必须先升级到 GitHub 最新版**，否则编译不过。核对清单 `docs/review/2026-07-02-接入契约核对清单.md` 中 §A/§B1/§B2 的"不存在"结论就是基于那份过时本地源码得出的，**已证伪**（见 dev-log 2026-07-02 复核处置条）。
+> ⚠️ **版本基线**：本设计以 **MGC GitHub `1.0.5`** 为准（`docs/dev-guide.md` + `docs/dev-advanced.md`）。`JsonPlayerData`/`getPlayerDataManager()`/`getData()`/`PlayerDataLeaderboard` **从 1.0.4 起即存在**（测试服 jar=1.0.4 已含）；建议测试服 **1.0.4 → 1.0.5 对齐设计**（**不是**"缺 API 编译不过"）。⚠️ 本地 `MCZJUGameCore-main` clone 是 **1.0.0（过时：无 PlayerData、Menu API 也不同）**——核对任何 API 必须看 GitHub 1.0.5，勿用本地 clone。详见 dev-log 2026-07-02 复核条。
 
 ### 1.3 依赖坐标（pom.xml）
 ```xml
@@ -75,6 +75,7 @@ MCZJUGameCore.getPlayerDataManager().registerPlayerData("maggoteers", Maggoteers
 MenuFacade.registerMenu("maggoteers_shop", ShopMenu.class);   // 供 /menu 或 NPC 打开商店
 // + 各 Config 加载、Listener 注册、PluginCommand 注册
 ```
+> **Menu 子类写法（1.0.5，E4）**：`public ShopMenu(Player player, Object... args) { super(player, args); }`，重写 `getTitle()/getRows()(1~6)/getPermission()/setup()`（`setup()` 内 `setSlot(slot, item[, action])`）。`registerMenu` 反射要求子类有 `(Player, Object[])` 构造器。⚠️ **勿照抄**本地 1.0.0 `guide.md` 的 `super(XxxMenu.class, player)` 写法。
 
 ### 2.3 生命周期 hook
 | Hook | 我们做什么 |
@@ -89,9 +90,9 @@ MenuFacade.registerMenu("maggoteers_shop", ShopMenu.class);   // 供 /menu 或 N
 
 ### 2.4 常用 MGC API
 - `new PlayerExt(player)`：`isInGame(MaggoteersGame.class)`、`getGame()`、`getParty()`、`giveItem(id)`、`getData(MaggoteersPlayerData.class)`、`switchProfile(null)`、`resetState()`。
-- `JsonPlayerData` 子类 `MaggoteersPlayerData`（§10.3）：改完务必 `setModified(true)`。
+- `JsonPlayerData` 子类 `MaggoteersPlayerData`（§13.1）：改完务必 `setModified(true)`。
 - `Sender`：`AbstractGame` 自带 `sender()` 向局内全员发消息。
-- 排行榜：继承 `PlayerDataLeaderboard`，字段名 `totalEarned`（§10.5）。
+- 排行榜：继承 `PlayerDataLeaderboard`，字段名 `totalEarned`（§13.5）。
 
 ---
 
@@ -192,7 +193,7 @@ spawnPoints:
 - **产出 `RunPlan`**（确定性、可重放/调试）：
 ```
 RunPlan { seed, playerCount, scalingSnapshot,
-  acts: [ { mapId, spawnPointAbs{id→World(x,y,z)},
+  acts: [ { mapId, spawnPointAbs{id→{x,y,z}},        // 纯坐标：异步线程不持有 World（E8）；主线程绑定 World 时再构造 Location
            waves:[ Wave{ steps:[Step…已解析绝对坐标&缩放后数值], clearReward } … ],  // M+N+1 波
            bossPoolAct } … ×3 ] }
 ```
@@ -424,7 +425,7 @@ public class MaggoteersPlayerData extends JsonPlayerData {
     public List<String> unlocks = new ArrayList<>();  // 已解锁的 option.id
 }
 ```
-MGC 自动落盘到 `players/maggoteers/<uuid>.json`（每 5 分钟 + 退出 + 关服）。**改完 `setModified(true)`。**
+由 **MGC 统一管理**，落盘到 **`plugins/MCZJUGameCore/player_data/maggoteers/<uuid>.json`**（**不在本插件目录**；`JsonPlayerData.getFilePath()`，E1）。自动保存 **每 30 分钟**（`startAutoSave(20*60*30L)`）+ 玩家退出 `savePlayerDataAsync` + 关服 `saveAllPlayerData`（E2）。**改完务必 `setModified(true)`**，否则不落盘。
 
 ### 13.2 结算
 - ⚠️ 胜利与失败**都走** `endGame`→`onGameEnd`，须在游戏状态里存**显式 `outcome`（`WIN`/`FAIL`）标志**（D4），`onGameEnd` 据此分支结算。
@@ -441,8 +442,12 @@ MGC 自动落盘到 `players/maggoteers/<uuid>.json`（每 5 分钟 + 退出 + �
 - **开局**（`onGameStart`）：对每个玩家，把其 `unlocks` 对应的选项并入该玩家个人奖励池。
 - 3 选 1 在休整期**按需现抽**（非战斗，开销极小）。
 
-### 13.5 排行榜
-注册 `PlayerDataLeaderboard`，字段 `totalEarned`（降序）。通关时间可另注册一个榜（可选）。
+### 13.5 排行榜（E5）
+```java
+MCZJUGameCore.getLeaderboardManager()
+    .registerLeaderboard("maggoteers_total", MaggoteersTotalLeaderboard.class);   // onEnable 里
+```
+子类 `extends PlayerDataLeaderboard`，实现 `getTitle() / getSubtitle() / getPlayerDataClass()→MaggoteersPlayerData.class / getFieldName()→"totalEarned"`（降序）。放置展示实体：`/mgcop leaderboard create|edit maggoteers_total <entityId>`（详见 `dev-advanced.md` §四）。通关时间榜同理另注册一个（可选）。
 
 ---
 
@@ -500,7 +505,7 @@ MGC 自动落盘到 `players/maggoteers/<uuid>.json`（每 5 分钟 + 退出 + �
 - **ItemCreator 版本**：jitpack 版本号接手时核实。
 - **ItemCreator 物品来源**：默认读它自己 `items/`；我们用 `parseYamlToItems` 解析本插件目录下的物品。
 - **PlayerData 改动忘 `setModified(true)`**：不会落盘——封装一层 setter 提醒。
-- **MGC 版本（最高优先级）**：服务器必须装 GitHub 最新版（≥1.0.5）；旧版无 `JsonPlayerData` 等 API，持久化整章失效。
+- **MGC 版本**：设计基线 **1.0.5**；测试服 **1.0.4 已含** PlayerData API，建议升 1.0.5 对齐。⚠️ 本地 clone 是 **1.0.0（过时）**，核对 API 须看 GitHub 1.0.5（`dev-advanced.md` 在线版）。
 - **净化技巧待实测（D1）**：`ADD_POTION` 0 秒 255 级抵消不一定成立；fallback 走 damage-cancel。
 - **结构粘贴主线程掉帧（D8）**：4 象限粘贴主线程瞬时完成会掉几 tick；接受。已改为"进层时粘该层"（非开局一次性粘 12 个）摊薄。
 - **缩放开局锁定（D8）**：人数中途减少时仍按开局人数算难度（偏难）；接受。
