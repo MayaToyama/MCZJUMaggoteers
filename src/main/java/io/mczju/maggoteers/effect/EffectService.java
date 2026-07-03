@@ -11,7 +11,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import org.bukkit.Bukkit;
+
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -38,20 +42,26 @@ public final class EffectService {
         }
     }
 
-    /** 复活后重施加：把 PlayerState 所有常驻型重新写回 Bukkit（死亡清掉的药水补回）。 */
+    /** 复活后重施加（幂等）：先剥除该玩家已施加的派生视图，再重施加全部常驻型。 */
     public static void resync(Player p) {
         PlayerState st = PlayerStateManager.get(currentGame(p), p.getUniqueId());
         if (st == null) return;
+        stripDerived(p, st.effects());
         for (PlayerEffect e : new ArrayList<>(st.effects())) {
             if (e.isPermanent()) applyDerived(p, e);
         }
     }
 
-    /** 对局结束：清 PlayerState 效果 + 移除本插件加的属性修改器/药水（粗粒度：清插件 key 的 modifier + 清药水）。 */
+    /** 对局结束：剥除派生视图 + 清 PlayerState 效果。 */
     public static void removeAll(Player p) {
         PlayerState st = PlayerStateManager.get(currentGame(p), p.getUniqueId());
         if (st == null) return;
-        // 移除插件命名空间下的所有 AttributeModifier
+        stripDerived(p, st.effects());
+        st.clearEffects();
+    }
+
+    /** 剥除本插件施加的派生视图：插件命名空间下的 AttributeModifier + 常驻 ADD_POTION 药水。 */
+    private static void stripDerived(Player p, java.util.List<PlayerEffect> effects) {
         for (Attribute attr : new Attribute[]{Attribute.MAX_HEALTH, Attribute.ATTACK_DAMAGE,
                 Attribute.MOVEMENT_SPEED, Attribute.ATTACK_SPEED}) {
             AttributeInstance inst = p.getAttribute(attr);
@@ -62,15 +72,15 @@ public final class EffectService {
                 }
             }
         }
-        // 移除本插件施加的常驻药水（常驻型 ADD_POTION 的 POTION 类型）
-        for (io.mczju.maggoteers.effect.PlayerEffect e : st.effects()) {
-            if (e.isPermanent() && e.effect() == io.mczju.maggoteers.effect.Effect.ADD_POTION) {
-                org.bukkit.potion.PotionEffectType type = e.params().get(io.mczju.maggoteers.effect.EffectKeys.POTION);
+        for (PlayerEffect e : effects) {
+            if (e.isPermanent() && e.effect() == Effect.ADD_POTION) {
+                PotionEffectType type = e.params().get(EffectKeys.POTION);
                 if (type != null) p.removePotionEffect(type);
             }
         }
-        st.clearEffects();
     }
+
+    private static final Set<String> FIRING = new HashSet<>();
 
     /**
      * 对局内某 trigger 触发：对每个冒险模式玩家扫到期 + 执行 fireTrigger==fired 的触发型效果。
@@ -80,22 +90,28 @@ public final class EffectService {
      */
     public static void fireTrigger(io.mczju.maggoteers.game.MaggoteersGame game, Trigger fired, int tickSeconds) {
         if (game == null) return;
-        for (var pe : game.getPlayers()) {
-            Player p = pe.player();
-            var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
-            if (ps == null || !ps.isAlive()) continue;
-            // 1) 到期扫描
-            EffectStacker.sweepExpiry(ps.effects(), fired);
-            // 2) 执行触发型（fireTrigger==fired）
-            for (PlayerEffect e : new ArrayList<>(ps.effects())) {
-                if (e.fireTrigger() == fired) executeEffect(p, e, game);
-                // 3) recurring（仅 ON_TICK_1S 累计秒）
-                if (fired == Trigger.ON_TICK_1S && tickSeconds > 0 && e.recurringIntervalSec() > 0
-                        && e.recurringSpawn() != null
-                        && tickSeconds % e.recurringIntervalSec() == 0) {
-                    apply(p, e.recurringSpawn());
+        String key = System.identityHashCode(game) + ":" + fired.name();
+        if (!FIRING.add(key)) return;   // 同 (game,trigger) 正在分发 → 防递归
+        try {
+            for (var pe : game.getPlayers()) {
+                Player p = pe.player();
+                var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
+                if (ps == null || !ps.isAlive()) continue;
+                // 1) 到期扫描
+                EffectStacker.sweepExpiry(ps.effects(), fired);
+                // 2) 执行触发型（fireTrigger==fired）
+                for (PlayerEffect e : new ArrayList<>(ps.effects())) {
+                    if (e.fireTrigger() == fired) executeEffect(p, e, game);
+                    // 3) recurring（仅 ON_TICK_1S，基于全局 tick 时钟）
+                    if (fired == Trigger.ON_TICK_1S && e.recurringIntervalSec() > 0
+                            && e.recurringSpawn() != null
+                            && (Bukkit.getCurrentTick() / 20L) % e.recurringIntervalSec() == 0) {
+                        apply(p, e.recurringSpawn());
+                    }
                 }
             }
+        } finally {
+            FIRING.remove(key);
         }
     }
 

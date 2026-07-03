@@ -18,10 +18,11 @@ import org.bukkit.scheduler.BukkitTask;
 public final class EffectListener implements Listener {
 
     private static BukkitTask tickTask;
+    private static int tickRef = 0;
 
-    /** 启动 ON_TICK_1S 心跳（每秒对每个运行中的 MaggoteersGame fire ON_TICK_1S）。 */
+    /** 启动 ON_TICK_1S 心跳（引用计数：多个对局共享同一个心跳任务）。 */
     public static void startTick() {
-        stopTick();
+        if (++tickRef > 1) return;          // 已有心跳，只增引用计数
         tickTask = Bukkit.getScheduler().runTaskTimer(MaggoteersPlugin.getInstance(), () -> {
             for (com.github.mczjuops.mczjugamecore.game.AbstractGame g :
                     com.github.mczjuops.mczjugamecore.MCZJUGameCore.getGameManager().getAllGames()) {
@@ -33,6 +34,8 @@ public final class EffectListener implements Listener {
     }
 
     public static void stopTick() {
+        if (tickRef <= 0) return;
+        if (--tickRef > 0) return;          // 还有对局在用
         if (tickTask != null) { tickTask.cancel(); tickTask = null; }
     }
 
