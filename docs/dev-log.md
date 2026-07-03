@@ -5,6 +5,27 @@
 
 ---
 
+## 2026-07-03 — Plan 4 实现（PlayerState + 死亡/复活/失败，Cursor 接手）
+
+### 做了什么
+- 按 `docs/plan/2026-07-03-plan4-playerstate-death-revive.md` 完成 Task 1–3（Task 4 需 in-game 手测）。
+- 新增：`PlayerState`/`PlayerStateManager`（含 `revivePlayer`/`addReviveCount` API 供 Plan 6）、`GameOutcome`、`MaggoteersDeathStrategy`。
+- `MaggoteersGame`：`getPlayerDeathStrategy()` 注入；开局 `switchProfile` + 冒险模式 + `PlayerStateManager.init(lives.default)`；`win()`/`fail()` 设 outcome 后 `endGame`；结束钩子 `destroyAll`。
+- `WaveScheduler` 通关分支改调 `((MaggoteersGame) game).win()`。
+- MGC API 已 javap 核实：`AbstractGame.getPlayerDeathStrategy()`、`AbstractPlayerDeathStrategy.onPlayerDeath(PlayerExt, PlayerDeathEvent)`、`PlayerExt.switchProfile(String)`。
+- `mvn test` 31 项全绿（新增 `PlayerStateTest` 4 项）。
+
+### 决策与原因
+- **DeathStrategy 取消 PlayerDeathEvent**：不走原版死亡屏/重生；`tryAutoRevive` 含 1→0 仍复活；耗尽转 SPECTATOR + `isAnyAlive` 判失败。
+- **outcome 防重入**：`win()`/`fail()` 仅在 `IN_PROGRESS` 时生效，避免重复 endGame。
+- **switchProfile 保留**：按 plan + VampireSurvivor 实证在 onGameStart 手动切 profile；若 in-game 见背包双清再移除（dev-log 待实测记录）。
+
+### 遗留
+- Task 4 in-game：自动复活链、单人/多人失败、胜利 outcome=WIN；复活币 GUI 端到端留 Plan 6。
+- Plan 5 复活路径补 `EffectService.resync`；Plan 7 `onGameEnd` 按 outcome 结算货币。
+
+---
+
 ## 2026-07-03 — Plan 3 实现（RunPlanner + 缩放 + 词缀，Cursor 接手）
 
 ### 做了什么

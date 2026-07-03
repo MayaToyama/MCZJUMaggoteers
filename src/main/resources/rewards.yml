@@ -1,0 +1,130 @@
+# 奖励池（3 选 1 / 开局职业）；cost=0 免费
+
+reward_pools:
+  class:
+    cost: 0
+    options:
+      - id: class_vanguard
+        display: "<gold>先锋"
+        description: "高生命，木剑开局"
+        category: WEAPON
+        item: maggoteers:wooden_sword
+      - id: class_striker
+        display: "<red>突击手"
+        description: "测试之刃，高伤害"
+        category: WEAPON
+        item: maggoteers:test_blade
+      - id: class_medic
+        display: "<green>医疗兵"
+        description: "应急口粮 x2"
+        category: SUPPLY
+        item: maggoteers:supply_healing
+        amount: 2
+
+  act1_weak:
+    cost: 1
+    currency: normal
+    options:
+      - id: a1w_heal
+        display: "<red>治疗包"
+        description: "恢复 6 颗心"
+        category: SUPPLY
+        item: maggoteers:supply_healing
+      - id: a1w_sword
+        display: "<gray>木剑"
+        description: "备用武器"
+        category: WEAPON
+        item: maggoteers:wooden_sword
+      - id: a1w_nugget
+        display: "<yellow>卫戍币"
+        description: "再得 1 枚普通货币"
+        category: SUPPLY
+        item: maggoteers:currency_normal
+
+  act1_strong:
+    cost: 1
+    currency: normal
+    options:
+      - id: a1s_blade
+        display: "<aqua>测试之刃"
+        description: "锋利 III"
+        category: WEAPON
+        item: maggoteers:test_blade
+      - id: a1s_heal
+        display: "<red>治疗包 x2"
+        description: "双份口粮"
+        category: SUPPLY
+        item: maggoteers:supply_healing
+        amount: 2
+      - id: a1s_coin
+        display: "<yellow>卫戍币 x2"
+        description: "普通货币"
+        category: SUPPLY
+        item: maggoteers:currency_normal
+        amount: 2
+
+  act1_boss:
+    cost: 1
+    currency: boss
+    options:
+      - id: a1b_revive
+        display: "<green>复活币"
+        description: "+1 复活次数或救队友"
+        category: SUPPLY
+        item: maggoteers:revive_coin
+      - id: a1b_blade
+        display: "<aqua>测试之刃"
+        category: WEAPON
+        item: maggoteers:test_blade
+      - id: a1b_bosscoin
+        display: "<light_purple>Boss 币"
+        category: SUPPLY
+        item: maggoteers:currency_boss
+
+  act2_weak:
+    cost: 1
+    currency: normal
+    options:
+      - { id: a2w_heal, display: "<red>治疗包", category: SUPPLY, item: maggoteers:supply_healing }
+      - { id: a2w_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
+      - { id: a2w_coin, display: "<yellow>卫戍币", category: SUPPLY, item: maggoteers:currency_normal }
+
+  act2_strong:
+    cost: 1
+    currency: normal
+    options:
+      - { id: a2s_heal, display: "<red>治疗包 x2", category: SUPPLY, item: maggoteers:supply_healing, amount: 2 }
+      - { id: a2s_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
+      - { id: a2s_revive, display: "<green>复活币", category: SUPPLY, item: maggoteers:revive_coin }
+
+  act2_boss:
+    cost: 1
+    currency: boss
+    options:
+      - { id: a2b_revive, display: "<green>复活币", category: SUPPLY, item: maggoteers:revive_coin }
+      - { id: a2b_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
+      - { id: a2b_coin, display: "<light_purple>Boss 币", category: SUPPLY, item: maggoteers:currency_boss }
+
+  act3_weak:
+    cost: 1
+    currency: normal
+    options:
+      - { id: a3w_heal, display: "<red>治疗包", category: SUPPLY, item: maggoteers:supply_healing }
+      - { id: a3w_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
+      - { id: a3w_coin, display: "<yellow>卫戍币", category: SUPPLY, item: maggoteers:currency_normal }
+
+  act3_strong:
+    cost: 1
+    currency: normal
+    options:
+      - { id: a3s_heal, display: "<red>治疗包 x2", category: SUPPLY, item: maggoteers:supply_healing, amount: 2 }
+      - { id: a3s_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
+      - { id: a3s_revive, display: "<green>复活币", category: SUPPLY, item: maggoteers:revive_coin }
+
+  act3_boss:
+    cost: 1
+    currency: boss
+    options:
+      - { id: a3b_revive, display: "<green>复活币", category: SUPPLY, item: maggoteers:revive_coin }
+      - { id: a3b_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
+      - { id: a3b_coin, display: "<light_purple>Boss 币", category: SUPPLY, item: maggoteers:currency_boss }

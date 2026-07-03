@@ -1,0 +1,74 @@
+# 本插件物品（ItemCreator parseYamlToItems 加载）；id 带 maggoteers: 前缀
+
+maggoteers:currency_normal:
+  material: GOLD_NUGGET
+  customName: "<yellow>卫戍币"
+  lore:
+    - "<gray>普通波次奖励货币"
+    - "<dark_gray>右键或休整菜单 · 3 选 1 普通池"
+  glint: true
+  pdc:
+    - key: maggoteers:kind
+      type: STRING
+      value: currency_normal
+
+maggoteers:currency_boss:
+  material: NETHER_STAR
+  customName: "<light_purple>Boss 卫戍币"
+  lore:
+    - "<gray>Boss 波次奖励货币"
+    - "<dark_gray>休整菜单 · 3 选 1 Boss 池"
+  glint: true
+  pdc:
+    - key: maggoteers:kind
+      type: STRING
+      value: currency_boss
+
+maggoteers:revive_coin:
+  material: TOTEM_OF_UNDYING
+  customName: "<green>复活币"
+  lore:
+    - "<gray>对死者：拉回战场"
+    - "<gray>对活者：+1 自动复活次数"
+  glint: true
+  pdc:
+    - key: maggoteers:kind
+      type: STRING
+      value: revive_coin
+
+maggoteers:supply_healing:
+  material: GOLDEN_APPLE
+  customName: "<red>应急口粮"
+  lore:
+    - "<gray>立即恢复 6 颗心"
+  pdc:
+    - key: maggoteers:kind
+      type: STRING
+      value: supply_healing
+
+maggoteers:wooden_sword:
+  material: WOODEN_SWORD
+  customName: "<gray>训练木剑"
+  lore:
+    - "<dark_gray>开局配发"
+  unbreakable: true
+
+maggoteers:leather_helmet:
+  material: LEATHER_HELMET
+  customName: "<gray>训练皮帽"
+  lore:
+    - "<dark_gray>开局配发"
+  unbreakable: true
+
+maggoteers:test_blade:
+  material: IRON_SWORD
+  customName: "<aqua>测试之刃"
+  lore:
+    - "<yellow>+4 攻击力（测试用）"
+  enchantments:
+    - minecraft:sharpness: 3
+  unbreakable: true
+  pdc:
+    - key: maggoteers:kind
+      type: STRING
+      value: weapon_test

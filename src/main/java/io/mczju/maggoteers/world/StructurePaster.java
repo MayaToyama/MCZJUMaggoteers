@@ -60,14 +60,14 @@ public final class StructurePaster {
         }
     }
 
-    /** 64×64 玻璃平台 + 中央下方实心柱（保证玩家不落虚空）。 */
-    private static void buildPlatform(World w, int ox, int y, int oz) {
+    /** 64×64 玻璃平台（顶面 = baseY）+ 中央下方实心柱（保证玩家/怪落在平台上）。 */
+    private static void buildPlatform(World w, int ox, int baseY, int oz) {
         for (int dx = -QUAD; dx < QUAD; dx++) {
             for (int dz = -QUAD; dz < QUAD; dz++) {
-                w.getBlockAt(ox + dx, y - 1, oz + dz).setType(Material.GLASS);
+                w.getBlockAt(ox + dx, baseY, oz + dz).setType(Material.GLASS);
             }
         }
-        for (int dy = 0; dy < 40; dy++) w.getBlockAt(ox, y - 1 - dy, oz).setType(Material.GLASS);
+        for (int dy = 1; dy <= 40; dy++) w.getBlockAt(ox, baseY - dy, oz).setType(Material.GLASS);
     }
 
     private static int offX(String q) { return q.endsWith("e") ? 0 : -QUAD; }

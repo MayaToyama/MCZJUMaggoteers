@@ -1,9 +1,12 @@
 package io.mczju.maggoteers.wave;
 
-import com.github.mczjuops.mczjugamecore.MCZJUGameCore;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
+import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.plan.ActPlan;
+import io.mczju.maggoteers.plan.RunConfig;
+import io.mczju.maggoteers.reward.RewardService;
 import io.mczju.maggoteers.world.MapRepository;
 import io.mczju.maggoteers.world.StructurePaster;
 import io.mczju.maggoteers.world.WorldService;
@@ -17,39 +20,57 @@ import java.util.*;
 
 /**
  * 单一可暂停状态机心跳，驱动 {@code SPAWNING→ACTIVE→CLEARED→REST→下一波/下一层/VICTORY}。
- * <p>暂停 = 取消任务保留游标（phase/actIndex/waveIndex/stepCursor/restEndTicks）；恢复 = 重建任务。
- * 借鉴设计 §7.3。Plan 2：REST 仅倒计时自动推进（升级菜单在 Plan 6）。
- *
- * <p><b>SPAWNING 推进</b>：当前波 steps 经 {@link WaveSpec#expand()} 展平且**按 delayTicks 升序**
- * （由 {@link io.mczju.maggoteers.plan.RunPlanner} 保证）；心跳用 {@code stepCursor} 线性推进，
- * 把所有 {@code delayTicks <= elapsed} 的 step 一次性 spawn，到尾即转 ACTIVE。
  */
 public final class WaveScheduler {
 
-    enum Phase { SPAWNING, ACTIVE, CLEARED, REST, DONE }
+    public enum Phase { SPAWNING, ACTIVE, CLEARED, REST, DONE }
+
+    public record RunSnapshot(
+            int actIndex, String mapId, int waveIndex, int waveCount,
+            Phase phase, String lastTier, int restSecondsLeft
+    ) {
+        public String phaseName() {
+            return switch (phase) {
+                case SPAWNING -> "刷怪";
+                case ACTIVE -> "战斗";
+                case CLEARED -> "清场";
+                case REST -> "休整";
+                case DONE -> "结束";
+            };
+        }
+    }
 
     static final class Cursor {
         final List<ActPlan> acts;
+        final RunConfig runCfg;
         int actIndex = 0;
         int waveIndex = 0;
         Phase phase = Phase.SPAWNING;
         long waveStartTicks;
         long restEndTicks;
-        /** 当前波 expand() 列表里下一个待 spawn 的下标（线性推进）。 */
         int stepCursor = 0;
         List<SpawnStep> currentExpanded = List.of();
         WaveRuntime runtime;
         BukkitTask task;
-        Cursor(List<ActPlan> acts) { this.acts = acts; }
+        String lastTier = "weak";
+
+        Cursor(List<ActPlan> acts, RunConfig runCfg) {
+            this.acts = acts;
+            this.runCfg = runCfg;
+        }
     }
 
     private static final Map<AbstractGame, Cursor> CURSORS = new IdentityHashMap<>();
 
-    public static void start(AbstractGame game, List<ActPlan> acts) {
-        Cursor c = new Cursor(acts);
+    public static void start(AbstractGame game, List<ActPlan> acts, RunConfig runCfg) {
+        Cursor c = new Cursor(acts, runCfg);
         CURSORS.put(game, c);
         enterAct(game, c, 0);
         scheduleHeartbeat(game, c);
+    }
+
+    public static void start(AbstractGame game, List<ActPlan> acts) {
+        start(game, acts, loadRunConfig());
     }
 
     public static void stop(AbstractGame game) {
@@ -57,6 +78,21 @@ public final class WaveScheduler {
         if (c == null) return;
         if (c.task != null) c.task.cancel();
         WaveEngine.stop(game);
+    }
+
+    public static RunSnapshot snapshot(AbstractGame game) {
+        Cursor c = CURSORS.get(game);
+        if (c == null) return null;
+        ActPlan act = c.acts.get(c.actIndex);
+        int restLeft = c.phase == Phase.REST
+                ? Math.max(0, (int) ((c.restEndTicks - Bukkit.getCurrentTick()) / 20L)) : 0;
+        return new RunSnapshot(c.actIndex, act.mapId(), c.waveIndex, act.waves().size(),
+                c.phase, c.lastTier, restLeft);
+    }
+
+    public static void skipRest(AbstractGame game) {
+        Cursor c = CURSORS.get(game);
+        if (c != null && c.phase == Phase.REST) advance(game, c);
     }
 
     public static void pause(AbstractGame game) {
@@ -84,8 +120,11 @@ public final class WaveScheduler {
 
         var spawn = act.playerSpawn();
         var loc = new org.bukkit.Location(w, spawn.x(), spawn.y(), spawn.z());
-        game.getPlayers().forEach(pe -> pe.player().teleport(loc));
-        broadcast(game, Component.text("▶ 进入第 " + (actIndex + 1) + " 层", NamedTextColor.GOLD));
+        game.getPlayers().forEach(pe -> {
+            pe.player().teleport(loc);
+            pe.player().setFallDistance(0f);
+        });
+        broadcast(game, Component.text("▶ 进入第 " + (actIndex + 1) + " 层 · " + act.mapId(), NamedTextColor.GOLD));
         beginWave(game, c, 0);
     }
 
@@ -93,6 +132,7 @@ public final class WaveScheduler {
         c.waveIndex = waveIndex;
         c.phase = Phase.SPAWNING;
         c.stepCursor = 0;
+        c.lastTier = tierForWave(c, waveIndex);
         WaveSpec spec = c.acts.get(c.actIndex).waves().get(waveIndex);
         c.currentExpanded = spec.expand();
         c.waveStartTicks = Bukkit.getCurrentTick();
@@ -100,6 +140,15 @@ public final class WaveScheduler {
         c.runtime.cleared = false;
         broadcast(game, Component.text("▶ 第 " + (waveIndex + 1) + " / "
                 + c.acts.get(c.actIndex).waves().size() + " 波", NamedTextColor.RED));
+    }
+
+    private static String tierForWave(Cursor c, int waveIndex) {
+        String act = actId(c.actIndex);
+        int weak = c.runCfg.weak(act);
+        int strong = c.runCfg.strong(act);
+        if (waveIndex < weak) return "weak";
+        if (waveIndex < weak + strong) return "strong";
+        return "boss";
     }
 
     private static void scheduleHeartbeat(AbstractGame game, Cursor c) {
@@ -136,11 +185,22 @@ public final class WaveScheduler {
 
     private static void onWaveCleared(AbstractGame game, Cursor c) {
         WaveSpec spec = c.acts.get(c.actIndex).waves().get(c.waveIndex);
-        broadcast(game, Component.text("✔ 本波清除！" + (spec.clearReward().isEmpty()
-                ? "" : "（奖励发放见 Plan 6）"), NamedTextColor.GREEN));
+        List<io.mczju.maggoteers.wave.RewardItem> rewards = spec.clearReward();
+        if (!rewards.isEmpty()) {
+            RewardService.grantClearRewards(
+                    game.getPlayers().stream().map(pe -> pe.player()).toList(), rewards);
+            broadcast(game, Component.text("✔ 本波清除！奖励已发放。", NamedTextColor.GREEN));
+        } else {
+            broadcast(game, Component.text("✔ 本波清除！", NamedTextColor.GREEN));
+        }
         int restSec = MaggoteersPlugin.getInstance().getConfig().getInt("rest.duration_sec", 30);
         c.restEndTicks = Bukkit.getCurrentTick() + restSec * 20L;
         c.phase = Phase.REST;
+        for (var pe : game.getPlayers()) {
+            if (pe.player().getGameMode() == org.bukkit.GameMode.ADVENTURE) {
+                MenuFacade.open("maggoteers-rest", pe.player(), game);
+            }
+        }
     }
 
     private static void advance(AbstractGame game, Cursor c) {
@@ -151,7 +211,7 @@ public final class WaveScheduler {
         if (c.task != null) c.task.cancel();
         WaveEngine.stop(game);
         broadcast(game, Component.text("🏆 通关 卫戍协议！", NamedTextColor.GOLD));
-        MCZJUGameCore.getGameManager().endGame(game);
+        ((MaggoteersGame) game).win();
     }
 
     private static String actId(int i) { return "act" + (i + 1); }
@@ -163,6 +223,11 @@ public final class WaveScheduler {
 
     private static void broadcast(AbstractGame game, Component msg) {
         game.getPlayers().forEach(pe -> pe.player().sendMessage(msg));
+    }
+
+    private static RunConfig loadRunConfig() {
+        var plugin = MaggoteersPlugin.getInstance();
+        return io.mczju.maggoteers.plan.RunPlanner.loadRunConfig(plugin);
     }
 
     private WaveScheduler() {}

@@ -1,0 +1,78 @@
+package io.mczju.maggoteers.state;
+
+import com.github.mczjuops.mczjugamecore.game.AbstractGame;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Player;
+
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * 本局每玩家 {@link PlayerState} 注册表（借鉴前代 VampireSurvivor SessionManager）。
+ */
+public final class PlayerStateManager {
+    private static final Map<AbstractGame, Map<UUID, PlayerState>> BY_GAME = new IdentityHashMap<>();
+
+    /** 开局为某玩家建状态（reviveCount 来自 config lives.default）。 */
+    public static PlayerState init(AbstractGame game, UUID uuid, int reviveCount) {
+        PlayerState st = new PlayerState(uuid, reviveCount);
+        BY_GAME.computeIfAbsent(game, g -> new HashMap<>()).put(uuid, st);
+        return st;
+    }
+
+    public static PlayerState get(AbstractGame game, UUID uuid) {
+        Map<UUID, PlayerState> m = BY_GAME.get(game);
+        return m == null ? null : m.get(uuid);
+    }
+
+    /** 场上是否还有冒险模式（参战）玩家。 */
+    public static boolean isAnyAlive(AbstractGame game) {
+        Map<UUID, PlayerState> m = BY_GAME.get(game);
+        if (m == null) return false;
+        return m.values().stream().anyMatch(PlayerState::isAlive);
+    }
+
+    /**
+     * 复活币 · 对死者：拉回冒险模式（仅复活，不加次数）。返回是否成功（死者才需复活）。
+     * <p>Plan 6 复活币 GUI 对死者头像调用。
+     */
+    public static boolean revivePlayer(AbstractGame game, UUID uuid) {
+        PlayerState st = get(game, uuid);
+        if (st == null || st.isAlive()) return false;
+        st.setAlive(true);
+        applyAdventure(Bukkit.getPlayer(uuid));
+        return true;
+    }
+
+    /**
+     * 复活币 · 对活者：reviveCount + n（不改变当前存活状态）。
+     * <p>Plan 6 复活币 GUI 对活者头像调用。
+     */
+    public static void addReviveCount(AbstractGame game, UUID uuid, int n) {
+        PlayerState st = get(game, uuid);
+        if (st == null) return;
+        st.setReviveCount(st.getReviveCount() + n);
+    }
+
+    /** 把玩家设为冒险模式并满血（复活/开局用，主线程）。 */
+    static void applyAdventure(Player p) {
+        if (p == null) return;
+        p.setGameMode(GameMode.ADVENTURE);
+        var maxHp = p.getAttribute(Attribute.MAX_HEALTH);
+        p.setHealth(maxHp != null ? maxHp.getValue() : 20.0);
+        p.setFallDistance(0f);
+        p.setFireTicks(0);
+        p.setNoDamageTicks(40);
+    }
+
+    /** 结束钩子：清掉本局所有玩家状态。 */
+    public static void destroyAll(AbstractGame game) {
+        BY_GAME.remove(game);
+    }
+
+    private PlayerStateManager() {}
+}

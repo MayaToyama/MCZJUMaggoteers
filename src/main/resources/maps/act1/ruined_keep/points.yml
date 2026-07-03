@@ -1,5 +1,6 @@
-playerSpawn: { x: 0.5, y: 65, z: 0.5 }
+# 相对 act_origins 的坐标；y=1 表示层原点上方 1 格（玻璃平台顶 y=origin.y）
+playerSpawn: { x: 0.5, y: 1, z: 0.5 }
 spawnPoints:
-  "1":   { x: 8,  y: 65, z: 8 }
-  "9":   { x: -8, y: 65, z: -8 }
-  boss:  { x: 0,  y: 65, z: 0 }
+  "1":   { x: 8,  y: 1, z: 8 }
+  "9":   { x: -8, y: 1, z: -8 }
+  boss:  { x: 0,  y: 1, z: 0 }
