@@ -187,6 +187,11 @@ public final class EffectService {
         PotionEffectType type = e.params().get(EffectKeys.POTION);
         if (type == null) return;
         int amp = e.params().getOrDefault(EffectKeys.AMP, 0);
+        // D1 净化技巧：amp >= 255 视为"免疫该效果"（0s 255 级抵消）——Paper 实测若无效，靠 PurifyListener fallback
+        if (amp >= 255) {
+            p.addPotionEffect(new PotionEffect(type, 20 * 30, 255, false, false, false));
+            return;
+        }
         // 常驻药水：用足够长时长模拟 infinite（定期由 ON_TICK_1S 刷新，见 Task 5）；这里先施加长时长
         p.addPotionEffect(new PotionEffect(type, 20 * 30, amp, false, false, true));
     }

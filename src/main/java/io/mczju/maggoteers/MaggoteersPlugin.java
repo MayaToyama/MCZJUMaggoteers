@@ -44,6 +44,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MobDeathListener(), this);
         getServer().getPluginManager().registerEvents(new ItemInteractRouter(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.effect.EffectListener(), this);
+        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.PurifyListener(), this);
         getLogger().info("Maggoteers (卫戍协议) enabled, game 'maggoteers' registered.");
     }
 
