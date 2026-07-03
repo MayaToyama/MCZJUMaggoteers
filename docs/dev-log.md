@@ -5,6 +5,32 @@
 
 ---
 
+## 2026-07-03 — 编写 Plan 2 / 3 / 4 实现计划（writing-plans）
+
+### 做了什么
+- 按 Plan 1 的约定（`docs/plan/` 分阶段、TDD 步骤、checkbox、照搬前代已验证实现）续写三份计划：
+  - `2026-07-03-plan2-maps-waves.md`：结构粘贴 + WaveEngine/Scheduler + 原版怪 + 三层闭环 VICTORY。
+  - `2026-07-03-plan3-runplanner-scaling-affixes.md`：SeededRng + Affix + Compose + ScalingConfig(count-roll D6) + RunPlanner（纯函数单测）。
+  - `2026-07-03-plan4-playerstate-death-revive.md`：PlayerState + MaggoteersDeathStrategy + outcome + 失败判定。
+- 复核并照搬前代 `MCZJUvampireSurvivor` 已验证实现：`WaveManager`（IdentityHashMap + UUID 反查 + 5-tick 安全扫描）、`WorldManager`（结构粘贴）、`ScalingConfig`、`SurvivorPlayerDeathStrategy`、`PlayerSession`、`SurvivorGame` 生命周期。
+
+### 决策与原因
+- **Plan 2↔Plan 3 稳定契约**：定义 `ActPlan{mapId,playerSpawn,waves}` / `WaveSpec{steps,repeat,clearReward}` / `SpawnStep{...}`（已解析绝对坐标 + 最终倍率）为跨 Plan 不变量。Plan 2 用同步 `SimplePlanner`（coeff-only、count 固定）产出 `List<ActPlan>`；Plan 3 的异步种子化 `RunPlanner` **替换** `SimplePlanner`，**WaveEngine/WaveScheduler 零改动**——把"规划"与"执行"解耦，最小化返工。
+- **RunPlanner 放 onGameStart 异步，不放 onGameInit**：§2.3 字面说 onGameInit 启动 RunPlanner，但 playerCount 是"开局快照锁定"（§6/§1.1），onGameInit 时玩家可能还在集结，count 未定。故放在 `onGameStart` 的就绪门闩内异步跑（取 `getPlayers().size()` 锁定快照），与 G4"建世界唯一在 onGameStart 门闩主线程"一致。world seed 由 `WorldService.create` 生成并 `getSeed` 暴露给 RunPlanner（世界名 hex = seed hex，可重放）。
+- **纯函数可测**：`WaveDefinitions`/`MapLibrary`/`RunConfig` 纯数据 record + `RunPlanner.plan(seed,playerCount,defs,maps,scaling,affixes,cfg)` 全注入、不碰 Bukkit；`AffixService.forTesting`/`ScalingConfig.forTesting` 包级工厂绕过单例——Plan 3 全套单测（确定性/G3/count-roll/专属波次并入）无需开服。
+- **SpawnStep 字段演进**：Plan 2 定义 9 字段；Plan 3 加 `dropMult`（coeff×affix×scaling 的掉落倍率，Plan 6 CurrencyService 消费）+ 填 `affixes/potions`。`dropMult` 落地字段在 Plan 3，避免 Plan 6 再改模型。
+- **死亡策略接入点已源码核实**：`AbstractGame.getPlayerDeathStrategy()` override 返回 `new XxxDeathStrategy(this)`（VampireSurvivor `SurvivorGame:75` 实证）；策略 `onPlayerDeath(PlayerExt, PlayerDeathEvent)` 取消事件 + reviveCount 逻辑。`switchProfile(getId())` 在 onGameStart 切干净游戏 profile（`SurvivorGame:147` 实证）——Plan 1–3 缺失，Plan 4 补上。
+- **outcome 标志（D4）**：`GameOutcome{IN_PROGRESS,WIN,FAIL}` 落在 `MaggoteersGame` 实例；`WaveScheduler` 胜利调 `win()`、`DeathStrategy` 失败调 `fail()`，都 `setOutcome + endGame`。Plan 7 的 `onGameEnd` 据此分支结算。
+
+### 遗留 / 待实现期核实
+- Plan 2 地图 4 象限 NBT 需运维用结构方块导出；v1 用玻璃平台兜底（`map.fallback_platform`）。
+- Plan 4 `switchProfile` 是否与 MGC 自动切换重复——实测后定（若开局背包被清两次则移除手动调用）。
+- ItemCreator jitpack 版本号、净化技巧（D1）仍待实现期核实/实测。
+- 复活时 `EffectService.resync` 补回药水——Plan 5 在复活路径加 hook。
+- 全部三份 Plan 依赖本机装 JDK21+Maven 才能跑 `mvn`/部署（Claude 侧只写文件）。
+
+---
+
 ## 2026-07-02 — 设计补充：开局职业选择
 
 ### 做了什么

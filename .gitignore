@@ -21,3 +21,6 @@ out/
 
 # Claude Code local
 .claude/settings.local.json
+
+# Superpowers SDD scratch
+.superpowers/
