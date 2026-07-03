@@ -131,6 +131,7 @@ public final class WaveScheduler {
             pe.player().setFallDistance(0f);
         });
         broadcast(game, Component.text("▶ 进入第 " + (actIndex + 1) + " 层 · " + act.mapId(), NamedTextColor.GOLD));
+        io.mczju.maggoteers.effect.EffectService.fireTrigger((MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_ACT_ENTER);
         beginWave(game, c, 0);
     }
 
@@ -199,6 +200,7 @@ public final class WaveScheduler {
         } else {
             broadcast(game, Component.text("✔ 本波清除！", NamedTextColor.GREEN));
         }
+        io.mczju.maggoteers.effect.EffectService.fireTrigger((MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_WAVE_CLEAR);
         int restSec = MaggoteersPlugin.getInstance().getConfig().getInt("rest.duration_sec", 30);
         c.restEndTicks = Bukkit.getCurrentTick() + restSec * 20L;
         c.phase = Phase.REST;

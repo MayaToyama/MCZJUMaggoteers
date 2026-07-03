@@ -32,6 +32,8 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
 
         if (st.tryAutoRevive()) {
             healAndInvuln(p);
+            io.mczju.maggoteers.effect.EffectService.fireTrigger((io.mczju.maggoteers.game.MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_REVIVE);
+            io.mczju.maggoteers.effect.EffectService.resync(p);
             game.sender().info("<yellow>" + p.getName()
                     + " 倒下，自动复活！（剩余 " + st.getReviveCount() + " 次）");
             return;
@@ -40,6 +42,7 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
         st.markDown();
         healAndInvuln(p);
         p.setGameMode(GameMode.SPECTATOR);
+        io.mczju.maggoteers.effect.EffectService.fireTrigger((io.mczju.maggoteers.game.MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_DEATH);
         game.sender().warn("<red>" + p.getName() + " 倒下！转为观察者（可用复活币救援）。");
 
         if (!PlayerStateManager.isAnyAlive(game)) {

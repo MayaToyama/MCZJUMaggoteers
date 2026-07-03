@@ -42,11 +42,13 @@ public final class MaggoteersPlugin extends JavaPlugin {
         MenuFacade.registerMenu("maggoteers-pick", PickMenu.class);
         getServer().getPluginManager().registerEvents(new MobDeathListener(), this);
         getServer().getPluginManager().registerEvents(new ItemInteractRouter(), this);
+        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.effect.EffectListener(), this);
         getLogger().info("Maggoteers (卫戍协议) enabled, game 'maggoteers' registered.");
     }
 
     @Override
     public void onDisable() {
+        io.mczju.maggoteers.effect.EffectListener.stopTick();
         getLogger().info("Maggoteers disabled.");
     }
 

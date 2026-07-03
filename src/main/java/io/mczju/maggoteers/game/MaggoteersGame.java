@@ -164,6 +164,7 @@ public class MaggoteersGame extends AbstractGame {
     public void onAllClassesChosen() {
         if (plannedActs == null || outcome != GameOutcome.IN_PROGRESS || wavesStarted) return;
         wavesStarted = true;
+        io.mczju.maggoteers.effect.EffectListener.startTick();
         WaveScheduler.start(this, plannedActs);
         sender().info("<green>卫戍协议 开战！三层共 "
                 + plannedActs.stream().mapToInt(a -> a.waves().size()).sum() + " 波。每人复活 "
@@ -171,6 +172,9 @@ public class MaggoteersGame extends AbstractGame {
     }
 
     private void cleanupRun() {
+        io.mczju.maggoteers.effect.EffectService.fireTrigger(this, io.mczju.maggoteers.effect.Trigger.ON_GAME_END);
+        for (var pe : getPlayers()) io.mczju.maggoteers.effect.EffectService.removeAll(pe.player());
+        io.mczju.maggoteers.effect.EffectListener.stopTick();
         WaveScheduler.stop(this);
         RunScoreboard.stop(this);
         ClassSelectGate.clear(this);
