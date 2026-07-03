@@ -40,6 +40,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         MenuFacade.registerMenu("maggoteers-class", ClassSelectMenu.class);
         MenuFacade.registerMenu("maggoteers-rest", RestMenu.class);
         MenuFacade.registerMenu("maggoteers-pick", PickMenu.class);
+        MenuFacade.registerMenu("maggoteers-revive", io.mczju.maggoteers.menu.ReviveMenu.class);
         getServer().getPluginManager().registerEvents(new MobDeathListener(), this);
         getServer().getPluginManager().registerEvents(new ItemInteractRouter(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.effect.EffectListener(), this);

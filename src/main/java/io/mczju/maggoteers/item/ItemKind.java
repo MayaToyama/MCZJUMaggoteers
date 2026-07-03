@@ -6,7 +6,8 @@ import java.util.Locale;
 public enum ItemKind {
     CURRENCY_NORMAL("currency_normal"),
     CURRENCY_BOSS("currency_boss"),
-    CLASS_TICKET("class_ticket");
+    CLASS_TICKET("class_ticket"),
+    REVIVE_COIN("revive_coin");
 
     private final String pdcValue;
 
