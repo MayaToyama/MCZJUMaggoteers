@@ -109,20 +109,26 @@ public final class RewardService {
     private static void applyStat(Player player, RewardOption opt) {
         if (!opt.isStatEffect()) return;   // 配置不全则不发
         int level = 1;
-        io.mczju.maggoteers.effect.EffectContext params = opt.params();
+        io.mczju.maggoteers.effect.EffectContext params = opt.params().copy();   // C1: 不污染共享 RewardOption
+        PlayerEffect pe;
         // UPGRADE_LEVEL：按玩家已 acquired 次数定 level（amp/value 随 level 缩放）
         if (opt.stack() == Stack.UPGRADE_LEVEL) {
-            var pe = new PlayerExt(player);
-            var ps = pe.isInGame() ? PlayerStateManager.get(pe.getGame(), player.getUniqueId()) : null;
+            final int UPGRADE_MAX = 4;
+            var pExt = new PlayerExt(player);
+            var ps = pExt.isInGame() ? PlayerStateManager.get(pExt.getGame(), player.getUniqueId()) : null;
             int acquired = ps == null ? 0 : (int) ps.acquiredUnique().stream().filter(opt.id()::equals).count();
-            level = Math.min(acquired + 1, 4);
+            level = Math.min(acquired + 1, UPGRADE_MAX);
             // 药水 amp 随 level：amp = baseAmp + (level-1)
             Integer baseAmp = params.get(EffectKeys.AMP);
             if (baseAmp != null) params.put(EffectKeys.AMP, baseAmp + (level - 1));
+            pe = new PlayerEffect(
+                    opt.id(), opt.effect(), params, opt.trigger(),
+                    null, 0, 0, null, opt.stack(), UPGRADE_MAX, 0);
+        } else {
+            pe = new PlayerEffect(
+                    opt.id(), opt.effect(), params, opt.trigger(),
+                    null, 0, 0, null, opt.stack(), 0, 0);
         }
-        PlayerEffect pe = new PlayerEffect(
-                opt.id(), opt.effect(), params, opt.trigger(),
-                null, 0, 0, null, opt.stack(), 4, 0);
         pe.setLevel(level);
         io.mczju.maggoteers.effect.EffectService.apply(player, pe);
     }

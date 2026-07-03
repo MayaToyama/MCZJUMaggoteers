@@ -19,4 +19,11 @@ public final class EffectContext {
     }
 
     public boolean has(EffectKey<?> key) { return data.containsKey(key); }
+
+    /** 返回浅拷贝（内部 map 独立），避免修改污染共享实例。 */
+    public EffectContext copy() {
+        EffectContext c = new EffectContext();
+        c.data.putAll(this.data);
+        return c;
+    }
 }
