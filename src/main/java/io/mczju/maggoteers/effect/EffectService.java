@@ -72,6 +72,76 @@ public final class EffectService {
         st.clearEffects();
     }
 
+    /**
+     * 对局内某 trigger 触发：对每个冒险模式玩家扫到期 + 执行 fireTrigger==fired 的触发型效果。
+     * @param game        当前对局
+     * @param fired       触发的 trigger
+     * @param tickSeconds 仅 ON_TICK_1S 传>0（用于 recurring 累计）；其余传 0
+     */
+    public static void fireTrigger(io.mczju.maggoteers.game.MaggoteersGame game, Trigger fired, int tickSeconds) {
+        if (game == null) return;
+        for (var pe : game.getPlayers()) {
+            Player p = pe.player();
+            var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
+            if (ps == null || !ps.isAlive()) continue;
+            // 1) 到期扫描
+            EffectStacker.sweepExpiry(ps.effects(), fired);
+            // 2) 执行触发型（fireTrigger==fired）
+            for (PlayerEffect e : new ArrayList<>(ps.effects())) {
+                if (e.fireTrigger() == fired) executeEffect(p, e, game);
+                // 3) recurring（仅 ON_TICK_1S 累计秒）
+                if (fired == Trigger.ON_TICK_1S && tickSeconds > 0 && e.recurringIntervalSec() > 0
+                        && e.recurringSpawn() != null
+                        && tickSeconds % e.recurringIntervalSec() == 0) {
+                    apply(p, e.recurringSpawn());
+                }
+            }
+        }
+    }
+
+    /** 便捷重载（无 recurring 计时）。 */
+    public static void fireTrigger(io.mczju.maggoteers.game.MaggoteersGame game, Trigger fired) {
+        fireTrigger(game, fired, 0);
+    }
+
+    /** 执行一条效果（触发型在 fireTrigger 时调；常驻型在 apply 时已施加）。 */
+    private static void executeEffect(Player p, PlayerEffect e,
+                                      io.mczju.maggoteers.game.MaggoteersGame game) {
+        switch (e.effect()) {
+            case HEAL -> {
+                double amount = e.params().getOrDefault(EffectKeys.AMOUNT, 0.0);
+                var hp = p.getAttribute(Attribute.MAX_HEALTH);
+                double max = hp != null ? hp.getValue() : 20.0;
+                p.setHealth(Math.min(max, p.getHealth() + amount));
+            }
+            case ADD_POTION -> {   // 限时药水（duration_ticks>0）；常驻药水在 applyDerived 施加
+                PotionEffectType type = e.params().get(EffectKeys.POTION);
+                if (type == null) return;
+                int amp = e.params().getOrDefault(EffectKeys.AMP, 0);
+                int dur = e.params().getOrDefault(EffectKeys.DURATION_TICKS, 0);
+                if (dur > 0) p.addPotionEffect(new PotionEffect(type, dur, amp, false, true));
+            }
+            case DAMAGE_AREA -> {
+                double radius = e.params().getOrDefault(EffectKeys.RADIUS, 3.0);
+                double dmg = e.params().getOrDefault(EffectKeys.DAMAGE, 0.0);
+                org.bukkit.World w = p.getWorld();
+                for (org.bukkit.entity.Entity en : w.getNearbyEntities(p.getLocation(), radius, radius, radius)) {
+                    if (en instanceof org.bukkit.entity.LivingEntity le && en != p) {
+                        le.damage(dmg, p);
+                    }
+                }
+            }
+            case GRANT_REVIVE -> {
+                int count = e.params().getOrDefault(EffectKeys.COUNT, 1);
+                io.mczju.maggoteers.state.PlayerStateManager.addReviveCount(game, p.getUniqueId(), count);
+            }
+            case ADD_ATTRIBUTE -> {
+                // 触发型一次性 ADD_ATTRIBUTE（少见；按常驻同样施加，靠 expiry 控制去留）
+                applyAttribute(p, e);
+            }
+        }
+    }
+
     // —— 派生视图施加（常驻型）——
     private static void applyDerived(Player p, PlayerEffect e) {
         switch (e.effect()) {
