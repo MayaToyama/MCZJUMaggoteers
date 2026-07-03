@@ -1,0 +1,49 @@
+# 定义唯一处（铁律②）：刷怪策略 + 池子。Plan 2 仅 coeff（无 affix/scaling）。
+pools:
+  act1:
+    weak:   [ {strategy: w_zombie_swarm,   weight: 3} ]
+    strong: [ {strategy: s_skeleton_line,  weight: 2} ]
+    boss:   [ {strategy: b_iron_guard,     weight: 1} ]
+  act2:
+    weak:   [ {strategy: w_zombie_swarm,   weight: 3} ]
+    strong: [ {strategy: s_creeper_rush,   weight: 2} ]
+    boss:   [ {strategy: b_ravager,        weight: 1} ]
+  act3:
+    weak:   [ {strategy: w_zombie_swarm,   weight: 3} ]
+    strong: [ {strategy: s_creeper_rush,   weight: 2} ]
+    boss:   [ {strategy: b_warden_puppet,  weight: 1} ]
+
+strategies:
+  w_zombie_swarm:
+    repeat: 2
+    clearReward: [ {item: maggoteers:currency_normal, amount: 2} ]
+    steps:
+      - { point: "1", type: ZOMBIE, count: 5, coeff: {hp: 1.0, dmg: 1.0, speed: 1.0}, delay: 0 }
+      - { point: "9", type: ZOMBIE, count: 5, coeff: {hp: 1.0, dmg: 1.0, speed: 1.0}, delay: 5 }
+  s_skeleton_line:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_normal, amount: 2} ]
+    steps:
+      - { point: "1", type: SKELETON, count: 4, coeff: {hp: 1.2, dmg: 1.0, speed: 1.0}, delay: 0 }
+      - { point: "9", type: SKELETON, count: 4, coeff: {hp: 1.2, dmg: 1.0, speed: 1.0}, delay: 4 }
+  s_creeper_rush:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_normal, amount: 2} ]
+    steps:
+      - { point: "1", type: CREEPER, count: 3, coeff: {hp: 1.0, dmg: 1.2, speed: 1.1}, delay: 0 }
+      - { point: "9", type: CREEPER, count: 3, coeff: {hp: 1.0, dmg: 1.2, speed: 1.1}, delay: 3 }
+  b_iron_guard:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_boss, amount: 1} ]
+    steps:
+      - { point: boss, type: IRON_GOLEM, count: 1, coeff: {hp: 8.0, dmg: 1.5, speed: 1.0}, delay: 0 }
+  b_ravager:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_boss, amount: 1} ]
+    steps:
+      - { point: boss, type: RAVAGER, count: 1, coeff: {hp: 10.0, dmg: 1.6, speed: 1.0}, delay: 0 }
+  b_warden_puppet:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_boss, amount: 1} ]
+    steps:
+      - { point: boss, type: WARDEN, count: 1, coeff: {hp: 14.0, dmg: 1.8, speed: 1.0}, delay: 0 }

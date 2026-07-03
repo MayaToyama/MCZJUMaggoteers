@@ -5,6 +5,24 @@
 
 ---
 
+## 2026-07-03 — Plan 2 实现（地图 + 波次 v1，Cursor 接手）
+
+### 做了什么
+- Claude Code 额度用尽后由 Cursor 按 `docs/plan/2026-07-03-plan2-maps-waves.md` 完成 Plan 2 全部 8 个 Task。
+- 新增：`waves.yml` + 三张默认 `points.yml`；`WavesConfig`/`MapRepository`/`StructurePaster`（玻璃平台兜底）；`MobFactory`；`WaveEngine`/`WaveRuntime`/`WaveScheduler`/`MobDeathListener`；`SimplePlanner`/`Origins`；`MaggoteersGame` 开局闭环（建世界 → 规划 → 波次）。
+- `mvn test` + `mvn package` 通过（`CoordsTest`/`WaveSpecTest`/`OriginsTest`）。
+
+### 决策与原因
+- 严格按 plan 照搬 VampireSurvivor 的 WaveManager/WorldManager 模式；Plan 2 不做缩放/词缀/货币发放/clearReward 实发/死亡判定（留 Plan 3–6）。
+- `WavesConfig.parseStrategy` 对 Bukkit `MapList` 的 wildcard 做了 `num()` 辅助，避免 `getOrDefault` 泛型编译错误（plan 原文在 JDK 21 下不通过）。
+
+### 遗留
+- 需人工部署 `target/Maggoteers-0.1.0-SNAPSHOT.jar` 到 `E:\MCpaper\plugins\` 做 in-game 验证（见 plan Task 8 Step 3）。
+- 4 象限 NBT 仍缺，v1 靠 `map.fallback_platform` 玻璃平台兜底。
+- 下一步：**Plan 3**（RunPlanner 替换 SimplePlanner）。
+
+---
+
 ## 2026-07-03 — 编写 Plan 2 / 3 / 4 实现计划（writing-plans）
 
 ### 做了什么

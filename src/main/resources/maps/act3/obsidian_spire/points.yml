@@ -1,0 +1,5 @@
+playerSpawn: { x: 0.5, y: 65, z: 0.5 }
+spawnPoints:
+  "1":   { x: 8,  y: 65, z: 8 }
+  "9":   { x: -8, y: 65, z: -8 }
+  boss:  { x: 0,  y: 65, z: 0 }

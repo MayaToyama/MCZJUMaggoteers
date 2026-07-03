@@ -1,8 +1,11 @@
 package io.mczju.maggoteers;
 
 import com.github.mczjuops.mczjugamecore.MCZJUGameCore;
+import io.mczju.maggoteers.config.WavesConfig;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.game.MaggoteersRoom;
+import io.mczju.maggoteers.listener.MobDeathListener;
+import io.mczju.maggoteers.world.MapRepository;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -16,8 +19,11 @@ public final class MaggoteersPlugin extends JavaPlugin {
         instance = this;
         saveDefaultConfig();
         io.mczju.maggoteers.world.WorldService.cleanupOrphansOnEnable();
-        saveDefaultRooms();   // G1：必须先释放房间实例，再注册（注册时会 loadGameRoom）
+        saveDefaultRooms();
         MCZJUGameCore.getGameManager().registerGame(MaggoteersGame.class, MaggoteersRoom.class);
+        WavesConfig.loadFromFile(this);
+        MapRepository.load(this);
+        getServer().getPluginManager().registerEvents(new MobDeathListener(), this);
         getLogger().info("Maggoteers (卫戍协议) enabled, game 'maggoteers' registered.");
     }
 

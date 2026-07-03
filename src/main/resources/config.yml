@@ -2,4 +2,18 @@ wait:
   min_players: 1
 lives:
   default: 2
-# 后续 Plan 补充：scaling / waves_per_act / rest / settlement / act_origins / initial_equipment
+# —— Plan 2 新增 ——
+act_origins:
+  act1: [0, 64, 0]
+  act2: [1024, 64, 0]
+  act3: [2048, 64, 0]
+waves_per_act:
+  act1: { weak: 3, strong: 2 }   # M, N → 每层 M+N+1 波
+  act2: { weak: 4, strong: 3 }
+  act3: { weak: 4, strong: 3 }
+rest:
+  duration_sec: 30
+  extend_sec: 15
+  extend_max: 2
+map:
+  fallback_platform: true   # nbt 缺失时铺玻璃平台（v1 可玩兜底）
