@@ -67,7 +67,10 @@ public final class WavesConfig {
             double dmg = num(c.get("dmg"), 1.0).doubleValue();
             double spd = num(c.get("speed"), 1.0).doubleValue();
             int delay = num(m.get("delay"), 0).intValue();
-            steps.add(new StepCfg(point, type, count, new CoeffCfg(hp, dmg, spd), delay));
+            List<String> affixes = new ArrayList<>();
+            Object affRaw = m.get("affixes");
+            if (affRaw instanceof List<?> al) for (Object o : al) affixes.add(String.valueOf(o));
+            steps.add(new StepCfg(point, type, count, new CoeffCfg(hp, dmg, spd), delay, affixes));
         }
         List<RewardItemCfg> rewards = new ArrayList<>();
         for (var m : s.getMapList("clearReward")) {
@@ -85,6 +88,10 @@ public final class WavesConfig {
 
     public List<PoolEntry> getPool(String act, String tier) {
         return pools.getOrDefault(act, Map.of()).getOrDefault(tier, List.of());
+    }
+
+    public WaveDefinitions definitions() {
+        return new WaveDefinitions(strategies, pools);
     }
 
     private static Number num(Object v, Number fallback) {

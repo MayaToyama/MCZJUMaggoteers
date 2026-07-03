@@ -17,3 +17,8 @@ rest:
   extend_max: 2
 map:
   fallback_platform: true   # nbt 缺失时铺玻璃平台（v1 可玩兜底）
+scaling:
+  mob_hp:        [1.0, 1.3, 1.6, 2.0]   # 1–4 人
+  mob_damage:    [1.0, 1.15, 1.3, 1.5]
+  mob_count:     [1.0, 1.0, 1.2, 1.5]   # 向下取整 + 概率补 1（走种子 RNG，D6）
+  currency_drop: [1.0, 1.4, 1.8, 2.2]

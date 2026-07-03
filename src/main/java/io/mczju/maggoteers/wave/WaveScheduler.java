@@ -21,7 +21,7 @@ import java.util.*;
  * 借鉴设计 §7.3。Plan 2：REST 仅倒计时自动推进（升级菜单在 Plan 6）。
  *
  * <p><b>SPAWNING 推进</b>：当前波 steps 经 {@link WaveSpec#expand()} 展平且**按 delayTicks 升序**
- * （由 {@link io.mczju.maggoteers.plan.SimplePlanner} 保证）；心跳用 {@code stepCursor} 线性推进，
+ * （由 {@link io.mczju.maggoteers.plan.RunPlanner} 保证）；心跳用 {@code stepCursor} 线性推进，
  * 把所有 {@code delayTicks <= elapsed} 的 step 一次性 spawn，到尾即转 ACTIVE。
  */
 public final class WaveScheduler {

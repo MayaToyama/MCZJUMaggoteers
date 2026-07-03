@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 public final class WorldService {
 
     private static final Map<AbstractGame, World> worlds = new IdentityHashMap<>();
+    private static final Map<AbstractGame, Long> SEEDS = new IdentityHashMap<>();
     private static final Logger LOG = Logger.getLogger("Maggoteers");
 
     /** 主线程调用：为本对局创建虚空世界。返回 null 表示失败。 */
@@ -43,6 +44,7 @@ public final class WorldService {
         w.setGameRule(GameRule.NATURAL_REGENERATION, false);
         w.setGameRule(GameRule.MOB_GRIEFING, false);
         w.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+        SEEDS.put(game, seed);
         worlds.put(game, w);
         LOG.info("已为对局创建世界 " + name);
         return w;
@@ -52,9 +54,15 @@ public final class WorldService {
         return worlds.get(game);
     }
 
+    public static long getSeed(AbstractGame game) {
+        Long s = SEEDS.get(game);
+        return s == null ? 0L : s;
+    }
+
     /** 传送玩家回主世界 → 卸载 → 异步删目录。 */
     public static void cleanup(AbstractGame game) {
         World w = worlds.remove(game);
+        SEEDS.remove(game);
         if (w == null) return;
         Location hub = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().get(0).getSpawnLocation();
         for (Player p : new ArrayList<>(w.getPlayers())) {

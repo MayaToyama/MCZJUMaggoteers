@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class WaveSpecTest {
     private static SpawnStep step(int delay) {
         return new SpawnStep(new Vec3(0, 64, 0), EntityType.ZOMBIE, 5,
-                1.0, 1.0, 1.0, delay, List.of(), List.of());
+                1.0, 1.0, 1.0, 1.0, delay, List.of(), List.of());
     }
 
     @Test

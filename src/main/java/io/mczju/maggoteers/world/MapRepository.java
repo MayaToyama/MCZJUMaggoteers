@@ -1,6 +1,7 @@
 package io.mczju.maggoteers.world;
 
 import io.mczju.maggoteers.config.MapPoints;
+import io.mczju.maggoteers.config.WavesConfig;
 import io.mczju.maggoteers.wave.Vec3;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -11,7 +12,8 @@ import java.util.*;
 /** 读 plugins/Maggoteers/maps/actN/<mapId>/ 的 points.yml + 4 象限 nbt 清单。 */
 public final class MapRepository {
 
-    public record MapEntry(String mapId, MapPoints points, Set<String> nbtFiles, File dir) {
+    public record MapEntry(String mapId, MapPoints points, Set<String> nbtFiles, File dir,
+                           Map<String, List<WavesConfig.PoolEntry>> specialWaves) {
         public boolean hasNbt(String quad) { return nbtFiles.contains(quad + ".nbt"); }
     }
 
@@ -29,6 +31,9 @@ public final class MapRepository {
             };
             String path = "maps/" + act + "/" + mapId + "/points.yml";
             plugin.saveResource(path, false);
+            if (act.equals("act1")) {
+                plugin.saveResource("maps/act1/ruined_keep/special_waves.yml", false);
+            }
             File actDir = new File(root, act);
             if (!actDir.isDirectory()) continue;
             List<MapEntry> entries = new ArrayList<>();
@@ -43,11 +48,33 @@ public final class MapRepository {
                 for (String q : List.of("nw", "sw", "ne", "se")) {
                     if (new File(mapDir, q + ".nbt").isFile()) nbts.add(q + ".nbt");
                 }
-                entries.add(new MapEntry(mapDir.getName(), points, nbts, mapDir));
+                entries.add(new MapEntry(mapDir.getName(), points, nbts, mapDir, parseSpecialWaves(mapDir)));
             }
             BY_ACT.put(act, entries);
         }
         plugin.getLogger().info("MapRepository 已加载：" + BY_ACT);
+    }
+
+    private static Map<String, List<WavesConfig.PoolEntry>> parseSpecialWaves(File mapDir) {
+        File f = new File(mapDir, "special_waves.yml");
+        if (!f.isFile()) return Map.of();
+        var cfg = YamlConfiguration.loadConfiguration(f);
+        Map<String, List<WavesConfig.PoolEntry>> out = new HashMap<>();
+        for (String tier : List.of("weak", "strong", "boss")) {
+            var list = cfg.getMapList(tier);
+            if (list.isEmpty()) continue;
+            List<WavesConfig.PoolEntry> entries = new ArrayList<>();
+            for (var m : list) {
+                entries.add(new WavesConfig.PoolEntry((String) m.get("strategy"),
+                        num(m.get("weight"), 1).doubleValue()));
+            }
+            out.put(tier, entries);
+        }
+        return out;
+    }
+
+    private static Number num(Object v, Number fallback) {
+        return v instanceof Number n ? n : fallback;
     }
 
     private static MapPoints parsePoints(YamlConfiguration cfg) {
@@ -66,6 +93,10 @@ public final class MapRepository {
     }
 
     public static List<MapEntry> getMaps(String act) { return BY_ACT.getOrDefault(act, List.of()); }
+
+    public static MapLibrary library() {
+        return new MapLibrary(BY_ACT);
+    }
 
     /** 随机抽一张图（Plan 3 起改由种子 RNG）。无图返回 null。 */
     public static MapEntry pickRandom(String act) {

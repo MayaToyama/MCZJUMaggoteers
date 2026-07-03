@@ -1,0 +1,9 @@
+# 词缀定义唯一处（铁律②）。缺省倍率=1.0（即不写=不影响）。display 用 MiniMessage。
+affixes:
+  armored: { hp: 2.0, display: "<aqua>装甲" }
+  berserk: { dmg: 1.5, speed: 1.2, display: "<red>狂暴" }
+  toxic:
+    potions: [ {effect: POISON, amp: 1, dur: 200} ]
+    on: hit-player
+    display: "<green>毒素"
+  greedy:  { drop: 1.5, display: "<gold>贪婪" }

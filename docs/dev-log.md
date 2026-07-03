@@ -5,7 +5,25 @@
 
 ---
 
-## 2026-07-03 — Plan 2 实现（地图 + 波次 v1，Cursor 接手）
+## 2026-07-03 — Plan 3 实现（RunPlanner + 缩放 + 词缀，Cursor 接手）
+
+### 做了什么
+- 按 `docs/plan/2026-07-03-plan3-runplanner-scaling-affixes.md` 完成全部 6 个 Task。
+- 新增：`SeededRng`、`Affix`/`AffixService`/`affixes.yml`、`Compose`、`ScalingConfig`（count-roll D6）、`WaveDefinitions`/`MapLibrary`、`RunPlanner`、`RunConfig`；`SpawnStep.dropMult`；`MapEntry.specialWaves` + `special_waves.yml` 样例。
+- `MaggoteersGame` 改为 onGameStart 异步 `RunPlanner.plan(seed, playerCount)` + 二段就绪门闩；`WorldService.getSeed` 记录世界 seed。
+- 删除 `SimplePlanner`（由 RunPlanner 取代）。`mvn test` 27 项全绿。
+
+### 决策与原因
+- **playerCount 开局锁定 → RunPlanner 在 onGameStart 异步**：onGameInit 时人数未定，故在 `startInWorld` 取 `getPlayers().size()` 后异步规划；seed = `WorldService.create` 的 world seed（可重放）。
+- **WaveEngine/WaveScheduler 零改动**：RunPlanner 产出同一 `List<ActPlan>` 契约，规划与执行解耦。
+- **ScalingConfigTest 概率测试**：plan 原文用 `new SeededRng(0..1999)` 的首个 `nextDouble()` 在 JDK 21 下均 ≥0.5（同 seed 低位序列特性），改为单 `SeededRng` 连续抽样。
+
+### 遗留
+- `dropMult` 已计算，Plan 6 `CurrencyService` 消费；词缀药水 Plan 5 落地。
+- 固定 seed 调试命令 → Plan 8。
+- 需 in-game 验证 Boss hp = coeff×affix×scaling（iron_golem armored @1人 ≈ 320）。
+
+---
 
 ### 做了什么
 - Claude Code 额度用尽后由 Cursor 按 `docs/plan/2026-07-03-plan2-maps-waves.md` 完成 Plan 2 全部 8 个 Task。

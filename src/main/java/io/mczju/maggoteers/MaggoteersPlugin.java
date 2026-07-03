@@ -1,6 +1,8 @@
 package io.mczju.maggoteers;
 
 import com.github.mczjuops.mczjugamecore.MCZJUGameCore;
+import io.mczju.maggoteers.config.AffixService;
+import io.mczju.maggoteers.config.ScalingConfig;
 import io.mczju.maggoteers.config.WavesConfig;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.game.MaggoteersRoom;
@@ -23,6 +25,8 @@ public final class MaggoteersPlugin extends JavaPlugin {
         MCZJUGameCore.getGameManager().registerGame(MaggoteersGame.class, MaggoteersRoom.class);
         WavesConfig.loadFromFile(this);
         MapRepository.load(this);
+        ScalingConfig.load(this);
+        AffixService.load(this);
         getServer().getPluginManager().registerEvents(new MobDeathListener(), this);
         getLogger().info("Maggoteers (卫戍协议) enabled, game 'maggoteers' registered.");
     }
