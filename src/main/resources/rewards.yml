@@ -40,6 +40,23 @@ reward_pools:
         description: "再得 1 枚普通货币"
         category: SUPPLY
         item: maggoteers:currency_normal
+      - id: a1w_dmg10
+        display: "<red>+10% 攻击伤害"
+        description: "常驻 +10% ATTACK_DAMAGE"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params: { attr: ATTACK_DAMAGE, op: PERCENT, value: 0.10 }
+        stack: ADD
+        icon: IRON_SWORD
+      - id: a1w_lifesteal
+        display: "<dark_red>嗜血"
+        description: "击杀回 2 心"
+        category: STAT
+        trigger: ON_KILL
+        effect: HEAL
+        params: { amount: 4.0 }
+        stack: IGNORE
+        icon: GOLDEN_APPLE
 
   act1_strong:
     cost: 1
@@ -62,6 +79,14 @@ reward_pools:
         category: SUPPLY
         item: maggoteers:currency_normal
         amount: 2
+      - id: a1s_resist
+        display: "<aqua>抗性(可升级)"
+        description: "抗性 I，重复抽到升级（最多 4 级）"
+        category: STAT
+        effect: ADD_POTION
+        params: { potion: RESISTANCE, amp: 0, duration_ticks: 0 }
+        stack: UPGRADE_LEVEL
+        icon: SHIELD
 
   act1_boss:
     cost: 1
@@ -88,6 +113,23 @@ reward_pools:
       - { id: a2w_heal, display: "<red>治疗包", category: SUPPLY, item: maggoteers:supply_healing }
       - { id: a2w_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
       - { id: a2w_coin, display: "<yellow>卫戍币", category: SUPPLY, item: maggoteers:currency_normal }
+      - id: a2w_speed
+        display: "<green>+15% 移速"
+        description: "常驻 +15% MOVEMENT_SPEED"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params: { attr: MOVEMENT_SPEED, op: PERCENT, value: 0.15 }
+        stack: ADD
+        icon: LEATHER_BOOTS
+      - id: a2w_vamp
+        display: "<dark_red>吸血"
+        description: "攻击回复 1 心"
+        category: STAT
+        trigger: ON_DAMAGE_DEALT
+        effect: HEAL
+        params: { amount: 2.0 }
+        stack: IGNORE
+        icon: RED_STAINED_GLASS
 
   act2_strong:
     cost: 1
@@ -96,6 +138,14 @@ reward_pools:
       - { id: a2s_heal, display: "<red>治疗包 x2", category: SUPPLY, item: maggoteers:supply_healing, amount: 2 }
       - { id: a2s_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
       - { id: a2s_revive, display: "<green>复活币", category: SUPPLY, item: maggoteers:revive_coin }
+      - id: a2s_str
+        display: "<red>力量(可升级)"
+        description: "力量 I，重复抽到升级（最多 4 级）"
+        category: STAT
+        effect: ADD_POTION
+        params: { potion: INCREASE_DAMAGE, amp: 0, duration_ticks: 0 }
+        stack: UPGRADE_LEVEL
+        icon: BLAZE_POWDER
 
   act2_boss:
     cost: 1
@@ -104,6 +154,15 @@ reward_pools:
       - { id: a2b_revive, display: "<green>复活币", category: SUPPLY, item: maggoteers:revive_coin }
       - { id: a2b_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
       - { id: a2b_coin, display: "<light_purple>Boss 币", category: SUPPLY, item: maggoteers:currency_boss }
+      - id: a2b_grant_revive
+        display: "<gold>卫戍之魂"
+        description: "+1 复活次数"
+        category: STAT
+        effect: GRANT_REVIVE
+        params: { count: 1 }
+        stack: ADD
+        icon: TOTEM_OF_UNDYING
+        unique: true
 
   act3_weak:
     cost: 1
@@ -112,6 +171,22 @@ reward_pools:
       - { id: a3w_heal, display: "<red>治疗包", category: SUPPLY, item: maggoteers:supply_healing }
       - { id: a3w_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
       - { id: a3w_coin, display: "<yellow>卫戍币", category: SUPPLY, item: maggoteers:currency_normal }
+      - id: a3w_hp
+        display: "<green>+10% 最大生命"
+        description: "常驻 +10% MAX_HEALTH"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params: { attr: MAX_HEALTH, op: PERCENT, value: 0.10 }
+        stack: ADD
+        icon: APPLE
+      - id: a3w_regen
+        display: "<light_green>再生(可升级)"
+        description: "再生 I，重复抽到升级（最多 4 级）"
+        category: STAT
+        effect: ADD_POTION
+        params: { potion: REGENERATION, amp: 0, duration_ticks: 0 }
+        stack: UPGRADE_LEVEL
+        icon: GOLDEN_CARROT
 
   act3_strong:
     cost: 1
@@ -120,6 +195,15 @@ reward_pools:
       - { id: a3s_heal, display: "<red>治疗包 x2", category: SUPPLY, item: maggoteers:supply_healing, amount: 2 }
       - { id: a3s_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
       - { id: a3s_revive, display: "<green>复活币", category: SUPPLY, item: maggoteers:revive_coin }
+      - id: a3s_armor
+        display: "<blue>铁壁"
+        description: "常驻 +10% 护甲韧性"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params: { attr: ARMOR_TOUGHNESS, op: PERCENT, value: 0.10 }
+        stack: ADD
+        icon: IRON_CHESTPLATE
+        unique: true
 
   act3_boss:
     cost: 1
@@ -128,3 +212,12 @@ reward_pools:
       - { id: a3b_revive, display: "<green>复活币", category: SUPPLY, item: maggoteers:revive_coin }
       - { id: a3b_blade, display: "<aqua>测试之刃", category: WEAPON, item: maggoteers:test_blade }
       - { id: a3b_coin, display: "<light_purple>Boss 币", category: SUPPLY, item: maggoteers:currency_boss }
+      - id: a3b_grant_revive
+        display: "<gold>不灭意志"
+        description: "+2 复活次数"
+        category: STAT
+        effect: GRANT_REVIVE
+        params: { count: 2 }
+        stack: ADD
+        icon: NETHER_STAR
+        unique: true

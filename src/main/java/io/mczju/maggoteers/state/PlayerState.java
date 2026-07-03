@@ -3,7 +3,9 @@ package io.mczju.maggoteers.state;
 import io.mczju.maggoteers.effect.PlayerEffect;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -15,6 +17,7 @@ public final class PlayerState {
     private int reviveCount;
     private boolean alive;
     private final List<PlayerEffect> effects = new ArrayList<>();
+    private final Set<String> acquiredUnique = new HashSet<>();
 
     public PlayerState(UUID uuid, int reviveCount) {
         this.uuid = uuid;
@@ -31,7 +34,10 @@ public final class PlayerState {
     public List<PlayerEffect> effects() { return effects; }
     public void addEffect(PlayerEffect e) { effects.add(e); }
     public void removeEffect(String id) { effects.removeIf(e -> e.id().equals(id)); }
-    public void clearEffects() { effects.clear(); }
+    public void clearEffects() { effects.clear(); acquiredUnique.clear(); }
+
+    public Set<String> acquiredUnique() { return acquiredUnique; }
+    public void addAcquiredUnique(String id) { acquiredUnique.add(id); }
 
     /** 死亡时调：有复活次数则消耗一次、保持存活，返回 true；否则返回 false（调用方再 markDown）。 */
     public boolean tryAutoRevive() {
