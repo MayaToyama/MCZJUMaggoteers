@@ -15,6 +15,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        io.mczju.maggoteers.world.WorldService.cleanupOrphansOnEnable();
         saveDefaultRooms();   // G1：必须先释放房间实例，再注册（注册时会 loadGameRoom）
         MCZJUGameCore.getGameManager().registerGame(MaggoteersGame.class, MaggoteersRoom.class);
         getLogger().info("Maggoteers (卫戍协议) enabled, game 'maggoteers' registered.");
