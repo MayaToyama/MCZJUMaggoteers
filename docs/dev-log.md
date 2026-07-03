@@ -5,6 +5,30 @@
 
 ---
 
+## 2026-07-03 — Plan 5 实现：效果系统引擎（Trigger/Effect/到期/堆叠/resync，SDD）
+
+### 做了什么
+- 按 `docs/plan/2026-07-03-plan5-effects.md` 用 SDD 逐 Task 实现（6 Task，每 Task implementer+reviewer 复核通过）。
+- 新增 `effect/` 包：`Trigger`(10)/`Effect`(5)/`Stack`(5) 枚举、`EffectKey<T>`+`EffectContext`(类型化参数)、`EffectKeys`(标准键)、`PlayerEffect`(生命周期模型)、`EffectStacker`(merge/sweepExpiry 纯逻辑)、`EffectService`(apply/resync/removeAll/fireTrigger/executeEffect)、`EffectListener`(战斗+ON_TICK_1S 心跳)。
+- `PlayerState` 扩 `List<PlayerEffect>`；接入 fire-points：`WaveScheduler`(ON_WAVE_CLEAR/ON_ACT_ENTER)、`DeathStrategy`(ON_REVIVE+resync/ON_DEATH)、`MaggoteersGame.cleanupRun`(ON_GAME_END+removeAll+stopTick)、`onAllClassesChosen`(startTick)、`Plugin`(注册监听 + onDisable stopTick)。
+- 43 单测全绿（新增 `EffectContextTest`/`EffectStackerTest`，纯逻辑覆盖堆叠/到期/merge）。
+
+### 决策与原因
+- **引擎与奖励解耦**：Cursor 的 `RewardOption` 是简化版（无 trigger/effect/params/stack），`RewardService.apply` 把 STAT 硬编码成 +4 HP。Plan 5 只造引擎 + 接监听器，**不**动 `RewardOption`/`RewardService`——`RewardOption` reshape + `RewardService` 改走 `EffectService.apply` 留 Plan 6（效果引擎的真实输入源）。故本 Plan 引擎先靠单测 + 编译验证，Plan 6 接通后才有真实效果流入。
+- **D5 唯一 NamespacedKey**：常驻 ADD_ATTRIBUTE 每层 `AttributeModifier` key = `id_level_自增序号`（1.21 同 key 重复抛异常）。
+- **MGC API 修正**：brief 原写 `getGameManager().getRunningGames()`，javap 核实 MGC 1.0.5 `DefaultGameManager` 无此法，改用 `getAllGames()` + `instanceof MaggoteersGame` 过滤（ON_TICK_1S 心跳）。
+- **Attribute 命名**：Paper 1.21.7 用无前缀 `Attribute.MAX_HEALTH`（非 `GENERIC_*`），与 MobFactory 一致。
+- **纯逻辑/Bukkit 分层**：`EffectStacker`(merge/sweepExpiry) 与 Bukkit 解耦、全单测；`EffectService` 的 apply/resync/fireTrigger 操作 live Player → 编译 + 手测。
+
+### 遗留（Plan 6 处理）
+- `RewardOption` reshape + `RewardService.apply` 改走 `EffectService`（效果引擎才有输入）。
+- D1 净化（`ADD_POTION` 0s-255 抵消 + damage-cancel fallback）、D2 物品 CD（`cooldown_sec` 按 PDC-id 时间戳表）、`ON_INTERACT` 触发。
+- 右键空气打不开菜单（`ItemInteractRouter.PlayerInteractEvent` 缺陷）+ 复活币 GUI。
+- `EffectService.currentGame(p)` 反查可改显式传 game；`removeAll` 已补清常驻药水（Task 3 review fix）。
+- in-game 手测（监听器不崩、fireTrigger 无 NPE）需部署后人工验证。
+
+---
+
 ## 2026-07-03 — Plan 1–4 合规审计 + 刷怪架构确认 + 物品交互路由提交
 
 ### 做了什么
