@@ -1,0 +1,5 @@
+wait:
+  min_players: 1
+lives:
+  default: 2
+# 后续 Plan 补充：scaling / waves_per_act / rest / settlement / act_origins / initial_equipment

@@ -1,0 +1,6 @@
+name: Maggoteers
+version: '${project.version}'
+main: io.mczju.maggoteers.MaggoteersPlugin
+api-version: '1.21.7'
+depend: [MCZJUGameCore]
+softdepend: [MCZJUItemCreator]
