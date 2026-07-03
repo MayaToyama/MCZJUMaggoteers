@@ -9,15 +9,10 @@ import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 复活币 GUI（§11）：本局玩家头像列表。点击头像：
@@ -29,7 +24,6 @@ import java.util.List;
  */
 public class ReviveMenu extends Menu {
     private final AbstractGame game;
-    private final List<java.util.UUID> heads = new ArrayList<>();
 
     public ReviveMenu(Player player, Object... args) {
         super(player, args);
@@ -48,7 +42,6 @@ public class ReviveMenu extends Menu {
             PlayerState st = PlayerStateManager.get(game, target.getUniqueId());
             boolean dead = st == null || !st.isAlive();
             setSlot(slot, headOf(target, dead), (clicker, ev) -> onPick(clicker.player(), target, dead));
-            heads.add(target.getUniqueId());
             slot += 2;
             if (slot > 16) break;
         }

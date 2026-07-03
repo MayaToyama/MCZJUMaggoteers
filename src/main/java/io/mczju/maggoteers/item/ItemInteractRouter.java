@@ -100,22 +100,28 @@ public final class ItemInteractRouter implements Listener {
             if (weaponId != null) handler = WEAPON_HANDLERS.get(weaponId);
         }
 
-        // 3) 仍无 handler：若是本插件物品（有 id）→ 兜底 fire ON_INTERACT（玩家全局触发型被动）
+        // 3) 仍无 handler：若是本插件物品（有 id）→ 兜底 fire ON_INTERACT（仅当该玩家持 ON_INTERACT 效果）
         if (handler == null) {
             if (weaponId == null) weaponId = ItemService.itemIdOf(stack);
             if (weaponId == null) return;          // 不是本插件物品
-            event.setCancelled(true);
+            // tier-3: 仅有 id、无 handler。仅当该玩家持 ON_INTERACT 效果才触发（避免普通物品右键被拦）
             PlayerExt pe = new PlayerExt(event.getPlayer());
             if (!pe.isInGame()) return;
             AbstractGame game = pe.getGame();
             if (game == null) return;
-            // §10.3 D2：兜底层按 weaponId 计 CD（默认 1s）
+            var ps = io.mczju.maggoteers.state.PlayerStateManager.get(
+                    (MaggoteersGame) game, event.getPlayer().getUniqueId());
+            boolean hasOnInteract = ps != null && ps.effects().stream()
+                    .anyMatch(x -> x.fireTrigger() == Trigger.ON_INTERACT);
+            if (!hasOnInteract) return;   // 不 cancel、不 fire（普通物品右键正常交互：开箱/拉杆等）
             if (!CooldownService.tryUse(event.getPlayer().getUniqueId(), weaponId, DEFAULT_INTERACT_CD_SEC)) {
                 event.getPlayer().sendMessage(net.kyori.adventure.text.Component.text(
                         "冷却中…", net.kyori.adventure.text.format.NamedTextColor.GRAY));
                 return;
             }
-            EffectService.fireTrigger((MaggoteersGame) game, Trigger.ON_INTERACT);
+            event.setCancelled(true);
+            EffectService.fireTriggerPlayer(
+                    (MaggoteersGame) game, event.getPlayer(), Trigger.ON_INTERACT);
             return;
         }
 

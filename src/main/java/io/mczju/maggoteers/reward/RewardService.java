@@ -93,7 +93,19 @@ public final class RewardService {
                     player.setHealth(Math.min(max, player.getHealth() + 12.0));
                 }
             }
-            case STAT -> applyStat(player, opt);
+            case STAT -> {
+                if (opt.effect() == io.mczju.maggoteers.effect.Effect.GRANT_REVIVE) {
+                    var gpe = new com.github.mczjuops.mczjugamecore.player.PlayerExt(player);
+                    if (gpe.isInGame()) {
+                        int count = opt.params() == null ? 1
+                                : opt.params().getOrDefault(io.mczju.maggoteers.effect.EffectKeys.COUNT, 1);
+                        io.mczju.maggoteers.state.PlayerStateManager.addReviveCount(
+                                gpe.getGame(), player.getUniqueId(), count);
+                    }
+                } else {
+                    applyStat(player, opt);
+                }
+            }
         }
         // 记入本局已选（unique 用于 draw 过滤；UPGRADE_LEVEL 用于 level 计数）
         var pe = new PlayerExt(player);
@@ -116,8 +128,10 @@ public final class RewardService {
             final int UPGRADE_MAX = 4;
             var pExt = new PlayerExt(player);
             var ps = pExt.isInGame() ? PlayerStateManager.get(pExt.getGame(), player.getUniqueId()) : null;
-            int acquired = ps == null ? 0 : (int) ps.acquiredUnique().stream().filter(opt.id()::equals).count();
-            level = Math.min(acquired + 1, UPGRADE_MAX);
+            int curLevel = ps == null ? 0
+                    : ps.effects().stream().filter(e -> e.id().equals(opt.id()))
+                            .mapToInt(io.mczju.maggoteers.effect.PlayerEffect::level).max().orElse(0);
+            level = Math.min(curLevel + 1, UPGRADE_MAX);
             // 药水 amp 随 level：amp = baseAmp + (level-1)
             Integer baseAmp = params.get(EffectKeys.AMP);
             if (baseAmp != null) params.put(EffectKeys.AMP, baseAmp + (level - 1));

@@ -120,6 +120,18 @@ public final class EffectService {
         fireTrigger(game, fired, 0);
     }
 
+    /** 单玩家触发（tier-3 ON_INTERACT 用：只触发该玩家，不波及他人；不做 recurring 计时）。 */
+    public static void fireTriggerPlayer(io.mczju.maggoteers.game.MaggoteersGame game,
+                                          org.bukkit.entity.Player p, Trigger fired) {
+        if (game == null) return;
+        var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
+        if (ps == null || !ps.isAlive()) return;
+        EffectStacker.sweepExpiry(ps.effects(), fired);
+        for (PlayerEffect e : new java.util.ArrayList<>(ps.effects())) {
+            if (e.fireTrigger() == fired) executeEffect(p, e, game);
+        }
+    }
+
     /** 执行一条效果（触发型在 fireTrigger 时调；常驻型在 apply 时已施加）。 */
     private static void executeEffect(Player p, PlayerEffect e,
                                       io.mczju.maggoteers.game.MaggoteersGame game) {
