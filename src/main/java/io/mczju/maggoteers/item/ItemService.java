@@ -38,6 +38,10 @@ public final class ItemService {
         return new NamespacedKey(MaggoteersPlugin.getInstance(), "kind");
     }
 
+    private static NamespacedKey idKey() {
+        return new NamespacedKey(MaggoteersPlugin.getInstance(), "id");
+    }
+
     public static void init(MaggoteersPlugin plugin) {
         CACHE.clear();
         api = Bukkit.getServicesManager().load(ItemCreatorApi.class);
@@ -141,6 +145,12 @@ public final class ItemService {
         if (stack == null || stack.getType().isAir() || !stack.hasItemMeta()) return null;
         String raw = stack.getItemMeta().getPersistentDataContainer().get(kindKey(), PersistentDataType.STRING);
         return ItemKind.fromPdcLoose(raw);
+    }
+
+    /** 读取 PDC {@code maggoteers:id}，返回物品 id 字符串（如 {@code "maggoteers:fire_sword"}），无则 null。 */
+    public static String itemIdOf(ItemStack stack) {
+        if (stack == null || stack.getType().isAir() || !stack.hasItemMeta()) return null;
+        return stack.getItemMeta().getPersistentDataContainer().get(idKey(), PersistentDataType.STRING);
     }
 
     public static boolean hasItem(String id) {
