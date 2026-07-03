@@ -80,7 +80,7 @@ public final class ItemService {
                 LOG.warning("items." + key + " 缺少有效 kind，已跳过。");
                 continue;
             }
-            CACHE.put(itemId, buildConfigured(sec, kind));
+            CACHE.put(itemId, buildConfigured(sec, kind, itemId));
             switch (kind) {
                 case CURRENCY_NORMAL -> idCurrencyNormal = itemId;
                 case CURRENCY_BOSS -> idCurrencyBoss = itemId;
@@ -89,7 +89,7 @@ public final class ItemService {
         }
     }
 
-    private static ItemStack buildConfigured(ConfigurationSection sec, ItemKind kind) {
+    private static ItemStack buildConfigured(ConfigurationSection sec, ItemKind kind, String itemId) {
         Material mat = Material.matchMaterial(sec.getString("material", "PAPER"));
         if (mat == null || !mat.isItem()) mat = Material.PAPER;
         ItemStack stack = new ItemStack(mat);
@@ -112,6 +112,7 @@ public final class ItemService {
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         }
         meta.getPersistentDataContainer().set(kindKey(), PersistentDataType.STRING, kind.pdcValue());
+        meta.getPersistentDataContainer().set(idKey(), PersistentDataType.STRING, itemId);
         stack.setItemMeta(meta);
         if (sec.getBoolean("glint", false)) {
             stack.addUnsafeEnchantment(org.bukkit.enchantments.Enchantment.UNBREAKING, 1);
@@ -163,6 +164,11 @@ public final class ItemService {
         if (base == null) return Optional.empty();
         ItemStack stack = base.clone();
         stack.setAmount(Math.max(1, amount));
+        ItemMeta meta = stack.getItemMeta();
+        if (meta != null) {
+            meta.getPersistentDataContainer().set(idKey(), PersistentDataType.STRING, id);
+            stack.setItemMeta(meta);
+        }
         return Optional.of(stack);
     }
 
