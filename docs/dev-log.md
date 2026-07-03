@@ -5,6 +5,33 @@
 
 ---
 
+## 2026-07-03 — Plan 6 实现：奖励接效果引擎 + 物品/菜单收尾 + 可扩展武器地基（SDD）
+
+### 做了什么
+- 按 `docs/plan/2026-07-03-plan6-rewards-items.md` 用 SDD 逐 Task 实现（6 Task + 2 轮 critical/important 修复，全部 review 通过）。
+- **修了用户 flag 的两个 bug**：复活币不可用（`ItemKind` 加 `REVIVE_COIN` + `ReviveMenu` 玩家头像 GUI：点死者复活/点活者+1、扣币、失败退还）+ 右键空气打不开菜单（`ItemInteractRouter` `ignoreCancelled=false`）。
+- **奖励接效果引擎**：`RewardOption` reshape 到 §12 schema（trigger/effect/params/stack/icon/requires_unlock/unlock_cost/unique）；`rewards.yml` 加 STAT 选项（+伤害/嗜血/抗性升级/复活+1/复活+2）；`RewardService.apply` STAT→`EffectService.apply`（引擎有了真实输入）；`unique` 可见性过滤 + `UPGRADE_LEVEL` 升级。
+- **可扩展武器地基**（用户重点诉求"后续 agent 能在现有数据链路上加魔法武器"）：`ItemInteractRouter` 三层分发——已知 kind → `weapon_id` 注册表（`registerHandler(weaponId, handler)` public API，**未来武器在此挂 handler，零路由核心改动**）→ `ON_INTERACT` 兜底（仅当该玩家持 ON_INTERACT 效果才触发、只触发 clicker、CD 门禁）。`ItemService` 全路径打 `maggoteers:id` PDC（`itemIdOf`），激活二/三层。`CooldownService`（D2，按 PDC-id 时间戳表，**不用 `setCooldown(Material)`**；可注入时钟 + 4 例单测）作为 handler 的 CD 原语。
+- **D1 净化**：`applyPotionPermanent` amp≥255 技巧 + `PurifyListener`（POISON/WITHER damage-cancel fallback）。
+- 47 单测全绿。
+
+### 决策与原因（含 review 抓到的关键缺陷，已全部修复）
+- **效果引擎 vs 奖励的输入耦合**：Task 3 review 抓到两个 Critical——`applyStat` 直接改共享 `RewardOption.params()`（多人/多次抽会串味）→ 改 `EffectContext.copy()` 克隆；`EffectStacker.merge` UPGRADE_LEVEL 升 level 不升 amp（resync 丢等级）→ 同步 `same.params().amp++`。
+- **GRANT_REVIVE 不走引擎**：最终 review 发现 `GRANT_REVIVE` 作为常驻效果是 no-op（`applyDerived` 无此 case），且若加进去 resync 会重复 granting。改为 `RewardService.apply` 直发 `addReviveCount`（一次性，不过引擎/不进 PlayerState）。
+- **tier-3 ON_INTERACT 两处坑**：(a) 自从全物品打 `maggoteers:id` 后，tier-3 对所有奖励物品 cancel 右键（开箱被拦）→ 改为"仅当 clicker 持 ON_INTERACT 效果才 cancel+fire"；(b) `fireTrigger` 是全局（波及全员）→ 新增 `fireTriggerPlayer(game, player, trigger)` 只触发 clicker。
+- **UPGRADE_LEVEL level 来源**：原用 `acquiredUnique` Set 计数（Set 天然封顶 1，第 3+ 次抽 amp 错）→ 改读真源 `ps.effects()` 里同 id 效果的 level。
+- **`Attribute` 在 Paper 1.21.7 不是 Enum**（Registry 类）→ `RewardOption.parseParams` 用专用 `safeAttribute()` 而非 `safeEnum`。
+- **`maggoteers:id` PDC 必须打**：否则 `itemIdOf` 恒 null、二/三层死代码；`createItem`/`buildConfigured` 全路径补打。
+
+### 遗留（后续 Plan / 实测）
+- **D1 净化技巧需 in-game 实测**：0s-255 级抵消在 Paper 1.21.7 是否成立未知；不成立则 `PurifyListener`（`immunity_<cause>` 永久效果 id 约定）兜底。成立则可删 listener。配置时要给净化效果起 id `immunity_wither`/`immunity_poison` 才能触发 fallback（两路径独立）。
+- **in-game 手测**：右键空气/复活币/STAT 奖励生效/unique 过滤/UPGRADE 升级——需部署后人工验证。
+- **Plan 7**：`requires_unlock` 持久 unlocks（账户货币/商店/解锁/排行榜/结算）、通关时间榜（`RewardService.draw` 已留过滤钩子）。
+- **Plan 8**：`/maggoteers` 命令、配置 schema 校验、按 id 配 CD 的 `item_cooldowns.yml`、`Map<String,Integer>` 替代 `acquiredUnique` 双用途计数（若 UPGRADE_LEVEL 需求超过 4 级）。
+- **加魔法武器 = 写 handler + `registerHandler`**（tier-2，零核心改动）；tier-3（无 handler 的 ON_INTERACT）可用但建议优先 tier-2。
+
+---
+
 ## 2026-07-03 — Plan 5 实现：效果系统引擎（Trigger/Effect/到期/堆叠/resync，SDD）
 
 ### 做了什么
