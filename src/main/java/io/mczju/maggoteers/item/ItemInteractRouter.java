@@ -35,11 +35,18 @@ import java.util.Map;
  *       fire {@link Trigger#ON_INTERACT}（供玩家全局触发型被动）。</li>
  * </ol>
  *
+ * <h2>CD 门禁（§10.3 D2）</h2>
+ * <p>第三层兜底（ON_INTERACT）由路由自身按 {@code weaponId} 计 CD（默认 1s）。
+ * 第二层（已注册 handler）的 CD 由 handler 在其 {@code onUse} 内自行调用
+ * {@link CooldownService#tryUse(java.util.UUID, String, int)} 管控——路由不代劳，
+ * 因为不同武器的 CD 时长各异。</p>
+ *
  * <h2>扩展指南（给未来 agent）</h2>
  * <p>添加一把魔法武器（如 {@code maggoteers:fire_sword}）的右键效果：</p>
  * <ol>
  *   <li>在 {@code items/*.yml} 里定义物品，带上 PDC {@code maggoteers:id = "maggoteers:fire_sword"}。</li>
- *   <li>写一个实现 {@link ItemUseHandler} 的 handler 类。</li>
+ *   <li>写一个实现 {@link ItemUseHandler} 的 handler 类，在其 {@code onUse} 内调用
+ *       {@link CooldownService#tryUse(java.util.UUID, String, int)} 做门禁。</li>
  *   <li>在 {@code onEnable}（{@link ItemService#init} 之后）调用：
  *       {@code ItemInteractRouter.registerHandler("maggoteers:fire_sword", new FireSwordHandler());}</li>
  * </ol>
@@ -51,6 +58,9 @@ public final class ItemInteractRouter implements Listener {
 
     /** weapon_id（maggoteers:id）→ handler。未来魔法武器用 {@link #registerHandler} 注册，免改路由核心。 */
     private static final Map<String, ItemUseHandler> WEAPON_HANDLERS = new HashMap<>();
+
+    /** 第三层兜底的默认 CD（秒）。Plan 8 接 item_cooldowns.yml 按物品配。 */
+    private static final int DEFAULT_INTERACT_CD_SEC = 1;
 
     static {
         OpenRestMenuHandler rest = new OpenRestMenuHandler();
@@ -99,6 +109,12 @@ public final class ItemInteractRouter implements Listener {
             if (!pe.isInGame()) return;
             AbstractGame game = pe.getGame();
             if (game == null) return;
+            // §10.3 D2：兜底层按 weaponId 计 CD（默认 1s）
+            if (!CooldownService.tryUse(event.getPlayer().getUniqueId(), weaponId, DEFAULT_INTERACT_CD_SEC)) {
+                event.getPlayer().sendMessage(net.kyori.adventure.text.Component.text(
+                        "冷却中…", net.kyori.adventure.text.format.NamedTextColor.GRAY));
+                return;
+            }
             EffectService.fireTrigger((MaggoteersGame) game, Trigger.ON_INTERACT);
             return;
         }
