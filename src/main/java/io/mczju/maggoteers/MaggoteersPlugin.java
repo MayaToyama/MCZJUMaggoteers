@@ -7,6 +7,7 @@ import io.mczju.maggoteers.config.ScalingConfig;
 import io.mczju.maggoteers.config.WavesConfig;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.game.MaggoteersRoom;
+import io.mczju.maggoteers.item.ItemInteractRouter;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.listener.MobDeathListener;
 import io.mczju.maggoteers.menu.ClassSelectMenu;
@@ -40,6 +41,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         MenuFacade.registerMenu("maggoteers-rest", RestMenu.class);
         MenuFacade.registerMenu("maggoteers-pick", PickMenu.class);
         getServer().getPluginManager().registerEvents(new MobDeathListener(), this);
+        getServer().getPluginManager().registerEvents(new ItemInteractRouter(), this);
         getLogger().info("Maggoteers (卫戍协议) enabled, game 'maggoteers' registered.");
     }
 

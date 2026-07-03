@@ -9,6 +9,7 @@ import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import com.github.mczjuops.mczjugamecore.player.strategy.AbstractPlayerDeathStrategy;
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.plan.ActPlan;
 import io.mczju.maggoteers.plan.RunPlanner;
@@ -16,6 +17,7 @@ import io.mczju.maggoteers.reward.RewardService;
 import io.mczju.maggoteers.state.PlayerStateManager;
 import io.mczju.maggoteers.ui.RunScoreboard;
 import io.mczju.maggoteers.wave.WaveScheduler;
+import io.mczju.maggoteers.world.ActSpawnHelper;
 import io.mczju.maggoteers.world.WorldService;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -61,6 +63,11 @@ public class MaggoteersGame extends AbstractGame {
     public GameOutcome getOutcome() { return outcome; }
     public void setOutcome(GameOutcome o) { this.outcome = o; }
 
+    /** 开局选职业阶段（已进图、波次未开）。 */
+    public boolean isInClassSelectPhase() {
+        return outcome == GameOutcome.IN_PROGRESS && plannedActs != null && !wavesStarted;
+    }
+
     public void win() {
         if (outcome != GameOutcome.IN_PROGRESS) return;
         outcome = GameOutcome.WIN;
@@ -96,7 +103,6 @@ public class MaggoteersGame extends AbstractGame {
             pe.player().setGameMode(GameMode.ADVENTURE);
             pe.player().getInventory().clear();
             PlayerStateManager.init(this, pe.player().getUniqueId(), lives);
-            ItemService.giveInitialEquipment(pe.player());
         }
 
         final long seed = WorldService.getSeed(this);
@@ -121,14 +127,20 @@ public class MaggoteersGame extends AbstractGame {
         }.runTaskTimer(MaggoteersPlugin.getInstance(), 1L, 1L);
     }
 
+    /** 进图 → 发职业券 → 选职业（右键券可重开菜单）；全员选完再开波。 */
     private void beginClassSelect() {
         if (plannedActs == null) {
             sender().error("剧本生成失败" + (planError != null ? "：" + planError : "") + "，对局终止。");
             fail();
             return;
         }
-        sender().info("<yellow>请选择职业（全员选完或超时后开局）");
+        ActPlan act1 = plannedActs.get(0);
+        ActSpawnHelper.pasteAndTeleport(this, act1, 0);
+        RunScoreboard.start(this);
+
+        sender().info("<yellow>已进入第 1 层地图 · 请选择职业（右键职业选择券可重新打开菜单）");
         for (PlayerExt pe : getPlayers()) {
+            ItemService.giveKind(pe.player(), ItemKind.CLASS_TICKET, 1);
             MenuFacade.open("maggoteers-class", pe.player(), this);
         }
         int timeout = MaggoteersPlugin.getInstance().getConfig().getInt("class_select.timeout_sec", 45);
@@ -152,9 +164,8 @@ public class MaggoteersGame extends AbstractGame {
     public void onAllClassesChosen() {
         if (plannedActs == null || outcome != GameOutcome.IN_PROGRESS || wavesStarted) return;
         wavesStarted = true;
-        RunScoreboard.start(this);
         WaveScheduler.start(this, plannedActs);
-        sender().info("<green>卫戍协议 开局！三层共 "
+        sender().info("<green>卫戍协议 开战！三层共 "
                 + plannedActs.stream().mapToInt(a -> a.waves().size()).sum() + " 波。每人复活 "
                 + MaggoteersPlugin.getInstance().getConfig().getInt("lives.default", 2) + " 次。");
     }

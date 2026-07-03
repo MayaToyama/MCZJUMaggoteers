@@ -4,6 +4,7 @@ import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.menu.Menu;
 import io.mczju.maggoteers.game.ClassSelectGate;
 import io.mczju.maggoteers.game.MaggoteersGame;
+import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.reward.RewardOption;
 import io.mczju.maggoteers.reward.RewardService;
@@ -49,6 +50,10 @@ public class ClassSelectMenu extends Menu {
             setSlot(SLOTS[i], icon(opt, mat), (clicker, ev) -> {
                 Player p = clicker.player();
                 if (ClassSelectGate.hasChosen(game, p.getUniqueId())) return;
+                if (!ItemService.spendOneKind(p, ItemKind.CLASS_TICKET)) {
+                    p.sendMessage(Component.text("需要手持职业选择券才能确认！", NamedTextColor.RED));
+                    return;
+                }
                 RewardService.apply(p, opt);
                 ClassSelectGate.markChosen(game, p.getUniqueId());
                 p.closeInventory();

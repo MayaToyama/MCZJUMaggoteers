@@ -1,28 +1,4 @@
-# 本插件物品（ItemCreator parseYamlToItems 加载）；id 带 maggoteers: 前缀
-
-maggoteers:currency_normal:
-  material: GOLD_NUGGET
-  customName: "<yellow>卫戍币"
-  lore:
-    - "<gray>普通波次奖励货币"
-    - "<dark_gray>右键或休整菜单 · 3 选 1 普通池"
-  glint: true
-  pdc:
-    - key: maggoteers:kind
-      type: STRING
-      value: currency_normal
-
-maggoteers:currency_boss:
-  material: NETHER_STAR
-  customName: "<light_purple>Boss 卫戍币"
-  lore:
-    - "<gray>Boss 波次奖励货币"
-    - "<dark_gray>休整菜单 · 3 选 1 Boss 池"
-  glint: true
-  pdc:
-    - key: maggoteers:kind
-      type: STRING
-      value: currency_boss
+# 非券种物品（货币/职业券改由 config.yml items 段配置）
 
 maggoteers:revive_coin:
   material: TOTEM_OF_UNDYING

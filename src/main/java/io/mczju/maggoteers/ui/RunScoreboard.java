@@ -3,6 +3,8 @@ package io.mczju.maggoteers.ui;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.game.ClassSelectGate;
+import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
 import io.mczju.maggoteers.wave.WaveEngine;
@@ -38,6 +40,10 @@ public final class RunScoreboard {
     }
 
     private static void refresh(AbstractGame game) {
+        if (game instanceof MaggoteersGame mg && mg.isInClassSelectPhase()) {
+            refreshClassSelect(game);
+            return;
+        }
         var snap = WaveScheduler.snapshot(game);
         if (snap == null) return;
         int mobs = WaveEngine.livingCount(game);
@@ -67,6 +73,29 @@ public final class RunScoreboard {
                 obj.getScore(status + " §f" + op.getName() + " §e♥" + rev).setScore(line--);
             }
 
+            p.setScoreboard(sb);
+        }
+    }
+
+    private static void refreshClassSelect(AbstractGame game) {
+        for (PlayerExt pe : game.getPlayers()) {
+            Player p = pe.player();
+            if (p == null) continue;
+            Scoreboard sb = Bukkit.getScoreboardManager().getNewScoreboard();
+            Objective obj = sb.registerNewObjective("maggoteers", Criteria.DUMMY, "§6卫戍协议");
+            obj.setDisplaySlot(DisplaySlot.SIDEBAR);
+            int line = 10;
+            obj.getScore("§e选职业 · 开局休整").setScore(line--);
+            obj.getScore("§7右键职业选择券").setScore(line--);
+            obj.getScore("§8────────").setScore(line--);
+            for (PlayerExt o : game.getPlayers()) {
+                Player op = o.player();
+                if (op == null) continue;
+                PlayerState st = PlayerStateManager.get(game, op.getUniqueId());
+                int rev = st == null ? 0 : st.getReviveCount();
+                String tag = ClassSelectGate.hasChosen(game, op.getUniqueId()) ? "§a[已选]" : "§e[待选]";
+                obj.getScore(tag + " §f" + op.getName() + " §e♥" + rev).setScore(line--);
+            }
             p.setScoreboard(sb);
         }
     }

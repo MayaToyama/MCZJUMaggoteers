@@ -3,6 +3,7 @@ package io.mczju.maggoteers.menu;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.menu.Menu;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
+import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.reward.RewardPool;
 import io.mczju.maggoteers.reward.RewardService;
@@ -38,11 +39,11 @@ public class RestMenu extends Menu {
         String poolBoss = snap == null ? "act1_boss" : RewardService.poolForWave(snap.actIndex(), "boss");
 
         setSlot(11, btn(Material.GOLD_NUGGET, "<yellow>普通奖励",
-                        "消耗 1 普通卫戍币 · 3 选 1", ItemService.countCurrency(p, ItemService.CURRENCY_NORMAL)),
-                (c, e) -> openPick(p, poolNormal, ItemService.CURRENCY_NORMAL));
+                        "消耗 1 普通卫戍币 · 3 选 1", ItemService.countKind(p, ItemKind.CURRENCY_NORMAL)),
+                (c, e) -> openPick(p, poolNormal, ItemKind.CURRENCY_NORMAL));
         setSlot(13, btn(Material.NETHER_STAR, "<light_purple>Boss 奖励",
-                        "消耗 1 Boss 币 · 3 选 1", ItemService.countCurrency(p, ItemService.CURRENCY_BOSS)),
-                (c, e) -> openPick(p, poolBoss, ItemService.CURRENCY_BOSS));
+                        "消耗 1 Boss 币 · 3 选 1", ItemService.countKind(p, ItemKind.CURRENCY_BOSS)),
+                (c, e) -> openPick(p, poolBoss, ItemKind.CURRENCY_BOSS));
         setSlot(15, btn(Material.LIME_DYE, "<green>跳过休整", "立即进入下一波", -1),
                 (c, e) -> {
                     p.closeInventory();
@@ -50,17 +51,17 @@ public class RestMenu extends Menu {
                 });
     }
 
-    private void openPick(Player p, String poolId, String currencyKind) {
+    private void openPick(Player p, String poolId, ItemKind currencyKind) {
         RewardPool pool = RewardService.pool(poolId);
         if (pool == null) {
             p.sendMessage(Component.text("奖励池未配置：" + poolId, NamedTextColor.RED));
             return;
         }
-        if (ItemService.countCurrency(p, currencyKind) < pool.cost()) {
+        if (ItemService.countKind(p, currencyKind) < pool.cost()) {
             p.sendMessage(Component.text("货币不足！", NamedTextColor.RED));
             return;
         }
-        if (!ItemService.spendOne(p, currencyKind)) {
+        if (!ItemService.spendOneKind(p, currencyKind)) {
             p.sendMessage(Component.text("扣费失败。", NamedTextColor.RED));
             return;
         }

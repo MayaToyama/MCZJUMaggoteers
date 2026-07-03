@@ -2,18 +2,49 @@ wait:
   min_players: 1
 lives:
   default: 2
-initial_equipment:
-  - maggoteers:wooden_sword
-  - maggoteers:leather_helmet
+initial_equipment: []   # 职业选择后由 reward 发放；如需全员基础装可在此列出 item_id
 class_select:
   timeout_sec: 45
+
+# 管理员可自定义：名称(MiniMessage)、材质、描述、光效
+# item_id 须与 waves.yml clearReward / rewards.yml 中引用一致
+items:
+  currency_normal:
+    item_id: maggoteers:currency_normal
+    kind: currency_normal
+    material: GOLD_NUGGET
+    name: "<yellow>金币"
+    lore:
+      - "<gray>普通波次奖励货币"
+      - "<dark_gray>休整期右键打开升级菜单"
+    glint: true
+  currency_boss:
+    item_id: maggoteers:currency_boss
+    kind: currency_boss
+    material: NETHER_STAR
+    name: "<light_purple>星石"
+    lore:
+      - "<gray>Boss 波次奖励货币"
+      - "<dark_gray>休整期右键打开升级菜单"
+    glint: true
+  class_ticket:
+    item_id: maggoteers:class_ticket
+    kind: class_ticket
+    material: WRITABLE_BOOK
+    name: "<gold>职业选择券"
+    lore:
+      - "<gray>开局选职业专用"
+      - "<dark_gray>右键重新打开职业菜单"
+      - "<dark_gray>选定职业后消耗"
+    glint: true
+
 # —— Plan 2 新增 ——
 act_origins:
   act1: [0, 64, 0]
   act2: [1024, 64, 0]
   act3: [2048, 64, 0]
 waves_per_act:
-  act1: { weak: 3, strong: 2 }   # M, N → 每层 M+N+1 波
+  act1: { weak: 3, strong: 2 }
   act2: { weak: 4, strong: 3 }
   act3: { weak: 4, strong: 3 }
 rest:
@@ -21,9 +52,9 @@ rest:
   extend_sec: 15
   extend_max: 2
 map:
-  fallback_platform: true   # nbt 缺失时铺玻璃平台（v1 可玩兜底）
+  fallback_platform: true
 scaling:
-  mob_hp:        [1.0, 2.3, 3.6, 5.0]   # 1–4 人
+  mob_hp:        [1.0, 2.3, 3.6, 5.0]
   mob_damage:    [1.0, 1.15, 1.3, 1.5]
-  mob_count:     [1.0, 1.0, 1.2, 1.5]   # 向下取整 + 概率补 1（走种子 RNG，D6）
+  mob_count:     [1.0, 1.0, 1.2, 1.5]
   currency_drop: [1.0, 1.4, 1.8, 2.2]

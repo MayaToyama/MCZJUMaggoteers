@@ -95,6 +95,12 @@ public final class WaveScheduler {
         if (c != null && c.phase == Phase.REST) advance(game, c);
     }
 
+    /** 是否处于波次休整期（可右键货币打开升级菜单）。 */
+    public static boolean isRestPhase(AbstractGame game) {
+        Cursor c = CURSORS.get(game);
+        return c != null && c.phase == Phase.REST;
+    }
+
     public static void pause(AbstractGame game) {
         Cursor c = CURSORS.get(game);
         if (c != null && c.task != null) { c.task.cancel(); c.task = null; }

@@ -2,6 +2,7 @@ package io.mczju.maggoteers.game;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import io.mczju.maggoteers.reward.RewardOption;
+import org.bukkit.entity.Player;
 
 import java.util.*;
 
@@ -37,8 +38,13 @@ public final class ClassSelectGate {
         for (var pe : game.getPlayers()) {
             UUID id = pe.player().getUniqueId();
             if (hasChosen(game, id)) continue;
+            Player p = pe.player();
+            if (!io.mczju.maggoteers.item.ItemService.spendOneKind(p, io.mczju.maggoteers.item.ItemKind.CLASS_TICKET)) {
+                io.mczju.maggoteers.item.ItemService.giveKind(p, io.mczju.maggoteers.item.ItemKind.CLASS_TICKET, 1);
+                io.mczju.maggoteers.item.ItemService.spendOneKind(p, io.mczju.maggoteers.item.ItemKind.CLASS_TICKET);
+            }
             RewardOption opt = fallbackPool.get(rng.nextInt(fallbackPool.size()));
-            io.mczju.maggoteers.reward.RewardService.apply(pe.player(), opt);
+            io.mczju.maggoteers.reward.RewardService.apply(p, opt);
             markChosen(game, id);
         }
     }

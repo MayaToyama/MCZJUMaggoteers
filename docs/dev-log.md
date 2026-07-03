@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-07-03 — Plan 1–4 合规审计 + 刷怪架构确认 + 物品交互路由提交
+
+### 做了什么
+- 对 GitHub 上 `e1cc5ab`（= origin）的 Plan 1–4 实现做合规审计：三个并行只读审计子代理（Plan 2/3/4）+ 控制器复核 Plan 1，对照 `docs/plan/*`。临时 worktree 跑 `mvn test` → 绿。
+- 确认"每张图各一份 `points.yml`、刷新点 1–9 映射地图相对坐标"的刷怪架构**已被支持**（见下）。
+- 提交未推送的 WIP：物品 PDC 交互路由 + 休整/职业菜单接线 + `ActSpawnHelper` + 物品定义。
+
+### 审计结论
+- **Plan 1/2/4 完全合规**；**Plan 3 合规**，仅 `scaling.mob_hp` 由需求方手动调强（`[1.0,1.3,1.6,2.0]→[1.0,2.3,3.6,5.0]`，有意平衡，非 bug）。
+- 一处"偏离"实为**修正了 Plan 2 文档自身的坐标 bug**：文档样例 `points.yml y:65` + 玻璃在 `baseY-1` 会让玩家出生在 y=129 悬空 66 格；实现改为 `y:1` + 玻璃在 `baseY`（出生 y=65 踩玻璃 y=64）。→ 待反向同步回 Plan 2 文档。
+- `e1cc5ab` 还夹带了 Plan 5/6 内容（`item/ItemService`、`menu/*`、`reward/*`、`ui/RunScoreboard`、`game/ClassSelectGate`），未破坏 Plan 4 死亡/复活/失败链。
+
+### 刷怪架构确认（每图一份 points.yml）
+- `MapRepository.load` 扫描 `maps/actN/*/` 下**所有**子目录，凡含 `points.yml` 即为一张图（自动发现，加图零代码）。
+- `RunPlanner.planAct` 每层种子化抽一张图，刷怪点 id 经 `map.points().point(id)` 取**该图相对坐标**，再 `Coords.resolve(act_origins[act], 相对)` 得绝对坐标；`waves.yml` 的 `steps[].point` 只写 id（"1"…"9"/"boss"）。
+- **G3 校验**：某波引用的 id 不在抽中图的 `points.yml` → 开局即抛错指到 strategy（fail-fast）。
+- **契约**：每张图的 `points.yml` 必须定义 `waves.yml` 会引用的全部 id（当前默认只用了 1/9/boss；要用 2–8 就在 points.yml 加点 + 在 waves.yml 加引用即可）。
+- 当前 3 个默认 `points.yml`（`ruined_keep/frozen_halls/obsidian_spire`，坐标相同、y=1）= 无 NBT 时的玻璃平台兜底。加真图 = 新建 `maps/actN/<新图id>/{points.yml,4×nbt[,special_waves.yml]}`。
+
+### 遗留
+- Plan 2 文档的 `points.yml y:65` + 玻璃 `baseY-1` 样例需改成 `y:1` + `baseY`（免得后人重踩）。
+- Plan 5/6（菜单/奖励/计分板/物品路由）尚无独立 plan 文档即已落地；后续补文档或并入 Plan 5/6 正式计划。
+
+---
+
 ## 2026-07-03 — Plan 4 实现（PlayerState + 死亡/复活/失败，Cursor 接手）
 
 ### 做了什么
