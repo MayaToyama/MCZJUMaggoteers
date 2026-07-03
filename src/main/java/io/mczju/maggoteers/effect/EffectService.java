@@ -62,6 +62,13 @@ public final class EffectService {
                 }
             }
         }
+        // 移除本插件施加的常驻药水（常驻型 ADD_POTION 的 POTION 类型）
+        for (io.mczju.maggoteers.effect.PlayerEffect e : st.effects()) {
+            if (e.isPermanent() && e.effect() == io.mczju.maggoteers.effect.Effect.ADD_POTION) {
+                org.bukkit.potion.PotionEffectType type = e.params().get(io.mczju.maggoteers.effect.EffectKeys.POTION);
+                if (type != null) p.removePotionEffect(type);
+            }
+        }
         st.clearEffects();
     }
 
