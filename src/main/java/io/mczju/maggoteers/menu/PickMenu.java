@@ -28,7 +28,7 @@ public class PickMenu extends Menu {
         super(player, args);
         this.game = (AbstractGame) args[0];
         String poolId = (String) args[1];
-        this.offers = RewardService.draw(poolId, 3, new Random());
+        this.offers = RewardService.draw(poolId, 3, new Random(), player);
     }
 
     @Override protected String getTitle() { return "3 选 1"; }

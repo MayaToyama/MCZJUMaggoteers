@@ -1,8 +1,15 @@
 package io.mczju.maggoteers.reward;
 
+import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.effect.EffectKeys;
+import io.mczju.maggoteers.effect.PlayerEffect;
+import io.mczju.maggoteers.effect.Stack;
 import io.mczju.maggoteers.item.ItemService;
+import io.mczju.maggoteers.state.PlayerStateManager;
 import io.mczju.maggoteers.wave.RewardItem;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -50,13 +57,29 @@ public final class RewardService {
         }
     }
 
-    /** 从池中随机抽 n 个不同选项（不足则全给）。 */
-    public static List<RewardOption> draw(String poolId, int n, Random rng) {
+    /** 从池中随机抽 n 个不同选项（不足则全给）。unique 已选过的排除；requires_unlock 暂恒可见（Plan 7 接 unlocks）。 */
+    public static List<RewardOption> draw(String poolId, int n, Random rng, Player viewer) {
         RewardPool pool = POOLS.get(poolId);
         if (pool == null || pool.options().isEmpty()) return List.of();
-        List<RewardOption> copy = new ArrayList<>(pool.options());
-        Collections.shuffle(copy, rng);
-        return copy.subList(0, Math.min(n, copy.size()));
+        Set<String> acquired = Set.of();
+        if (viewer != null) {
+            var pe = new PlayerExt(viewer);
+            var ps = pe.isInGame() ? PlayerStateManager.get(pe.getGame(), viewer.getUniqueId()) : null;
+            if (ps != null) acquired = ps.acquiredUnique();
+        }
+        List<RewardOption> visible = new ArrayList<>();
+        for (RewardOption o : pool.options()) {
+            if (o.unique() && acquired.contains(o.id())) continue;     // §12.2 unique 过滤
+            // requires_unlock 过滤留 Plan 7（unlocks 持久化前恒可见）
+            visible.add(o);
+        }
+        Collections.shuffle(visible, rng);
+        return visible.subList(0, Math.min(n, visible.size()));
+    }
+
+    /** 向后兼容重载（无 viewer → 不过滤）。 */
+    public static List<RewardOption> draw(String poolId, int n, Random rng) {
+        return draw(poolId, n, rng, null);
     }
 
     public static void apply(Player player, RewardOption opt) {
@@ -70,16 +93,38 @@ public final class RewardService {
                     player.setHealth(Math.min(max, player.getHealth() + 12.0));
                 }
             }
-            case STAT -> {
-                var attr = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
-                if (attr != null) {
-                    attr.setBaseValue(attr.getBaseValue() + 4.0);
-                    player.setHealth(Math.min(player.getHealth() + 4.0, attr.getValue()));
-                }
-            }
+            case STAT -> applyStat(player, opt);
         }
-        player.sendMessage(net.kyori.adventure.text.Component.text(
-                "获得：" + opt.displayPlain(), net.kyori.adventure.text.format.NamedTextColor.GREEN));
+        // 记入本局已选（unique 用于 draw 过滤；UPGRADE_LEVEL 用于 level 计数）
+        var pe = new PlayerExt(player);
+        if (pe.isInGame()) {
+            var ps = PlayerStateManager.get(pe.getGame(), player.getUniqueId());
+            if (ps != null) ps.acquiredUnique().add(opt.id());
+        }
+        player.sendMessage(Component.text(
+                "获得：" + opt.displayPlain(), NamedTextColor.GREEN));
+    }
+
+    /** STAT 选项 → 建成 PlayerEffect → EffectService.apply。 */
+    private static void applyStat(Player player, RewardOption opt) {
+        if (!opt.isStatEffect()) return;   // 配置不全则不发
+        int level = 1;
+        io.mczju.maggoteers.effect.EffectContext params = opt.params();
+        // UPGRADE_LEVEL：按玩家已 acquired 次数定 level（amp/value 随 level 缩放）
+        if (opt.stack() == Stack.UPGRADE_LEVEL) {
+            var pe = new PlayerExt(player);
+            var ps = pe.isInGame() ? PlayerStateManager.get(pe.getGame(), player.getUniqueId()) : null;
+            int acquired = ps == null ? 0 : (int) ps.acquiredUnique().stream().filter(opt.id()::equals).count();
+            level = Math.min(acquired + 1, 4);
+            // 药水 amp 随 level：amp = baseAmp + (level-1)
+            Integer baseAmp = params.get(EffectKeys.AMP);
+            if (baseAmp != null) params.put(EffectKeys.AMP, baseAmp + (level - 1));
+        }
+        PlayerEffect pe = new PlayerEffect(
+                opt.id(), opt.effect(), params, opt.trigger(),
+                null, 0, 0, null, opt.stack(), 4, 0);
+        pe.setLevel(level);
+        io.mczju.maggoteers.effect.EffectService.apply(player, pe);
     }
 
     /** 根据层/波类型解析池 id（weak 波→weak 池，boss 步→boss 池）。 */
