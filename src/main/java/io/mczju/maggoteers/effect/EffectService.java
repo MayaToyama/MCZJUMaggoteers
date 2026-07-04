@@ -152,6 +152,7 @@ public final class EffectService {
             case DAMAGE_AREA -> {
                 double radius = e.params().getOrDefault(EffectKeys.RADIUS, 3.0);
                 double dmg = e.params().getOrDefault(EffectKeys.DAMAGE, 0.0);
+                io.mczju.maggoteers.util.ParticleEffects.playAreaRing(p.getWorld(), p.getLocation(), radius);
                 org.bukkit.World w = p.getWorld();
                 for (org.bukkit.entity.Entity en : w.getNearbyEntities(p.getLocation(), radius, radius, radius)) {
                     if (en instanceof org.bukkit.entity.LivingEntity le && en != p) {
