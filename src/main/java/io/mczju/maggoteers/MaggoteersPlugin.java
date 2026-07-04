@@ -37,6 +37,8 @@ public final class MaggoteersPlugin extends JavaPlugin {
         ScalingConfig.load(this);
         AffixService.load(this);
         ItemService.init(this);
+        io.mczju.maggoteers.item.ItemInteractRouter.registerHandler(
+                "maggoteers:test_blade", new io.mczju.maggoteers.item.interact.TestBladeHandler());
         RewardService.load(this);
         MenuFacade.registerMenu("maggoteers-class", ClassSelectMenu.class);
         MenuFacade.registerMenu("maggoteers-rest", RestMenu.class);
