@@ -208,6 +208,31 @@ public final class EffectService {
         p.addPotionEffect(new PotionEffect(type, 20 * 30, amp, false, false, true));
     }
 
+    /**
+     * 刷新常驻药水派生视图（由 GameplayTickListener 每秒调）。
+     * 对 permanent + ADD_POTION 的效果重新施加 30s PotionEffect，
+     * 使其在过期前被刷新，从而真正"永久"。
+     */
+    public static void refreshPermanentPotions(Player p) {
+        io.mczju.maggoteers.game.MaggoteersGame game = currentGame(p);
+        if (game == null) return;
+        var st = PlayerStateManager.get(game, p.getUniqueId());
+        if (st == null) return;
+        for (PlayerEffect e : st.effects()) {
+            if (e.isPermanent() && e.effect() == Effect.ADD_POTION) {
+                PotionEffectType type = e.params().get(EffectKeys.POTION);
+                if (type == null) continue;
+                int amp = e.params().getOrDefault(EffectKeys.AMP, 0);
+                if (amp >= 255) {
+                    // D1 净化技巧：amp >= 255 → 0s 255 级抵消（PurifyListener fallback）
+                    p.addPotionEffect(new PotionEffect(type, 20 * 30, 255, false, false, false));
+                } else {
+                    p.addPotionEffect(new PotionEffect(type, 20 * 30, amp, false, false, true));
+                }
+            }
+        }
+    }
+
     /** 由 Task 5 监听器持有当前对局引用；这里临时用玩家所在游戏反查。 */
     private static io.mczju.maggoteers.game.MaggoteersGame currentGame(Player p) {
         var pe = new com.github.mczjuops.mczjugamecore.player.PlayerExt(p);

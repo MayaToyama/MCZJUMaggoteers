@@ -46,11 +46,14 @@ public final class MaggoteersPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ItemInteractRouter(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.effect.EffectListener(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.PurifyListener(), this);
+        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.GameplayTickListener(), this);
+        io.mczju.maggoteers.listener.GameplayTickListener.start();
         getLogger().info("Maggoteers (卫戍协议) enabled, game 'maggoteers' registered.");
     }
 
     @Override
     public void onDisable() {
+        io.mczju.maggoteers.listener.GameplayTickListener.stop();
         io.mczju.maggoteers.effect.EffectListener.stopTick();
         getLogger().info("Maggoteers disabled.");
     }
