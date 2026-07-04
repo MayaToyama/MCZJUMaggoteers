@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-07-04 — 首轮 QA 修复落地（5 任务 SDD + 最终复审）
+
+### 做了什么
+- 按 `docs/qa-findings-2026-07-03.md` 用 SDD 落地 5 个任务（每任务 implementer+reviewer，最终 opus whole-branch 复审 + 一次修复）：
+  1. **3 bug**：RestMenu 普通池 tier 映射（boss→strong，§9.2）；最终 Boss 清波直接 `win()` 不进休整；`cleanupRun` 重置每人 GameMode→SURVIVAL（防回大厅仍是观察者）。
+  2. **复活点复活**：`WaveScheduler.currentSpawnLocation(game)` + DeathStrategy 复活分支传送（保留 2s 无敌）。
+  3. **supply_healing 右键瞬回**：`ItemKind.SUPPLY_HEALING` + router handler（瞬回12、取消原版吃、消耗1、满血不消耗）；`RewardService.apply` 不再抽取时回血。
+  4. **商店 = 绿宝石物品入口**（用户澄清：不是按钮）：`ItemKind.SHOP_EMERALD`（开局发、不消耗）右键开 `ShopMenu`（读 `config.yml shop:` 段，按 normal/boss 币买固定商品，price>1 循环扣+失败回退）+ `ShopConfig`。
+  5. **扩充测试内容**（纯配置）：3 张 points.yml 填满 9 刷怪点；affixes.yml 4→8；waves.yml 6→11 strategy（用足 9 点、词缀挂 strong/boss）；rewards.yml 覆盖全部 5 种 Effect + ADD/UPGRADE_LEVEL/IGNORE + unique + 魔法物品奖励。
+
+### 最终复审（opus）抓到 + 修复
+- **I1**：`a2s_str` 用了 `INCREASE_DAMAGE`（1.20.5 改名 `STRENGTH`，1.21.7 `getByName` 返回 null → 奖励静默失效）→ 改 `STRENGTH`；`RewardOption.parseParams` 加 null 警告日志。
+- 顺手修 Minor：满血不消耗药水、ShopConfig slot 越界校验、ShopMenu 冗余 `player.player()`、points.yml 点9 移开（原与 boss/spawn 重合）。
+
+### 遗留 / 已知 gap
+- **【已知 gap，未修】词缀药水对怪无效**：`MobFactory.spawn` 只套 `hpMult/dmgMult/speedMult`，**从不应用 `SpawnStep.potions()`**（Plan 2/3 遗留）。导致**纯药水词缀**（`toxic` 凋零、`vampiric` 再生）只显示名字、无实际效果；**数值词缀**（armored/berserk/swift/tank/greedy/fortuned）正常。Need#5 想测的"词缀药水"因此测不到 → 下一 plan 在 `MobFactory.spawn` 里给怪加 `step.potions()`（注意 `on: hit-player` 的药水是给被击中的玩家上的，需在监听器里做，不是给怪自己喝）。
+- **Bug2 行为差异**：最终 Boss 短路通关会跳过该波 `clearReward` 发放 + `ON_WAVE_CLEAR` 触发——当前配置无 `ON_WAVE_CLEAR` 触发/到期效果，且 `win()` 立即结束，影响可忽略；若以后有"通关前最后一波清奖励"需求，把短路移到发放/触发之后。
+- **Minor 未修**：tier-1 路由 `setCancelled` 在 `isInGame` 判定之前（游戏外右键已知 kind 物品会静默 cancel 原版交互，罕现）；final-wave 跳过 clearReward（见上）。
+
+### 部署
+- jar 已构建 + 复制到 `/mnt/e/MCpaper/plugins/`（`Maggoteers-0.1.0-SNAPSHOT.jar`）。
+- ⚠️ **QA 前需删旧 `Maggoteers/` 数据目录里的旧 yml**（`rewards.yml/points.yml/config.yml/items/maggoteers.yml/affixes.yml/waves.yml`），`saveResource(false)` 不覆盖——否则新内容（STAT 奖励、9 点、shop、STRENGTH 修复）不生效。
+
+---
+
 ## 2026-07-03 — Plan 6 实现：奖励接效果引擎 + 物品/菜单收尾 + 可扩展武器地基（SDD）
 
 ### 做了什么
