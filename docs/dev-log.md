@@ -5,6 +5,32 @@
 
 ---
 
+## 2026-07-04 — 第二轮 QA 修复落地（4 任务 SDD + 最终复审，QA#2）
+
+### 做了什么
+- 按 `docs/qa-findings-2026-07-04.md` 用 SDD 落地 4 任务（每任务 implementer+reviewer，最终 opus whole-branch 复审 + M1/M2 修复）：
+  1. **常驻药水永久化 + 排除饥饿**：新增 `GameplayTickListener`（全局 1s 心跳，onEnable 启 / onDisable 停，非 per-game 防重入）；每秒对每个冒险玩家 `EffectService.refreshPermanentPotions`（重施加常驻 ADD_POTION，刷新 30s 不过期）+ 维持 food=20/saturation/exhaustion=0（`NATURAL_REGENERATION=false` 已阻断饱食回血 → 恒满不回血）。
+  2. **清理恢复大厅 profile**：`cleanupRun` 对每玩家 `clear()` → `switchProfile(null)`（先清后恢复，避免清掉已恢复的大厅背包）+ 复位血/食/火/坠落 → 防下局等待带上一局物品。
+  3. **粒子范围提示**：新增 `util/ParticleEffects.playAreaRing`（水平粒子环），`EffectService` DAMAGE_AREA 分支调用（范围打击有视觉反馈）。
+  4. **示例魔法武器**：`TestBladeHandler`（右键 `maggoteers:test_blade` → 范围斩+粒子环+3s CD），onEnable `registerHandler` 注册——演示 weapon 地基可用（tier-2 路径：kind 不在枚举→itemIdOf 命中→handler）。
+- 最终复审（opus）：0 Critical / 0 Important，4 Minor。补修 M1（TestBlade 不误伤队友，排除所有 Player）+ M2（tier-2 handler 加 isAlive 门禁，防观察者触发）。
+
+### 决策与原因
+- **药水永久化用 tick 刷新而非 infinite duration**：§10.3 设计本意（ON_TICK_1S 定期刷新）；infinite 时长在 Paper 跨死亡不存活、且改不了等级。tick 每秒重施加常驻药水（幂等），等级变更（UPGRADE_LEVEL）随真源 params 自动反映。
+- **switchProfile(null) belt-and-suspenders**：复审核实 MGC `DefaultGameManager.endGame→solveGameEnd→removeAllPlayer` 在 `onGameEnd` 之后**已自动** `switchProfile(null)`；我们在 `cleanupRun` 的显式调用是冗余但无害的保险（`clear()`-before 顺序无论 MGC 是否恢复都对）。
+- **GameplayTick 全局单 task**（非 per-game 引用计数）：避免 Plan 5 那次 tickTask 被 per-game cleanup 误杀的 bug；`getAllGames()` 空时心跳空转。
+
+### 遗留（未修，Minor）
+- **M3**：`cleanupRun` 先 `setHealth(20)` 后 `removeAll`（剥 MAX_HEALTH modifier）；若结局时正好有 MAX_HEALTH 负 buff（max<20），Paper clamp 后玩家可能非满血离场。罕见，非回归。建议改用 `PlayerExt.resetState()` 或把 removeAll 提前。
+- **M4**：双重 `switchProfile(null)`（我方 + MGC 各一次）冗余异步落盘 + 日志噪音；保留作保险，可去掉靠 MGC。
+- **词缀药水对怪无效**（上轮遗留）：`MobFactory` 仍不应用 `SpawnStep.potions()`；`toxic`/`vampiric` 纯药水词缀只显示名。下个 plan 在 MobFactory 加。
+
+### 部署
+- jar 已构建 + 复制到 `/mnt/e/MCpaper/plugins/`。
+- ⚠️ QA 前删旧 `Maggoteers/` 数据目录的 yml（`saveResource(false)` 不覆盖）。无新增 yml 字段（QA2 全是代码 + 复用已有配置），但上轮（QA#1）的配置变更（9 点/STAT/STRENGTH/shop 删除等）仍需清旧才生效。
+
+---
+
 ## 2026-07-04 — 首轮 QA 修复落地（5 任务 SDD + 最终复审）
 
 ### 做了什么
