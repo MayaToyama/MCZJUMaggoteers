@@ -4,3 +4,8 @@ main: io.mczju.maggoteers.MaggoteersPlugin
 api-version: '1.21.7'
 depend: [MCZJUGameCore]
 softdepend: [MCZJUItemCreator]
+commands:
+  maggoteers:
+    description: 卫戍协议命令（shop 等）
+    usage: /maggoteers shop
+    permission: maggoteers.play

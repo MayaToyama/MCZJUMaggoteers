@@ -48,6 +48,9 @@ public final class RewardService {
 
     public static RewardPool pool(String id) { return POOLS.get(id); }
 
+    /** 所有奖励池 id（局外商店枚举 requires_unlock 商品用）。 */
+    public static java.util.Set<String> allPoolIds() { return POOLS.keySet(); }
+
     public static void grantClearRewards(Collection<? extends Player> players, List<RewardItem> rewards) {
         if (rewards == null || rewards.isEmpty()) return;
         for (Player p : players) {
