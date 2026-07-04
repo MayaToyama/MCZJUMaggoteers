@@ -70,10 +70,12 @@ public final class RewardService {
             var ps = pe.isInGame() ? PlayerStateManager.get(pe.getGame(), viewer.getUniqueId()) : null;
             if (ps != null) acquired = ps.acquiredUnique();
         }
+        java.util.Set<String> unlocked = viewer == null ? java.util.Set.of()
+                : io.mczju.maggoteers.unlock.UnlockRegistry.unlocksOf(viewer);
         List<RewardOption> visible = new ArrayList<>();
         for (RewardOption o : pool.options()) {
-            if (o.unique() && acquired.contains(o.id())) continue;     // §12.2 unique 过滤
-            // requires_unlock 过滤留 Plan 7（unlocks 持久化前恒可见）
+            if (o.unique() && acquired.contains(o.id())) continue;                 // §12.2 unique
+            if (o.requiresUnlock() && !unlocked.contains(o.id())) continue;        // §12.2 requires_unlock
             visible.add(o);
         }
         Collections.shuffle(visible, rng);
