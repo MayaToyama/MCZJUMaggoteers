@@ -32,6 +32,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         io.mczju.maggoteers.world.WorldService.cleanupOrphansOnEnable();
         saveDefaultRooms();
         MCZJUGameCore.getGameManager().registerGame(MaggoteersGame.class, MaggoteersRoom.class);
+        MCZJUGameCore.getPlayerDataManager().registerPlayerData("maggoteers", io.mczju.maggoteers.persist.MaggoteersPlayerData.class);
         WavesConfig.loadFromFile(this);
         MapRepository.load(this);
         ScalingConfig.load(this);
