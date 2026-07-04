@@ -1,49 +1,148 @@
-# 定义唯一处（铁律②）：刷怪策略 + 池子。Plan 2 仅 coeff（无 affix/scaling）。
+# 定义唯一处（铁律②）：刷怪策略 + 池子。
 pools:
   act1:
-    weak:   [ {strategy: w_zombie_swarm,   weight: 3} ]
-    strong: [ {strategy: s_skeleton_line,  weight: 2} ]
-    boss:   [ {strategy: b_iron_guard,     weight: 1} ]
+    weak:
+      - { strategy: w_zombie_swarm,       weight: 3 }
+      - { strategy: w_zombie_dual,        weight: 2 }
+      - { strategy: w_skeleton_cross,     weight: 2 }
+      - { strategy: w_spider_swarm,       weight: 2 }
+      - { strategy: w_mixed_skirmish,     weight: 1 }
+    strong:
+      - { strategy: s_skeleton_line,      weight: 2 }
+      - { strategy: s_creeper_flank,      weight: 2 }
+      - { strategy: s_skeleton_volley,     weight: 1 }
+      - { strategy: s_zombie_brute,       weight: 1 }
+    boss:
+      - { strategy: b_iron_guard,         weight: 2 }
+      - { strategy: b_twin_golems,        weight: 1 }
   act2:
-    weak:   [ {strategy: w_zombie_swarm,   weight: 3} ]
-    strong: [ {strategy: s_creeper_rush,   weight: 2} ]
-    boss:   [ {strategy: b_ravager,        weight: 1} ]
+    weak:
+      - { strategy: w_zombie_swarm,       weight: 2 }
+      - { strategy: w_zombie_dual,        weight: 2 }
+      - { strategy: w_skeleton_cross,     weight: 2 }
+      - { strategy: w_spider_swarm,       weight: 2 }
+      - { strategy: w_mixed_skirmish,     weight: 1 }
+    strong:
+      - { strategy: s_creeper_rush,       weight: 2 }
+      - { strategy: s_creeper_flank,      weight: 2 }
+      - { strategy: s_skeleton_volley,    weight: 1 }
+      - { strategy: s_zombie_brute,       weight: 1 }
+    boss:
+      - { strategy: b_ravager,            weight: 2 }
+      - { strategy: b_twin_golems,        weight: 1 }
   act3:
-    weak:   [ {strategy: w_zombie_swarm,   weight: 3} ]
-    strong: [ {strategy: s_creeper_rush,   weight: 2} ]
-    boss:   [ {strategy: b_warden_puppet,  weight: 1} ]
+    weak:
+      - { strategy: w_zombie_swarm,       weight: 2 }
+      - { strategy: w_zombie_dual,        weight: 2 }
+      - { strategy: w_skeleton_cross,     weight: 2 }
+      - { strategy: w_spider_swarm,       weight: 2 }
+      - { strategy: w_mixed_skirmish,     weight: 1 }
+    strong:
+      - { strategy: s_creeper_rush,       weight: 2 }
+      - { strategy: s_creeper_flank,      weight: 1 }
+      - { strategy: s_skeleton_volley,     weight: 1 }
+      - { strategy: s_zombie_brute,       weight: 2 }
+    boss:
+      - { strategy: b_warden_puppet,      weight: 2 }
+      - { strategy: b_twin_golems,        weight: 1 }
 
 strategies:
+  # ── weak ──────────────────────────────────────────
   w_zombie_swarm:
     repeat: 2
     clearReward: [ {item: maggoteers:currency_normal, amount: 2} ]
     steps:
       - { point: "1", type: ZOMBIE, count: 5, coeff: {hp: 1.0, dmg: 1.0, speed: 1.0}, delay: 0 }
       - { point: "9", type: ZOMBIE, count: 5, coeff: {hp: 1.0, dmg: 1.0, speed: 1.0}, delay: 5 }
+
+  w_zombie_dual:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_normal, amount: 2} ]
+    steps:
+      - { point: "1", type: ZOMBIE, count: 4, coeff: {hp: 1.0, dmg: 1.0, speed: 1.0}, delay: 0 }
+      - { point: "2", type: ZOMBIE, count: 4, coeff: {hp: 1.0, dmg: 1.0, speed: 1.0}, delay: 3 }
+
+  w_skeleton_cross:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_normal, amount: 2} ]
+    steps:
+      - { point: "3", type: SKELETON, count: 3, coeff: {hp: 1.0, dmg: 1.0, speed: 1.0}, delay: 0 }
+      - { point: "4", type: SKELETON, count: 3, coeff: {hp: 1.0, dmg: 1.0, speed: 1.0}, delay: 5 }
+
+  w_spider_swarm:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_normal, amount: 2} ]
+    steps:
+      - { point: "5", type: SPIDER, count: 3, coeff: {hp: 1.0, dmg: 1.0, speed: 1.1}, delay: 0 }
+      - { point: "6", type: SPIDER, count: 3, coeff: {hp: 1.0, dmg: 1.0, speed: 1.1}, delay: 3 }
+      - { point: "7", type: SPIDER, count: 2, coeff: {hp: 1.0, dmg: 1.0, speed: 1.1}, delay: 6 }
+
+  w_mixed_skirmish:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_normal, amount: 2} ]
+    steps:
+      - { point: "8", type: ZOMBIE, count: 4, coeff: {hp: 1.0, dmg: 1.0, speed: 1.0}, delay: 0 }
+      - { point: "9", type: SKELETON, count: 3, coeff: {hp: 1.0, dmg: 1.1, speed: 1.0}, delay: 4 }
+
+  # ── strong ────────────────────────────────────────
   s_skeleton_line:
     repeat: 1
     clearReward: [ {item: maggoteers:currency_normal, amount: 2} ]
     steps:
       - { point: "1", type: SKELETON, count: 4, coeff: {hp: 1.2, dmg: 1.0, speed: 1.0}, delay: 0 }
       - { point: "9", type: SKELETON, count: 4, coeff: {hp: 1.2, dmg: 1.0, speed: 1.0}, delay: 4 }
+
   s_creeper_rush:
     repeat: 1
     clearReward: [ {item: maggoteers:currency_normal, amount: 2} ]
     steps:
       - { point: "1", type: CREEPER, count: 3, coeff: {hp: 1.0, dmg: 1.2, speed: 1.1}, delay: 0 }
       - { point: "9", type: CREEPER, count: 3, coeff: {hp: 1.0, dmg: 1.2, speed: 1.1}, delay: 3 }
+
+  s_creeper_flank:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_normal, amount: 3} ]
+    steps:
+      - { point: "5", type: CREEPER, count: 3, coeff: {hp: 1.0, dmg: 1.3, speed: 1.1}, affixes: [berserk], delay: 0 }
+      - { point: "6", type: CREEPER, count: 3, coeff: {hp: 1.0, dmg: 1.3, speed: 1.1}, affixes: [berserk], delay: 4 }
+
+  s_skeleton_volley:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_normal, amount: 3} ]
+    steps:
+      - { point: "1", type: SKELETON, count: 3, coeff: {hp: 1.2, dmg: 1.2, speed: 1.0}, affixes: [swift], delay: 0 }
+      - { point: "2", type: SKELETON, count: 3, coeff: {hp: 1.2, dmg: 1.2, speed: 1.0}, affixes: [swift], delay: 3 }
+      - { point: "3", type: SKELETON, count: 2, coeff: {hp: 1.2, dmg: 1.2, speed: 1.0}, affixes: [swift], delay: 5 }
+      - { point: "4", type: SKELETON, count: 2, coeff: {hp: 1.2, dmg: 1.2, speed: 1.0}, affixes: [swift], delay: 8 }
+
+  s_zombie_brute:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_normal, amount: 3} ]
+    steps:
+      - { point: "9", type: ZOMBIE, count: 2, coeff: {hp: 2.0, dmg: 1.2, speed: 0.8}, affixes: [armored, tank], delay: 0 }
+
+  # ── boss ──────────────────────────────────────────
   b_iron_guard:
     repeat: 1
     clearReward: [ {item: maggoteers:currency_boss, amount: 1} ]
     steps:
       - { point: boss, type: IRON_GOLEM, count: 1, coeff: {hp: 8.0, dmg: 1.5, speed: 1.0}, delay: 0 }
+
   b_ravager:
     repeat: 1
     clearReward: [ {item: maggoteers:currency_boss, amount: 1} ]
     steps:
       - { point: boss, type: RAVAGER, count: 1, coeff: {hp: 10.0, dmg: 1.6, speed: 1.0}, delay: 0 }
+
   b_warden_puppet:
     repeat: 1
     clearReward: [ {item: maggoteers:currency_boss, amount: 1} ]
     steps:
       - { point: boss, type: WARDEN, count: 1, coeff: {hp: 14.0, dmg: 1.8, speed: 1.0}, delay: 0 }
+
+  b_twin_golems:
+    repeat: 1
+    clearReward: [ {item: maggoteers:currency_boss, amount: 2} ]
+    steps:
+      - { point: boss, type: IRON_GOLEM, count: 1, coeff: {hp: 6.0, dmg: 1.5, speed: 1.0}, affixes: [armored], delay: 0 }
+      - { point: "9", type: IRON_GOLEM, count: 1, coeff: {hp: 6.0, dmg: 1.5, speed: 1.0}, affixes: [armored], delay: 2 }

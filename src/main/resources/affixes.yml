@@ -7,3 +7,10 @@ affixes:
     on: hit-player
     display: "<green>毒素"
   greedy:  { drop: 1.5, display: "<gold>贪婪" }
+  swift:   { speed: 1.3, display: "<blue>迅捷" }
+  tank:    { hp: 3.0, dmg: 0.8, display: "<dark_aqua>重甲" }
+  vampiric:
+    potions: [ {effect: REGENERATION, amp: 1, dur: 200} ]
+    on: hit-player
+    display: "<dark_red>嗜血"
+  fortuned: { drop: 2.0, display: "<gold>鸿运" }

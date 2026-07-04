@@ -57,6 +57,27 @@ reward_pools:
         params: { amount: 4.0 }
         stack: IGNORE
         icon: GOLDEN_APPLE
+      - id: a1w_flat_hp
+        display: "<green>+2 最大生命(扁平)"
+        description: "常驻 +2 MAX_HEALTH FLAT"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params: { attr: MAX_HEALTH, op: FLAT, value: 2.0 }
+        stack: ADD
+        icon: APPLE
+      - id: a1w_speed_pct
+        display: "<green>+5% 移速"
+        description: "常驻 +5% MOVEMENT_SPEED"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params: { attr: MOVEMENT_SPEED, op: PERCENT, value: 0.05 }
+        stack: ADD
+        icon: LEATHER_BOOTS
+      - id: a1w_magic_blade
+        display: "<aqua>魔法测试刃"
+        description: "右键触发范围伤害的测试武器(ON_INTERACT 地基)"
+        category: WEAPON
+        item: maggoteers:test_blade
 
   act1_strong:
     cost: 1
@@ -87,6 +108,15 @@ reward_pools:
         params: { potion: RESISTANCE, amp: 0, duration_ticks: 0 }
         stack: UPGRADE_LEVEL
         icon: SHIELD
+      - id: a1s_damage_area
+        display: "<red>震击(击杀范围伤害)"
+        description: "击杀时对周围敌人造成 3 伤害，半径 4"
+        category: STAT
+        trigger: ON_KILL
+        effect: DAMAGE_AREA
+        params: { damage: 3.0, radius: 4.0 }
+        stack: ADD
+        icon: TNT
 
   act1_boss:
     cost: 1
@@ -105,6 +135,14 @@ reward_pools:
         display: "<light_purple>Boss 币"
         category: SUPPLY
         item: maggoteers:currency_boss
+      - id: a1b_grant_revive
+        display: "<gold>卫戍之魂"
+        description: "+1 复活次数(STAT)"
+        category: STAT
+        effect: GRANT_REVIVE
+        params: { count: 1 }
+        stack: ADD
+        icon: TOTEM_OF_UNDYING
 
   act2_weak:
     cost: 1
@@ -130,6 +168,20 @@ reward_pools:
         params: { amount: 2.0 }
         stack: IGNORE
         icon: RED_STAINED_GLASS
+      - id: a2w_lone_wolf
+        display: "<gray>孤狼"
+        description: "+20% 移速(唯一)"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params: { attr: MOVEMENT_SPEED, op: PERCENT, value: 0.20 }
+        stack: ADD
+        icon: LEATHER_BOOTS
+        unique: true
+      - id: a2w_magic_blade
+        display: "<aqua>魔法测试刃"
+        description: "右键触发范围伤害的测试武器(ON_INTERACT 地基)"
+        category: WEAPON
+        item: maggoteers:test_blade
 
   act2_strong:
     cost: 1
@@ -146,6 +198,23 @@ reward_pools:
         params: { potion: INCREASE_DAMAGE, amp: 0, duration_ticks: 0 }
         stack: UPGRADE_LEVEL
         icon: BLAZE_POWDER
+      - id: a2s_damage_area_interact
+        display: "<red>冲击波(右键)"
+        description: "右键触发范围伤害，半径 5 伤害 4"
+        category: STAT
+        trigger: ON_INTERACT
+        effect: DAMAGE_AREA
+        params: { damage: 4.0, radius: 5.0 }
+        stack: ADD
+        icon: FIRE_CHARGE
+      - id: a2s_dmg_stack
+        display: "<red>+8% 攻击(可叠加)"
+        description: "常驻 +8% ATTACK_DAMAGE，可叠加多层"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params: { attr: ATTACK_DAMAGE, op: PERCENT, value: 0.08 }
+        stack: ADD
+        icon: IRON_SWORD
 
   act2_boss:
     cost: 1
@@ -187,6 +256,19 @@ reward_pools:
         params: { potion: REGENERATION, amp: 0, duration_ticks: 0 }
         stack: UPGRADE_LEVEL
         icon: GOLDEN_CARROT
+      - id: a3w_speed_potion
+        display: "<blue>急速(可升级)"
+        description: "速度 I，重复抽到升级（最多 4 级）"
+        category: STAT
+        effect: ADD_POTION
+        params: { potion: SPEED, amp: 0, duration_ticks: 0 }
+        stack: UPGRADE_LEVEL
+        icon: SUGAR
+      - id: a3w_magic_blade
+        display: "<aqua>魔法测试刃"
+        description: "右键触发范围伤害的测试武器(ON_INTERACT 地基)"
+        category: WEAPON
+        item: maggoteers:test_blade
 
   act3_strong:
     cost: 1
@@ -204,6 +286,15 @@ reward_pools:
         stack: ADD
         icon: IRON_CHESTPLATE
         unique: true
+      - id: a3s_damage_area_kill
+        display: "<red>爆裂(击杀范围伤害)"
+        description: "击杀时对周围敌人造成 5 伤害，半径 5"
+        category: STAT
+        trigger: ON_KILL
+        effect: DAMAGE_AREA
+        params: { damage: 5.0, radius: 5.0 }
+        stack: ADD
+        icon: TNT
 
   act3_boss:
     cost: 1
