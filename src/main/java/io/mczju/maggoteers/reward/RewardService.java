@@ -87,11 +87,6 @@ public final class RewardService {
         switch (opt.category()) {
             case SUPPLY, WEAPON -> {
                 ItemService.give(player, opt.item(), opt.amount());
-                if ("maggoteers:supply_healing".equals(opt.item())) {
-                    var attr = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
-                    double max = attr != null ? attr.getValue() : 20.0;
-                    player.setHealth(Math.min(max, player.getHealth() + 12.0));
-                }
             }
             case STAT -> {
                 if (opt.effect() == io.mczju.maggoteers.effect.Effect.GRANT_REVIVE) {

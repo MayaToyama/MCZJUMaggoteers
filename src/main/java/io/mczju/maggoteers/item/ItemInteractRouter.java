@@ -69,6 +69,16 @@ public final class ItemInteractRouter implements Listener {
         HANDLERS.put(ItemKind.CLASS_TICKET, new OpenClassMenuHandler());
         HANDLERS.put(ItemKind.REVIVE_COIN, (player, game, stack) ->
                 MenuFacade.open("maggoteers-revive", player, game));
+        HANDLERS.put(ItemKind.SUPPLY_HEALING, (player, game, stack) -> {
+            double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null
+                    ? player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue() : 20.0;
+            double toHeal = Math.min(12.0, maxHealth - player.getHealth());
+            if (toHeal > 0) player.setHealth(player.getHealth() + toHeal);
+            player.sendMessage(net.kyori.adventure.text.Component.text(
+                    "♥ +" + (int) (toHeal / 2) + " 心", net.kyori.adventure.text.format.NamedTextColor.RED));
+            if (stack.getAmount() <= 1) player.getInventory().setItemInMainHand(null);
+            else stack.setAmount(stack.getAmount() - 1);
+        });
     }
 
     /**

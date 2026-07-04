@@ -139,6 +139,7 @@ public final class ItemService {
             case CURRENCY_BOSS -> idCurrencyBoss;
             case CLASS_TICKET -> idClassTicket;
             case REVIVE_COIN -> "maggoteers:revive_coin";
+            case SUPPLY_HEALING -> "maggoteers:supply_healing";
         };
     }
 
