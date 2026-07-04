@@ -9,3 +9,8 @@ commands:
     description: 卫戍协议命令（shop 等）
     usage: /maggoteers shop
     permission: maggoteers.play
+permissions:
+  maggoteers.play:
+    default: true
+  maggoteers.admin:
+    default: op
