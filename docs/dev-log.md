@@ -5,6 +5,27 @@
 
 ---
 
+## 2026-07-04 — Plan 7 实现：持久化 + 局外商店 + 解锁回流 + 排行榜（5 任务 SDD）
+
+### 做了什么
+- 按 `docs/plan/2026-07-04-plan7-persistence-shop-unlock-leaderboard.md` 用 SDD 落地 5 任务（每任务 implementer+reviewer，全部 Approved）：
+  1. **`MaggoteersPlayerData extends JsonPlayerData`**（balance/totalEarned/unlocks + grant/spend/unlock）+ `Settlement` 纯函数（WIN=winFlat, FAIL=failPerAct×acts+failPerWave×waves）+ 4 例单测 + `registerPlayerData` + config settlement 段。
+  2. **结算**：`cleanupRun` 据 `outcome`(WIN/FAIL) → `Settlement.grant` → 每人 `getData(MaggoteersPlayerData.class).grant(grant)`（setModified 落盘）。`WaveScheduler.progress(game): int[]` 暴露 actIndex+waveIndex。
+  3. **局外商店**：`UnlockShopMenu`（商品=所有 `requires_unlock:true` 选项，花 `balance` 解锁→`unlocks.add`）+ `/maggoteers shop` CommandExecutor + plugin.yml 注册。
+  4. **解锁回流**：`UnlockRegistry.unlocksOf(p)`（读持久 unlocks 防御性拷贝）+ `RewardService.draw` 加 `requiresUnlock && !unlocked.contains(id) → continue` 过滤（已解锁才 roll 到）。
+  5. **排行榜**：`MaggoteersTotalLeaderboard extends PlayerDataLeaderboard`（`getFieldName`→"totalEarned", 默认降序）+ `registerLeaderboard("maggoteers_total", ...)`。
+
+### 决策与原因
+- **`getData` 局外可用**（核实 MGC 源码）：`PlayerExt.getData(Class)` 委托 `PlayerDataManager.getPlayerData(uuid, class)`，按 gameId+UUID 存取，**与 ProfileManager 完全独立**——局外商店（玩家不在局里）也能正确读 balance/unlocks。`cleanupRun` 的 settlement 在 `switchProfile(null)` 后跑也安全（同源）。
+- **SortOrder 默认降序**（核实 javap 字节码）：`AbstractLeaderboard.getSortOrder()` 返回 `DESCENDING`——累计卫戍币天然降序，无需 override。
+- **结算放 cleanupRun 前段**（ON_GAME_END fire 之后、WaveScheduler.stop 之前）：此时 `getPlayers()` 仍在、cursor 还在、getData 可用。后段 switchProfile 不影响 getData。
+
+### 遗留（Plan 8）
+- `/maggoteers` 命令套件（debug state/plan/wave/give/coin、强制 act/wave 跳转）、配置 schema 校验、通关时间榜（另注册 Leaderboard）、AlertMenu 二次确认（商店目前直接扣）、RewardService.allPoolIds 返回不可变视图（Minor）。
+- **需要 in-game QA**：通关/失败 → balance 增 + 重启仍在；`/maggoteers shop` → 买解锁 → 下局 3-pick 能 roll 到已解锁项；`/mgcop leaderboard create maggoteers_total` 放置排行榜实体。
+
+---
+
 ## 2026-07-04 — 第二轮 QA 修复落地（4 任务 SDD + 最终复审，QA#2）
 
 ### 做了什么
