@@ -71,7 +71,7 @@ public class ShopMenu extends Menu {
         // 发放物品
         ItemService.give(p, g.itemId(), 1);
         p.sendMessage(Component.text("已购买！", NamedTextColor.GREEN));
-        player.player().updateInventory();
+        p.updateInventory();
     }
 
     /** 构造商品展示图标：用 ItemService 缓存物品 + 价格 lore。 */

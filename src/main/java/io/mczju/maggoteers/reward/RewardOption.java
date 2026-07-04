@@ -80,7 +80,15 @@ public record RewardOption(
                     else if (k.equals("count")) ctx.put(EffectKeys.COUNT, iv);
                     else ctx.put(EffectKeys.DURATION_TICKS, iv);
                 }
-                case "potion" -> { PotionEffectType p = PotionEffectType.getByName(String.valueOf(v).toUpperCase()); if (p != null) ctx.put(EffectKeys.POTION, p); }
+                case "potion" -> {
+                    PotionEffectType p = PotionEffectType.getByName(String.valueOf(v).toUpperCase());
+                    if (p == null) {
+                        io.mczju.maggoteers.MaggoteersPlugin.getInstance()
+                                .getLogger().warning("未知药水类型: " + v);
+                    } else {
+                        ctx.put(EffectKeys.POTION, p);
+                    }
+                }
                 default -> { /* 忽略未知键 */ }
             }
         }

@@ -75,7 +75,12 @@ public final class ItemInteractRouter implements Listener {
             double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null
                     ? player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue() : 20.0;
             double toHeal = Math.min(12.0, maxHealth - player.getHealth());
-            if (toHeal > 0) player.setHealth(player.getHealth() + toHeal);
+            if (toHeal <= 0) {
+                player.sendMessage(net.kyori.adventure.text.Component.text(
+                        "生命值已满", net.kyori.adventure.text.format.NamedTextColor.GRAY));
+                return;
+            }
+            player.setHealth(player.getHealth() + toHeal);
             player.sendMessage(net.kyori.adventure.text.Component.text(
                     "♥ +" + (int) (toHeal / 2) + " 心", net.kyori.adventure.text.format.NamedTextColor.RED));
             if (stack.getAmount() <= 1) player.getInventory().setItemInMainHand(null);

@@ -195,7 +195,7 @@ reward_pools:
         description: "力量 I，重复抽到升级（最多 4 级）"
         category: STAT
         effect: ADD_POTION
-        params: { potion: INCREASE_DAMAGE, amp: 0, duration_ticks: 0 }
+        params: { potion: STRENGTH, amp: 0, duration_ticks: 0 }
         stack: UPGRADE_LEVEL
         icon: BLAZE_POWDER
       - id: a2s_damage_area_interact

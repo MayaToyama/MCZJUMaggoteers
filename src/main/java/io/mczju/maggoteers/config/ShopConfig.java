@@ -40,6 +40,11 @@ public final class ShopConfig {
                 LOG.warning("shop goods 条目缺少 item，已跳过。");
                 continue;
             }
+            int maxSlot = INSTANCE.rows * 9;
+            if (slot < 0 || slot >= maxSlot) {
+                LOG.warning("shop goods 条目 slot=" + slot + " 超出范围 [0, " + maxSlot + ")，已跳过。");
+                continue;
+            }
             INSTANCE.goods.add(new Good(slot, itemId, currency, price));
         }
         LOG.info("ShopConfig 已加载：" + INSTANCE.goods.size() + " 件商品。");
