@@ -80,6 +80,13 @@ public final class WaveScheduler {
         WaveEngine.stop(game);
     }
 
+    /** 结算用：返回 {actIndex, wavesClearedInCurrentAct}（无 cursor 返回 {0,0}）。 */
+    public static int[] progress(AbstractGame game) {
+        Cursor c = CURSORS.get(game);
+        if (c == null) return new int[]{0, 0};
+        return new int[]{c.actIndex, c.waveIndex};
+    }
+
     public static RunSnapshot snapshot(AbstractGame game) {
         Cursor c = CURSORS.get(game);
         if (c == null) return null;

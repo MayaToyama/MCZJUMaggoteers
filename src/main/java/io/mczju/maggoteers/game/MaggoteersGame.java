@@ -184,6 +184,27 @@ public class MaggoteersGame extends AbstractGame {
             pl.setFireTicks(0);
         }
         io.mczju.maggoteers.effect.EffectService.fireTrigger(this, io.mczju.maggoteers.effect.Trigger.ON_GAME_END);
+
+        // 结算：按 outcome 发账户货币（D4）
+        {
+            int winFlat = MaggoteersPlugin.getInstance().getConfig().getInt("settlement.win_flat", 100);
+            int failPerAct = MaggoteersPlugin.getInstance().getConfig().getInt("settlement.fail_per_act", 25);
+            int failPerWave = MaggoteersPlugin.getInstance().getConfig().getInt("settlement.fail_per_wave", 5);
+            int[] prog = WaveScheduler.progress(this);
+            var input = new io.mczju.maggoteers.persist.Settlement.Input(
+                    outcome, prog[0], prog[1]);
+            int grant = io.mczju.maggoteers.persist.Settlement.grant(input, winFlat, failPerAct, failPerWave);
+            if (grant > 0) {
+                for (var pe : getPlayers()) {
+                    var data = pe.getData(io.mczju.maggoteers.persist.MaggoteersPlayerData.class);
+                    if (data != null) {
+                        data.grant(grant);
+                        sender().info("<yellow>" + pe.player().getName() + " 结算获得 " + grant + " 卫戍币。");
+                    }
+                }
+            }
+        }
+
         for (var pe : getPlayers()) io.mczju.maggoteers.effect.EffectService.removeAll(pe.player());
         io.mczju.maggoteers.effect.EffectListener.stopTick();
         WaveScheduler.stop(this);
