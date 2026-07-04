@@ -70,7 +70,7 @@ public final class ItemInteractRouter implements Listener {
         HANDLERS.put(ItemKind.REVIVE_COIN, (player, game, stack) ->
                 MenuFacade.open("maggoteers-revive", player, game));
         HANDLERS.put(ItemKind.SHOP_EMERALD, (player, game, stack) ->
-                MenuFacade.open("maggoteers-shop", player, game));
+                MenuFacade.open("maggoteers-rest", player, game));
         HANDLERS.put(ItemKind.SUPPLY_HEALING, (player, game, stack) -> {
             double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null
                     ? player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue() : 20.0;

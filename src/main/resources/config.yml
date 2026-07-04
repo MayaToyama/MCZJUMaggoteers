@@ -58,12 +58,3 @@ scaling:
   mob_damage:    [1.0, 1.15, 1.3, 1.5]
   mob_count:     [1.0, 1.0, 1.2, 1.5]
   currency_drop: [1.0, 1.4, 1.8, 2.2]
-
-shop:
-  title: "<gold>卫戍商店"
-  rows: 3
-  goods:
-    - { slot: 11, item: maggoteers:supply_healing, currency: normal, price: 1 }
-    - { slot: 13, item: maggoteers:revive_coin,    currency: boss,   price: 1 }
-    - { slot: 15, item: maggoteers:wooden_sword,   currency: normal, price: 2 }
-    - { slot: 22, item: maggoteers:test_blade,     currency: boss,   price: 2 }
