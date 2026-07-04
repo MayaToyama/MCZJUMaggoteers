@@ -175,11 +175,13 @@ public class MaggoteersGame extends AbstractGame {
     private void cleanupRun() {
         for (var pe : getPlayers()) {
             var pl = pe.player();
+            pe.switchProfile(null);                                         // 恢复大厅 profile（背包回到局前）
+            pl.getInventory().clear();                                      // 兜底清游戏残留（防 profile 未切干净）
             pl.setGameMode(org.bukkit.GameMode.SURVIVAL);
+            pl.setHealth(20.0);
+            pl.setFoodLevel(20);
             pl.setFallDistance(0f);
             pl.setFireTicks(0);
-            pl.setHealth(Math.min(pl.getHealth(), pl.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null
-                    ? pl.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue() : 20.0));
         }
         io.mczju.maggoteers.effect.EffectService.fireTrigger(this, io.mczju.maggoteers.effect.Trigger.ON_GAME_END);
         for (var pe : getPlayers()) io.mczju.maggoteers.effect.EffectService.removeAll(pe.player());
