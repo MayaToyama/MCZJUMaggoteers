@@ -8,7 +8,8 @@ public enum ItemKind {
     CURRENCY_BOSS("currency_boss"),
     CLASS_TICKET("class_ticket"),
     REVIVE_COIN("revive_coin"),
-    SUPPLY_HEALING("supply_healing");
+    SUPPLY_HEALING("supply_healing"),
+    SHOP_EMERALD("shop_emerald");
 
     private final String pdcValue;
 

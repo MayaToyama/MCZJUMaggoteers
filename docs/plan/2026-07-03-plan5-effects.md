@@ -356,8 +356,9 @@ class EffectStackerTest {
                 null, null, 0, 0, null, s, 4, 0);
     }
     private static PlayerEffect timed(String id, int charges, Trigger expiry) {
+        // stack=REFRESH：refreshResetsCharges 测试需要 incoming.stack==REFRESH 才会走 merge 的 refresh 分支
         return new PlayerEffect(id, Effect.HEAL, new EffectContext().put(EffectKeys.AMOUNT, 2.0),
-                Trigger.ON_KILL, expiry, charges, 0, null, Stack.IGNORE, 0, 0);
+                Trigger.ON_KILL, expiry, charges, 0, null, Stack.REFRESH, 0, 0);
     }
 
     @Test

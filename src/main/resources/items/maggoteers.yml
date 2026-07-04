@@ -36,6 +36,18 @@ maggoteers:leather_helmet:
     - "<dark_gray>开局配发"
   unbreakable: true
 
+maggoteers:shop_emerald:
+  material: EMERALD
+  customName: "<green>卫戍商店"
+  lore:
+    - "<gray>右键打开商店"
+    - "<dark_gray>用卫戍币购买物资（不消耗）"
+  glint: true
+  pdc:
+    - key: maggoteers:kind
+      type: STRING
+      value: shop_emerald
+
 maggoteers:test_blade:
   material: IRON_SWORD
   customName: "<aqua>测试之刃"

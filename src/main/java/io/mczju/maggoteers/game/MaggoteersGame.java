@@ -141,6 +141,7 @@ public class MaggoteersGame extends AbstractGame {
         sender().info("<yellow>已进入第 1 层地图 · 请选择职业（右键职业选择券可重新打开菜单）");
         for (PlayerExt pe : getPlayers()) {
             ItemService.giveKind(pe.player(), ItemKind.CLASS_TICKET, 1);
+            ItemService.giveKind(pe.player(), ItemKind.SHOP_EMERALD, 1);
             MenuFacade.open("maggoteers-class", pe.player(), this);
         }
         int timeout = MaggoteersPlugin.getInstance().getConfig().getInt("class_select.timeout_sec", 45);
