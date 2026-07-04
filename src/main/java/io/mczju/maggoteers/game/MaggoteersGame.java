@@ -175,8 +175,8 @@ public class MaggoteersGame extends AbstractGame {
     private void cleanupRun() {
         for (var pe : getPlayers()) {
             var pl = pe.player();
-            pe.switchProfile(null);                                         // 恢复大厅 profile（背包回到局前）
-            pl.getInventory().clear();                                      // 兜底清游戏残留（防 profile 未切干净）
+            pl.getInventory().clear();                                      // 先清游戏残留
+            pe.switchProfile(null);                                         // 再恢复大厅 profile（含大厅背包）
             pl.setGameMode(org.bukkit.GameMode.SURVIVAL);
             pl.setHealth(20.0);
             pl.setFoodLevel(20);
