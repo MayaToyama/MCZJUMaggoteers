@@ -35,7 +35,8 @@ public class RestMenu extends Menu {
     protected void setup() {
         Player p = player.player();
         var snap = WaveScheduler.snapshot(game);
-        String poolNormal = snap == null ? "act1_weak" : RewardService.poolForWave(snap.actIndex(), snap.lastTier());
+        String normalTier = snap == null ? "weak" : ("weak".equals(snap.lastTier()) ? "weak" : "strong");
+        String poolNormal = snap == null ? "act1_weak" : RewardService.poolForWave(snap.actIndex(), normalTier);
         String poolBoss = snap == null ? "act1_boss" : RewardService.poolForWave(snap.actIndex(), "boss");
 
         setSlot(11, btn(Material.GOLD_NUGGET, "<yellow>普通奖励",

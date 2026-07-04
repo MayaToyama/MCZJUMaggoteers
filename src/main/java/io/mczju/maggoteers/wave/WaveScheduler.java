@@ -191,6 +191,16 @@ public final class WaveScheduler {
     }
 
     private static void onWaveCleared(AbstractGame game, Cursor c) {
+        boolean isFinalWave = c.actIndex == c.acts.size() - 1
+                && c.waveIndex == c.acts.get(c.actIndex).waves().size() - 1;
+        if (isFinalWave) {
+            c.phase = Phase.DONE;
+            if (c.task != null) c.task.cancel();
+            WaveEngine.stop(game);
+            broadcast(game, Component.text("🏆 通关 卫戍协议！", NamedTextColor.GOLD));
+            ((MaggoteersGame) game).win();
+            return;
+        }
         WaveSpec spec = c.acts.get(c.actIndex).waves().get(c.waveIndex);
         List<io.mczju.maggoteers.wave.RewardItem> rewards = spec.clearReward();
         if (!rewards.isEmpty()) {
