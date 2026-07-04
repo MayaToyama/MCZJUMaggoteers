@@ -32,6 +32,8 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
 
         if (st.tryAutoRevive()) {
             healAndInvuln(p);
+            org.bukkit.Location spawn = io.mczju.maggoteers.wave.WaveScheduler.currentSpawnLocation(game);
+            if (spawn != null) p.teleport(spawn);
             io.mczju.maggoteers.effect.EffectService.fireTrigger((io.mczju.maggoteers.game.MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_REVIVE);
             io.mczju.maggoteers.effect.EffectService.resync(p);
             game.sender().info("<yellow>" + p.getName()

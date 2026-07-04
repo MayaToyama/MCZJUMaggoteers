@@ -95,6 +95,16 @@ public final class WaveScheduler {
         if (c != null && c.phase == Phase.REST) advance(game, c);
     }
 
+    /** 返回当前层的 playerSpawn 绝对坐标（已叠 act_origins），供死亡复活等场景传送。null 表示无 cursor / 无世界。 */
+    public static org.bukkit.Location currentSpawnLocation(AbstractGame game) {
+        Cursor c = CURSORS.get(game);
+        if (c == null) return null;
+        World w = WorldService.get(game);
+        if (w == null) return null;
+        var spawn = c.acts.get(c.actIndex).playerSpawn();
+        return new org.bukkit.Location(w, spawn.x(), spawn.y(), spawn.z());
+    }
+
     /** 是否处于波次休整期（可右键货币打开升级菜单）。 */
     public static boolean isRestPhase(AbstractGame game) {
         Cursor c = CURSORS.get(game);
