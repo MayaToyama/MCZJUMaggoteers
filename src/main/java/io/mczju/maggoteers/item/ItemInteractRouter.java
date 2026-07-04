@@ -147,6 +147,9 @@ public final class ItemInteractRouter implements Listener {
         if (!pe.isInGame()) return;
         AbstractGame game = pe.getGame();
         if (game == null) return;
+        var ps = io.mczju.maggoteers.state.PlayerStateManager.get(
+                (MaggoteersGame) game, event.getPlayer().getUniqueId());
+        if (ps == null || !ps.isAlive()) return;
         handler.onUse(event.getPlayer(), game, stack);
     }
 }

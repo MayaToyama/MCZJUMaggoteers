@@ -27,7 +27,7 @@ public final class TestBladeHandler implements ItemUseHandler {
         ParticleEffects.playAreaRing(player.getWorld(), player.getLocation(), RADIUS);
         // 对周围非自身生物伤害
         for (Entity en : player.getWorld().getNearbyEntities(player.getLocation(), RADIUS, RADIUS, RADIUS)) {
-            if (en instanceof LivingEntity le && en != player) {
+            if (en instanceof LivingEntity le && !(en instanceof Player)) {
                 le.damage(DAMAGE, player);
             }
         }
