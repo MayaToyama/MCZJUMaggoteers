@@ -44,12 +44,24 @@ public final class RewardService {
             POOLS.put(poolId, new RewardPool(poolId, cost, currency, options));
         }
         LOG.info("RewardService 已加载 " + POOLS.size() + " 个奖励池。");
+
+        // 校验：option.item 引用的物品必须可创建（ItemService 已初始化）
+        for (var pool : POOLS.values()) {
+            for (var opt : pool.options()) {
+                if (opt.item() != null && !opt.item().isBlank()
+                        && !ItemService.hasItem(opt.item())
+                        && opt.category() != RewardOption.Category.STAT) {
+                    plugin.getLogger().warning("rewards.yml: 池 " + pool.id() + " 的选项 " + opt.id()
+                        + " 引用了未知物品: " + opt.item() + "（可能 ItemCreator 未装/物品未定义）");
+                }
+            }
+        }
     }
 
     public static RewardPool pool(String id) { return POOLS.get(id); }
 
     /** 所有奖励池 id（局外商店枚举 requires_unlock 商品用）。 */
-    public static java.util.Set<String> allPoolIds() { return POOLS.keySet(); }
+    public static java.util.Set<String> allPoolIds() { return java.util.Collections.unmodifiableSet(POOLS.keySet()); }
 
     public static void grantClearRewards(Collection<? extends Player> players, List<RewardItem> rewards) {
         if (rewards == null || rewards.isEmpty()) return;

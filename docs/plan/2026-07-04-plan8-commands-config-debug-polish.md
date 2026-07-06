@@ -27,7 +27,7 @@
 - Consumes: `WaveScheduler.snapshot/progress/isRestPhase`、`WaveEngine.livingCount`、`PlayerStateManager.get`、`ItemService.give/giveKind`、`PlayerExt.isInGame/getGame`。
 - Produces: `/maggoteers debug <state|plan|wave|act|give|coin> [...]`。
 
-- [ ] **Step 1: 重写 `MaggoteersCommand`（保留 shop + 加 debug）**
+- [x] **Step 1: 重写 `MaggoteersCommand`（保留 shop + 加 debug）**
 
 整文件替换：
 ```java
@@ -140,7 +140,7 @@ public class MaggoteersCommand implements CommandExecutor {
 }
 ```
 
-- [ ] **Step 2: `plugin.yml` 加权限**
+- [x] **Step 2: `plugin.yml` 加权限**
 
 在 `plugin.yml` 末尾（`commands:` 之后）加：
 ```yaml
@@ -151,7 +151,7 @@ permissions:
     default: op
 ```
 
-- [ ] **Step 3: 构建 + 测试 + 提交**
+- [x] **Step 3: 构建 + 测试 + 提交**
 
 `mvn -q test`（全绿）。提交：
 ```bash
@@ -170,7 +170,7 @@ git commit -m "feat(plan8): /maggoteers debug 命令套件(state/plan/wave/act/g
 **Interfaces:**
 - Produces: 加载时校验策略↔池引用、词缀↔steps 引用、物品↔option 引用；不可达引用 log.SEVERE + 抛 `IllegalStateException`（启动 fail-fast）。
 
-- [ ] **Step 1: `WavesConfig.loadFromFile` 末尾加校验**
+- [x] **Step 1: `WavesConfig.loadFromFile` 末尾加校验**
 
 在 `loadFromFile` 方法末尾（`plugin.getLogger().info(...)` 之后）加：
 ```java
@@ -200,7 +200,7 @@ git commit -m "feat(plan8): /maggoteers debug 命令套件(state/plan/wave/act/g
 ```
 （注意：`AffixService` 必须在 `WavesConfig` 之前加载——检查 `onEnable` 的加载顺序：`AffixService.load` 应在 `WavesConfig.loadFromFile` 之前。若不是，调整 onEnable 顺序。）
 
-- [ ] **Step 2: `RewardService.load` 末尾加校验**
+- [x] **Step 2: `RewardService.load` 末尾加校验**
 
 在 `RewardService.load` 末尾加：
 ```java
@@ -218,7 +218,7 @@ git commit -m "feat(plan8): /maggoteers debug 命令套件(state/plan/wave/act/g
 ```
 （STAT 选项不依赖 `item`（用 effect/params），跳过；WEAPON/SUPPLY 需要 `item` 可创建。）
 
-- [ ] **Step 3: 构建 + 测试 + 提交**
+- [x] **Step 3: 构建 + 测试 + 提交**
 
 `mvn -q test`（全绿；校验是运行时 log + throw，不影响单测）。提交：
 ```bash
@@ -238,7 +238,7 @@ git commit -m "feat(plan8): 配置加载时跨引用校验(strategy↔pool/affix
 - Modify: `src/main/java/io/mczju/maggoteers/wave/WaveEngine.java`（加 `entityStep(uuid)` 查询）
 - Modify: `src/main/java/io/mczju/maggoteers/MaggoteersPlugin.java`（注册 CombatAffixListener）
 
-- [ ] **Step 1: `MobFactory.spawn` 加 mob-self 词缀药水**
+- [x] **Step 1: `MobFactory.spawn` 加 mob-self 词缀药水**
 
 在 `MobFactory.spawn(Location, SpawnStep)` 的 `applyName(le, step)` 之后、`return le` 之前加：
 ```java
@@ -260,7 +260,7 @@ git commit -m "feat(plan8): 配置加载时跨引用校验(strategy↔pool/affix
     }
 ```
 
-- [ ] **Step 2: `WaveEngine` 加 `entityStep(uuid)`**
+- [x] **Step 2: `WaveEngine` 加 `entityStep(uuid)`**
 
 在 `WaveEngine` 加（供 CombatAffixListener 查 mob 的 step）：
 ```java
@@ -271,7 +271,7 @@ git commit -m "feat(plan8): 配置加载时跨引用校验(strategy↔pool/affix
     }
 ```
 
-- [ ] **Step 3: 写 `CombatAffixListener`**
+- [x] **Step 3: 写 `CombatAffixListener`**
 
 ```java
 package io.mczju.maggoteers.listener;
@@ -319,7 +319,7 @@ public final class CombatAffixListener implements Listener {
 }
 ```
 
-- [ ] **Step 4: 注册 `CombatAffixListener` + 构建 + 提交**
+- [x] **Step 4: 注册 `CombatAffixListener` + 构建 + 提交**
 
 `MaggoteersPlugin.onEnable` 加 `registerEvents(new CombatAffixListener(), this);`（与 MobDeathListener 等一起）。
 `mvn -q test`（全绿）。提交：
@@ -339,18 +339,18 @@ git commit -m "feat(plan8): 词缀药水落地(MobFactory mob-self + CombatAffix
 - Modify: `src/main/java/io/mczju/maggoteers/reward/RewardService.java`（`allPoolIds` → 不可变视图）
 - Modify: `docs/dev-log.md`（Plan 8 + 整体收尾记录）
 
-- [ ] **Step 1: `allPoolIds` 返回不可变视图**
+- [x] **Step 1: `allPoolIds` 返回不可变视图**
 
 把 `RewardService.allPoolIds()` 的 `return POOLS.keySet();` 改为：
 ```java
     public static java.util.Set<String> allPoolIds() { return java.util.Collections.unmodifiableSet(POOLS.keySet()); }
 ```
 
-- [ ] **Step 2: dev-log 追加 Plan 8 + 整体收尾**
+- [x] **Step 2: dev-log 追加 Plan 8 + 整体收尾**
 
 在 `docs/dev-log.md` 顶部追加 Plan 8 完成条目（做了什么 + 遗留 + 整体里程碑：Plan 1–8 全部完成）。
 
-- [ ] **Step 3: 最终构建 + 打包 + 提交**
+- [x] **Step 3: 最终构建 + 打包 + 提交**
 
 ```bash
 mvn -q test
@@ -363,11 +363,11 @@ git commit -m "feat(plan8): 打磨(allPoolIds 不可变) + dev-log 收尾"
 
 ## Plan 8 验收标准（Definition of Done）
 
-- [ ] `mvn package` 产 jar，`mvn test` 绿（51+ 测试）。
-- [ ] `/maggoteers debug state` 在局内显示 reviveCount/alive/effects 数。
-- [ ] `/maggoteers debug give maggoteers:test_blade 1` 给物品；`/maggoteers debug coin 10` 给 10 普通币。
-- [ ] 配置故意写错（如池引用不存在的 strategy）→ 启动 fail-fast 报精确错误。
-- [ ] toxic 词缀的怪打玩家 → 玩家中毒/凋零（CombatAffixListener）；vampiric 怪自身回血（MobFactory）。
-- [ ] `docs/dev-log.md` 追加 Plan 8 + 整体里程碑。
+- [x] `mvn package` 产 jar，`mvn test` 绿（51+ 测试）。
+- [ ] `/maggoteers debug state` 在局内显示 reviveCount/alive/effects 数。（需 in-game QA）
+- [ ] `/maggoteers debug give maggoteers:test_blade 1` 给物品；`/maggoteers debug coin 10` 给 10 普通币。（需 in-game QA）
+- [ ] 配置故意写错（如池引用不存在的 strategy）→ 启动 fail-fast 报精确错误。（需 in-game QA）
+- [ ] toxic 词缀的怪打玩家 → 玩家中毒/凋零（CombatAffixListener）；vampiric 怪自身回血（MobFactory）。（需 in-game QA；vampiric 当前配置为 hit-player）
+- [x] `docs/dev-log.md` 追加 Plan 8 + 整体里程碑。
 
 > **整个项目（Plan 1–8）至此完成。** 后续是内容运营（加地图 NBT / 波次 / 奖励 / 词缀配置）+ in-game QA 调参。

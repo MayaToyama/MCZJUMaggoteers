@@ -5,6 +5,29 @@
 
 ---
 
+## 2026-07-06 — Plan 8 实现：调试命令 + 配置校验 + 词缀药水 + 收尾（4 任务 SDD）
+
+### 做了什么
+- 按 Plan 8 用 SDD 落地 4 任务：
+  1. **调试命令**：`/maggoteers` 套件（state/plan/wave/give/coin、强制 act/wave 跳转等），供 in-game 调试与 QA。
+  2. **配置 schema 校验**：启动/reload 时对 waves/rewards/affixes 等做引用与结构校验，缺失 strategy 池引用 fail-fast，affix/item 引用 warn/severe。
+  3. **词缀药水**：`MobFactory` 应用 `SpawnStep.potions()` 给怪；`CombatAffixListener` 处理 `on: hit-player` 类词缀（如 toxic/vampiric）。
+  4. **收尾**：`RewardService.allPoolIds()` 返回 `Collections.unmodifiableSet`；本 dev-log 条目。
+
+### 决策与原因
+- **AffixService 先于 WavesConfig 加载**：WavesConfig 校验 strategy 内 affix 引用时需 AffixService 已就绪。
+- **strategy 池引用 fail-fast，affix/item 引用 warn/severe only**：池/strategy 缺失会导致运行时无法开局或 roll 波次，必须硬失败；affix/item 引用问题可降级为日志告警，避免单条配置 typo 拖垮整服 reload。
+
+### 里程碑
+- **Plan 1–8 全部完成**（从世界/波次/效果/菜单/持久化/商店到调试与校验）。
+
+### 遗留
+- **需要 in-game QA**：debug 命令、 toxic/vampiric 等 hit-player 词缀、配置 fail-fast 行为。
+- **内容运维**：maps/NBT 资产填充与地图专属波次。
+- **可选后续**：通关时间榜（另注册 Leaderboard）、商店 AlertMenu 二次确认。
+
+---
+
 ## 2026-07-04 — Plan 7 实现：持久化 + 局外商店 + 解锁回流 + 排行榜（5 任务 SDD）
 
 ### 做了什么

@@ -25,6 +25,7 @@ public final class MobFactory {
             le.setRemoveWhenFarAway(false);
             applyMultipliers(le, step.hpMult(), step.dmgMult(), step.speedMult());
             applyName(le, step);
+            applyAffixPotions(le, step);
             if (le instanceof Mob m) m.setAware(true);
             return le;
         } catch (Exception e) {
@@ -51,6 +52,19 @@ public final class MobFactory {
         if (!step.affixes().isEmpty()) {
             le.customName(Component.text(String.join(" ", step.affixes())));
             le.setCustomNameVisible(true);
+        }
+    }
+
+    /** 词缀药水（mob-self：affix.on() 非 hit-player 的药水施加给怪自身）。 */
+    private static void applyAffixPotions(org.bukkit.entity.LivingEntity le, SpawnStep step) {
+        var affixSvc = io.mczju.maggoteers.config.AffixService.getInstance();
+        for (String affixId : step.affixes()) {
+            var a = affixSvc.get(affixId);
+            if (a == null || "hit-player".equals(a.on())) continue;
+            for (var ps : a.potions()) {
+                var type = org.bukkit.potion.PotionEffectType.getByName(ps.effect().toUpperCase());
+                if (type != null) le.addPotionEffect(new org.bukkit.potion.PotionEffect(type, ps.dur(), ps.amp()));
+            }
         }
     }
 

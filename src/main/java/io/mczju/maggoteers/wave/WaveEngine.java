@@ -43,6 +43,12 @@ public final class WaveEngine {
 
     public static boolean isTracked(UUID uuid) { return BY_ENTITY.containsKey(uuid); }
 
+    /** 查某怪 UUID 的 SpawnStep（供 CombatAffixListener 查 on:hit-player 药水）。无则 null。 */
+    public static SpawnStep entityStep(UUID uuid) {
+        WaveRuntime rt = BY_ENTITY.get(uuid);
+        return rt == null ? null : rt.mobSteps.get(uuid);
+    }
+
     /**
      * 生成一个 SpawnStep 的全部 count 只怪于其绝对点，登记进追踪。
      * Boss 类（单只、高血）自动挂 BossBar 给全员。

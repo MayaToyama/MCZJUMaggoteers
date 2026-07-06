@@ -52,6 +52,30 @@ public final class WavesConfig {
         }
         plugin.getLogger().info("WavesConfig 已加载：" + INSTANCE.strategies.size() + " strategies, "
                 + INSTANCE.pools.size() + " acts。");
+
+        // 校验：池里引用的 strategy 必须在 strategies 里定义
+        for (var actEntry : INSTANCE.pools.entrySet()) {
+            String act = actEntry.getKey();
+            for (var tierEntry : actEntry.getValue().entrySet()) {
+                String tier = tierEntry.getKey();
+                for (var pe : tierEntry.getValue()) {
+                    if (!INSTANCE.strategies.containsKey(pe.strategy())) {
+                        throw new IllegalStateException(
+                            "waves.yml: 池 " + act + "/" + tier + " 引用了未定义的 strategy: " + pe.strategy());
+                    }
+                    // 校验 steps 里引用的 affix 必须在 AffixService 里（affixes.yml 已加载）
+                    SpawnStrategyCfg strat = INSTANCE.strategies.get(pe.strategy());
+                    if (strat != null) for (StepCfg step : strat.steps()) {
+                        for (String affixId : step.affixes()) {
+                            if (AffixService.getInstance().get(affixId) == null) {
+                                plugin.getLogger().severe("waves.yml: strategy " + pe.strategy()
+                                    + " 引用了未定义的词缀: " + affixId + "（继续，但该词缀无效）");
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private static SpawnStrategyCfg parseStrategy(String id, ConfigurationSection s) {

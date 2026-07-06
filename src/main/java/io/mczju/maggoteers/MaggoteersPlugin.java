@@ -34,10 +34,10 @@ public final class MaggoteersPlugin extends JavaPlugin {
         MCZJUGameCore.getGameManager().registerGame(MaggoteersGame.class, MaggoteersRoom.class);
         MCZJUGameCore.getPlayerDataManager().registerPlayerData("maggoteers", io.mczju.maggoteers.persist.MaggoteersPlayerData.class);
         MCZJUGameCore.getLeaderboardManager().registerLeaderboard("maggoteers_total", io.mczju.maggoteers.persist.MaggoteersTotalLeaderboard.class);
+        AffixService.load(this);
         WavesConfig.loadFromFile(this);
         MapRepository.load(this);
         ScalingConfig.load(this);
-        AffixService.load(this);
         ItemService.init(this);
         io.mczju.maggoteers.item.ItemInteractRouter.registerHandler(
                 "maggoteers:test_blade", new io.mczju.maggoteers.item.interact.TestBladeHandler());
@@ -48,6 +48,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         MenuFacade.registerMenu("maggoteers-revive", io.mczju.maggoteers.menu.ReviveMenu.class);
         MenuFacade.registerMenu("maggoteers-shop", io.mczju.maggoteers.menu.UnlockShopMenu.class);
         getServer().getPluginManager().registerEvents(new MobDeathListener(), this);
+        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.CombatAffixListener(), this);
         getServer().getPluginManager().registerEvents(new ItemInteractRouter(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.effect.EffectListener(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.PurifyListener(), this);
