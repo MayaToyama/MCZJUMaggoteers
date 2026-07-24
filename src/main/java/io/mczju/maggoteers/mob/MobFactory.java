@@ -62,7 +62,7 @@ public final class MobFactory {
             var a = affixSvc.get(affixId);
             if (a == null || "hit-player".equals(a.on())) continue;
             for (var ps : a.potions()) {
-                var type = org.bukkit.potion.PotionEffectType.getByName(ps.effect().toUpperCase());
+                var type = io.mczju.maggoteers.util.GameRegistries.potionEffect(ps.effect());
                 if (type != null) le.addPotionEffect(new org.bukkit.potion.PotionEffect(type, ps.dur(), ps.amp()));
             }
         }

@@ -30,7 +30,7 @@ public final class CombatAffixListener implements Listener {
             Affix a = affixSvc.get(affixId);
             if (a == null || !"hit-player".equals(a.on())) continue;
             for (PotionSpec ps : a.potions()) {
-                PotionEffectType type = PotionEffectType.getByName(ps.effect().toUpperCase());
+                PotionEffectType type = io.mczju.maggoteers.util.GameRegistries.potionEffect(ps.effect());
                 if (type != null) victim.addPotionEffect(new PotionEffect(type, ps.dur(), ps.amp()));
             }
         }

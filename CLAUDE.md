@@ -7,10 +7,10 @@
 
 ## 0. 一页速览（给赶时间的 agent）
 
-- **是什么**：Minecraft Paper 1.21.7 上的 PvE 小游戏插件——**波数防守 + Roguelike**。4 人合作，三阶段（Act 1/2/3，类杀戮尖塔三层）依次清波打 Boss，波间 3 选 1 随机强化。
+- **是什么**：Minecraft Paper **26.2** 上的 PvE 小游戏插件——**波数防守 + Roguelike**。4 人合作，三阶段（Act 1/2/3，类杀戮尖塔三层）依次清波打 Boss，波间 3 选 1 随机强化。
 - **身份**：游戏内中文名 **卫戍协议**；项目英文名 **The Maggoteers**；MGC 游戏 id `maggoteers`；主包 `io.mczju.maggoteers`；主类 `MaggoteersPlugin`。
 - **定位**：是 **MCZJUGameCore (MGC)** 的子插件。大厅/房间/组队/玩家档案/排行榜由 MGC 管；我们只写"游戏玩法"。局内物品由 **MCZJUItemCreator** 生成。
-- **构建**：Maven + JDK 21。
+- **构建**：Maven + JDK **25**。
 - **三条铁律（不要违反）**：
   1. **绝对坐标永不入配置**——图内用相对坐标，层原点只写在 `config.yml`，进层时 `原点 + 相对` 现算。
   2. **定义唯一处**——刷怪策略只在 `waves.yml`、奖励项只在 `rewards.yml`，被各处引用；改一处即全局生效。
@@ -26,27 +26,27 @@
 ### 1.2 技术栈
 | 项 | 值 |
 |---|---|
-| 服务端 | Paper 1.21.7 |
-| Java | 21 |
+| 服务端 | Paper **26.2**（API `26.2.build.62-beta`） |
+| Java | **25**（编译/运行；本地可用 Minecraft runtime JDK 或 Temurin 25） |
 | 构建 | Maven（`paper-api` / `MCZJUGameCore` 为 provided，不打进 jar） |
 | 硬依赖 | `MCZJUGameCore`（`depend`） |
 | 软依赖 | `MCZJUItemCreator`（`softdepend`；缺失时仅警告，不崩） |
 | 其他 | 无（**不引入** WorldEdit / MythicMobs / InfernalMobs） |
 
-> ⚠️ **版本基线**：本设计以 **MGC GitHub `1.0.5`** 为准（`docs/dev-guide.md` + `docs/dev-advanced.md`）。`JsonPlayerData`/`getPlayerDataManager()`/`getData()`/`PlayerDataLeaderboard` **从 1.0.4 起即存在**（测试服 jar=1.0.4 已含）；建议测试服 **1.0.4 → 1.0.5 对齐设计**（**不是**"缺 API 编译不过"）。⚠️ 本地 `MCZJUGameCore-main` clone 是 **1.0.0（过时：无 PlayerData、Menu API 也不同）**——核对任何 API 必须看 GitHub 1.0.5，勿用本地 clone。详见 dev-log 2026-07-02 复核条。
+> ⚠️ **版本基线**：本设计以 **MGC GitHub `1.0.7`** 为准（Paper 26.2）。`JsonPlayerData`/`getPlayerDataManager()`/`getData()`/`PlayerDataLeaderboard` 自 1.0.4 起存在。核对 API 须看 GitHub **1.0.7** tag，勿用过时本地 clone（1.0.0）。
 
 ### 1.3 依赖坐标（pom.xml）
 ```xml
 <dependency>
   <groupId>io.papermc.paper</groupId>
   <artifactId>paper-api</artifactId>
-  <version>1.21.7-R0.1-SNAPSHOT</version>
+  <version>26.2.build.62-beta</version>
   <scope>provided</scope>
 </dependency>
 <dependency>
   <groupId>com.github.mczju-ops</groupId>
   <artifactId>MCZJUGameCore</artifactId>
-  <version>1.0.5</version>
+  <version>1.0.7</version>
   <scope>provided</scope>
 </dependency>
 <!-- MCZJUItemCreator：jitpack 引入（同组织 com.github.mczju-ops，已被前代 VampireSurvivor/build.gradle 验证）；版本号以该仓库 pom 为准 -->
@@ -57,7 +57,7 @@
 
 ## 2. 接入 MCZJUGameCore (MGC)
 
-> MGC 文档：`https://github.com/mczju-ops/MCZJUGameCore` 的 `docs/dev-guide.md`、`docs/dev-advanced.md`。Paper javadoc：`https://jd.papermc.io/paper/1.21.7/`。
+> MGC 文档：`https://github.com/mczju-ops/MCZJUGameCore` 的 `docs/dev-guide.md`、`docs/dev-advanced.md`。Paper javadoc：`https://jd.papermc.io/paper/26/`。
 
 ### 2.1 必须的两个类
 - **`MaggoteersGame extends AbstractGame`**（4 人合作 → 直接继承 `AbstractGame`，不继承 `SinglePlayerGame`/`OpenSessionGame`）。
@@ -490,10 +490,10 @@ MCZJUGameCore.getLeaderboardManager()
 - **部署**：jar 放 `plugins/`；同目录需有 `MCZJUGameCore`、`MCZJUItemCreator` 两个 jar。
 - **本地无 JDK 时**：Windows IntelliJ 构建，或 WSL 内安装 JDK21 + Maven 后构建。
 - **资产**：首次启动释放 `plugins/Maggoteers/{items,maps}/...` 默认样例。
-- **测试服**：`E:\MCpaper`（Windows）；WSL 下 `/mnt/e/MCpaper`。
+- **测试服**：`E:\MCpaper`（Paper 26.2；WSL `/mnt/e/MCpaper`）。
 
 ### 16.1 首测前部署清单（plan 阶段 0 须覆盖）
-- [ ] 测试服 MGC **1.0.4 → 1.0.5**（对齐设计基线；1.0.4 已含 PlayerData API，升级为稳妥）。
+- [ ] 测试服 MGC **1.0.7** + Paper **26.2**（见 `E:\MCpaper`）。
 - [ ] `plugins/MCZJUGameCore/rooms/maggoteers/default.json` 存在（由本插件 `onEnable` 自动释放，或 `/mgcop room create maggoteers default`）——否则 `/mgc join maggoteers` 无房间（G1）。
 - [ ] `plugins/Maggoteers/{items,maps}/...` 资产就位（首次启动释放默认样例）。
 - [ ] `MCZJUItemCreator` 已装（否则物品缺失，仅警告不崩）。
@@ -520,7 +520,7 @@ MCZJUGameCore.getLeaderboardManager()
 - **ItemCreator 版本**：jitpack 版本号接手时核实。
 - **ItemCreator 物品来源**：默认读它自己 `items/`；我们用 `parseYamlToItems` 解析本插件目录下的物品。
 - **PlayerData 改动忘 `setModified(true)`**：不会落盘——封装一层 setter 提醒。
-- **MGC 版本**：设计基线 **1.0.5**；测试服 **1.0.4 已含** PlayerData API，建议升 1.0.5 对齐。⚠️ 本地 clone 是 **1.0.0（过时）**，核对 API 须看 GitHub 1.0.5（`dev-advanced.md` 在线版）。
+- **MGC 版本**：设计基线 **1.0.7**（Paper 26.2）。⚠️ 本地 clone 若仍为 **1.0.0（过时）**，核对 API 须看 GitHub **1.0.7** tag。
 - **净化技巧待实测（D1）**：`ADD_POTION` 0 秒 255 级抵消不一定成立；fallback 走 damage-cancel。
 - **结构粘贴主线程掉帧（D8）**：4 象限粘贴主线程瞬时完成会掉几 tick；接受。已改为"进层时粘该层"（非开局一次性粘 12 个）摊薄。
 - **缩放开局锁定（D8）**：人数中途减少时仍按开局人数算难度（偏难）；接受。

@@ -84,7 +84,7 @@ public final class WavesConfig {
         List<StepCfg> steps = new ArrayList<>();
         for (var m : s.getMapList("steps")) {
             String point = String.valueOf(m.get("point"));
-            EntityType type = EntityType.valueOf(String.valueOf(m.get("type")).toUpperCase());
+            EntityType type = io.mczju.maggoteers.util.GameRegistries.entityType(String.valueOf(m.get("type")));
             int count = num(m.get("count"), 1).intValue();
             Map<?, ?> c = m.get("coeff") instanceof Map<?, ?> cm ? cm : Map.of();
             double hp = num(c.get("hp"), 1.0).doubleValue();

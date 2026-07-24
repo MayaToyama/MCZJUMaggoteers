@@ -81,7 +81,7 @@ public record RewardOption(
                     else ctx.put(EffectKeys.DURATION_TICKS, iv);
                 }
                 case "potion" -> {
-                    PotionEffectType p = PotionEffectType.getByName(String.valueOf(v).toUpperCase());
+                    PotionEffectType p = io.mczju.maggoteers.util.GameRegistries.potionEffect(String.valueOf(v));
                     if (p == null) {
                         io.mczju.maggoteers.MaggoteersPlugin.getInstance()
                                 .getLogger().warning("未知药水类型: " + v);
@@ -105,8 +105,7 @@ public record RewardOption(
         catch (Exception e) { return null; }
     }
     private static Attribute safeAttribute(Object v) {
-        try { return Attribute.valueOf(String.valueOf(v).toUpperCase()); }
-        catch (Exception e) { return null; }
+        return io.mczju.maggoteers.util.GameRegistries.attribute(String.valueOf(v));
     }
     private static boolean bool(Map<?, ?> m, String key) {
         Object v = m.get(key); return v != null && Boolean.parseBoolean(String.valueOf(v));

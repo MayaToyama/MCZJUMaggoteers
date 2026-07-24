@@ -5,6 +5,25 @@
 
 ---
 
+## 2026-07-24 — Plan 9：Paper 26.2 + MGC 1.0.7 升级（ItemCreator 暂不装）
+
+### 做了什么
+- **构建基线**：`pom.xml` → Paper `26.2.build.62-beta`、MGC `1.0.7`、JDK **25**；`plugin.yml` `api-version: 1.21`。
+- **`GameRegistries`**：集中 Registry 解析药水/属性/实体（替代 `getByName`/`valueOf`）。
+- **部署**：`E:\MCpaper\plugins\` 放置 `MCZJUGameCore-1.0.7.jar` + 新构建 `Maggoteers-*.jar`；**无 ItemCreator**（决策 C）。
+- **构建脚本**：`scripts/build-with-jdk25.sh`（WSL 需配合 Windows JDK25；Windows 推荐 IDEA `mvn.cmd` + `%APPDATA%\.minecraft\runtime\java-runtime-epsilon`）。
+
+### 决策与原因
+- **ItemCreator 仅 compile-time**：测试服不装；`ItemService` warning + `RewardService` 物品 warning 可接受；QA 侧重 STAT/波次/菜单/MGC。
+- **JDK 25 强制**：Paper 26.2 / MGC 1.0.7 为 class file 69；JDK 21 无法编译。本地用 Minecraft 自带 JDK 25 跑 Maven。
+
+### 遗留
+- **in-game 冒烟**（Plan 9 Task 6 Step 4）：join → 波次 → 菜单 → 结算。
+- **ItemCreator** 恢复后另测 WEAPON/SUPPLY/货币。
+- **Windows 新环境**：需 `mvn install:install-file` 安装 `MCZJUItemCreator-1.0.1.jar`（或从 WSL `~/.m2` 拷贝）才能编译。
+
+---
+
 ## 2026-07-06 — Plan 8 实现：调试命令 + 配置校验 + 词缀药水 + 收尾（4 任务 SDD）
 
 ### 做了什么
