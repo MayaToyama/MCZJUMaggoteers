@@ -154,7 +154,7 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
 - 世界名 `maggoteers_<8位hex>`（hex 来自 seed）。
 - `new WorldCreator(name).environment(NORMAL).generator(new VoidGenerator()).createWorld()`——**必须在主线程调用**（Bukkit 限制；前代 VampireSurvivor 也是同步建世界，仅删目录走异步）。
 - `VoidGenerator`：所有 `shouldGenerate*()` 返回 false、`generateSurface` 空实现 → 纯虚空。
-- GameRule：`DO_DAYLIGHT_CYCLE=false`、`DO_WEATHER_CYCLE=false`、`NATURAL_REGENERATION=false`、`MOB_GRIEFING=false`、`DO_MOB_SPAWNING=false`；`Difficulty.HARD`。
+- GameRule：`ADVANCE_TIME=false`、`ADVANCE_WEATHER=false`、`NATURAL_HEALTH_REGENERATION=false`、`MOB_GRIEFING=false`、`SPAWN_MOBS=false`；永久白天+晴天；`Difficulty.HARD`。
 - **结构粘贴（已验证可行）**：
   ```java
   Structure s = Bukkit.getStructureManager().loadStructure(nbtFile); // 直接吃 java.io.File
@@ -184,7 +184,7 @@ spawnPoints:
 ```
 > 所有坐标相对该图原点；运行时绝对坐标 = `act_origins[act] + 相对值`。**绝对坐标绝不出现在配置里。**
 > 相对坐标须按结构原点书写（结构往 +X/+Y/+Z）；缺 `structure.nbt` 时铺玻璃平台兜底（示例 `points.yml` 可含负坐标以适配居中平台）。
-> **刷怪点校验（G3）**：`waves.yml` 里 `steps[].point` 用到的每个编号（含 `boss`）**必须**在该图 `points.yml` 有定义；`RunPlanner` 解析时校验，缺失则启动/reload 报错指到具体 strategy。
+> **刷怪点校验（G3）**：`waves.yml` 里 `steps[].point` 引用的编号应在该图 `points.yml` 定义。若该图**非 boss 刷怪点少于 9 个**且引用了未配置点，则回退到 **boss** 点坐标；非 boss 已满 9 个仍缺 id、或无 boss 可回退时，启动/规划报错指到具体 strategy。
 
 ### 5.3 抽图
 `RunPlanner` 每层从 `maps/actN/` 随机抽 1 张 → 读 `points.yml` + `special_waves.yml` → 把专属波次并入该层对应池。
@@ -465,7 +465,7 @@ MCZJUGameCore.getLeaderboardManager()
 
 | 想加… | 怎么做 | 要写 Java 吗 |
 |---|---|---|
-| 新地图 | `maps/actN/<mapId>/` 加 4 nbt + points.yml（+ special_waves.yml） | 否 |
+| 新地图 | `maps/actN/<mapId>/` 加 `structure.nbt` + points.yml（+ special_waves.yml） | 否 |
 | 新波次 | `waves.yml` 加 strategy + 池引用 | 否 |
 | 新词缀 | `affixes.yml` 加条目 | 否 |
 | 新奖励（属性/武器/补给） | `rewards.yml` 加 option（武器/补给配 ItemCreator 物品） | 否 |
@@ -518,7 +518,7 @@ MCZJUGameCore.getLeaderboardManager()
 - **结构 NBT 粘贴**：已用 VampireSurvivor 的方法验证可行（`Bukkit.getStructureManager().loadStructure(File)` + VoidGenerator）。务必照搬。
 - **崩服残留孤立世界**：`onEnable` 必须扫描清理 `maggoteers_*`。
 - **爆炸怪卡波**：5-tick 安全扫描强制计入击杀（沿用 VampireSurvivor `WaveManager`）。
-- **ItemCreator 版本**：jitpack 版本号接手时核实。
+- **ItemCreator 版本**：本机构建基线 **1.1.0**（仓库 `main`，Paper 26.2）；`pom` `provided` 坐标 `io.mczju:MCZJUItemCreator:1.1.0`。
 - **ItemCreator 物品来源**：默认读它自己 `items/`；我们用 `parseYamlToItems` 解析本插件目录下的物品。
 - **PlayerData 改动忘 `setModified(true)`**：不会落盘——封装一层 setter 提醒。
 - **MGC 版本**：设计基线 **1.0.7**（Paper 26.2）。⚠️ 本地 clone 若仍为 **1.0.0（过时）**，核对 API 须看 GitHub **1.0.7** tag。

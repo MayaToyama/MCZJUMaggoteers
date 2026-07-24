@@ -4,7 +4,7 @@ import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import io.mczju.maggoteers.MaggoteersPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
-import org.bukkit.GameRule;
+import org.bukkit.GameRules;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
@@ -39,11 +39,15 @@ public final class WorldService {
         }
         w.setSpawnLocation(0, 64, 0);
         w.setDifficulty(Difficulty.HARD);
-        w.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
-        w.setGameRule(GameRule.DO_WEATHER_CYCLE, false);
-        w.setGameRule(GameRule.NATURAL_REGENERATION, false);
-        w.setGameRule(GameRule.MOB_GRIEFING, false);
-        w.setGameRule(GameRule.DO_MOB_SPAWNING, false);
+        w.setGameRule(GameRules.ADVANCE_TIME, false);
+        w.setGameRule(GameRules.ADVANCE_WEATHER, false);
+        w.setGameRule(GameRules.NATURAL_HEALTH_REGENERATION, false);
+        w.setGameRule(GameRules.MOB_GRIEFING, false);
+        w.setGameRule(GameRules.SPAWN_MOBS, false);
+        w.setTime(1000L); // 白天附近
+        w.setStorm(false);
+        w.setThundering(false);
+        w.setClearWeatherDuration(Integer.MAX_VALUE);
         SEEDS.put(game, seed);
         worlds.put(game, w);
         LOG.info("已为对局创建世界 " + name);

@@ -21,7 +21,7 @@
   <dependencies>
     <dependency><groupId>io.papermc.paper</groupId><artifactId>paper-api</artifactId><version>26.2.build.62-beta</version><scope>provided</scope></dependency>
     <dependency><groupId>com.github.mczju-ops</groupId><artifactId>MCZJUGameCore</artifactId><version>1.0.7</version><scope>provided</scope></dependency>
-    <dependency><groupId>io.mczju</groupId><artifactId>MCZJUItemCreator</artifactId><version>1.0.1</version><scope>provided</scope></dependency>
+    <dependency><groupId>io.mczju</groupId><artifactId>MCZJUItemCreator</artifactId><version>1.1.0</version><scope>provided</scope></dependency>
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>5.10.2</version><scope>test</scope></dependency>
   </dependencies>
 

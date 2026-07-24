@@ -75,9 +75,11 @@ public final class RunPlanner {
 
         List<SpawnStep> steps = new ArrayList<>();
         for (StepCfg sc : ordered) {
-            Vec3 rel = map.points().point(sc.point());
+            Vec3 rel = map.points().resolvePointOrBossFallback(sc.point());
             if (rel == null) throw new IllegalStateException(
-                    "刷怪点 " + sc.point() + " 在 " + map.mapId() + "/points.yml 未定义（strategy=" + strat.id() + "，G3）");
+                    "刷怪点 " + sc.point() + " 在 " + map.mapId() + "/points.yml 未定义"
+                            + (map.points().point("boss") == null ? "且无 boss 可回退" : "且非 boss 点数≥9 不可回退")
+                            + "（strategy=" + strat.id() + "，G3）");
             List<Affix> resolved = affixes.resolve(sc.affixes());
             Compose.MobScale ms = Compose.compose(sc.coeff(), resolved, snap);
             int resolvedCount = ScalingConfig.rollCount(sc.count(), snap.mobCount(), rng);

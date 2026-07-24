@@ -108,7 +108,7 @@ class RunPlannerTest {
     }
 
     @Test
-    void g3MissingSpawnPointThrows() {
+    void missingSpawnFallsBackToBossWhenFewerThanNineNonBoss() {
         SpawnStrategyCfg bad = new SpawnStrategyCfg("bad",
                 List.of(new StepCfg("9", EntityType.ZOMBIE, 1, new CoeffCfg(1, 1, 1), 0, List.of())), 1, List.of());
         Map<String, SpawnStrategyCfg> strat = new HashMap<>(simpleDefs().strategies());
@@ -119,8 +119,36 @@ class RunPlannerTest {
                     "strong", List.of(new WavesConfig.PoolEntry("s_strong", 1)),
                     "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
         WaveDefinitions defs = new WaveDefinitions(strat, pools);
+        List<ActPlan> acts = RunPlanner.plan(1L, 1, defs, oneMapLib(), scaling(), affixes(), cfg());
+        // oneMapLib: 仅 "1"+boss → 点 "9" 回退 boss 相对 (0,65,0) + act1 原点 (0,64,0)
+        var step = acts.get(0).waves().get(0).expand().get(0);
+        assertEquals(0.0, step.point().x(), 1e-9);
+        assertEquals(129.0, step.point().y(), 1e-9);
+        assertEquals(0.0, step.point().z(), 1e-9);
+    }
+
+    @Test
+    void g3MissingSpawnPointThrowsWhenNineNonBossDefined() {
+        Map<String, Vec3> pts = new HashMap<>();
+        for (int i = 1; i <= 9; i++) pts.put(String.valueOf(i), new Vec3(i, 65, i));
+        pts.put("boss", new Vec3(0, 65, 0));
+        MapEntry entry = new MapEntry("full", new MapPoints(new Vec3(0.5, 65, 0.5), pts), false, null, Map.of());
+        Map<String, List<MapEntry>> byAct = new HashMap<>();
+        for (String act : List.of("act1", "act2", "act3")) byAct.put(act, List.of(entry));
+
+        SpawnStrategyCfg bad = new SpawnStrategyCfg("bad",
+                List.of(new StepCfg("missing", EntityType.ZOMBIE, 1, new CoeffCfg(1, 1, 1), 0, List.of())),
+                1, List.of());
+        Map<String, SpawnStrategyCfg> strat = new HashMap<>(simpleDefs().strategies());
+        strat.put("bad", bad);
+        Map<String, Map<String, List<WavesConfig.PoolEntry>>> pools = new HashMap<>();
+        for (String act : List.of("act1", "act2", "act3"))
+            pools.put(act, Map.of("weak", List.of(new WavesConfig.PoolEntry("bad", 99)),
+                    "strong", List.of(new WavesConfig.PoolEntry("s_strong", 1)),
+                    "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
+        WaveDefinitions defs = new WaveDefinitions(strat, pools);
         assertThrows(IllegalStateException.class,
-                () -> RunPlanner.plan(1L, 1, defs, oneMapLib(), scaling(), affixes(), cfg()));
+                () -> RunPlanner.plan(1L, 1, defs, new MapLibrary(byAct), scaling(), affixes(), cfg()));
     }
 
     @Test

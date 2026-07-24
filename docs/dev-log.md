@@ -5,6 +5,36 @@
 
 ---
 
+## 2026-07-24 — ItemCreator 1.1.0（Paper 26.2 main）+ GameRules 新名
+
+### 做了什么
+- 从 `mczju-ops/MCZJUItemCreator` **main**（无独立 `26.2` 分支；`api-version: 26.2`，版本 **1.1.0**）本地 `mvn package`/`install`，jar 已复制到 `E:\MCpaper\plugins\`。
+- Maggoteers `pom` → `MCZJUItemCreator:1.1.0`；`plugin.yml` `api-version: 26.2`。
+- `WorldService`：弃用 `GameRule.DO_*` → `GameRules.ADVANCE_TIME` / `ADVANCE_WEATHER` / `NATURAL_HEALTH_REGENERATION` / `SPAWN_MOBS`；并设白天+晴天。
+
+### 决策与原因
+- 远程仅有 `main`；Paper 26.2 适配已合入 main，按 1.1.0 使用。
+- 编译 warning 实为 GameRule 弃用（非 ItemCreatorApi 签名变化；API 与 1.0.1 兼容）。
+
+### 遗留
+- in-game 冒烟：ItemCreator 加载 + Maggoteers 物品发放。
+
+---
+
+## 2026-07-24 — 稀疏刷怪点回退 boss（G3 放宽）
+
+### 做了什么
+- `MapPoints.resolvePointOrBossFallback`：非 boss 点数少于 9 且引用缺失点 → 用 `boss` 坐标；已满 9 非 boss 或缺 boss 仍 fail-fast。
+- `RunPlanner` 改用该解析；单测覆盖回退 / 满 9 仍抛错。
+
+### 决策与原因
+- 地图可只配 1–5 + boss，而 `waves.yml` 仍可共用引用 1–9 的 strategy，避免每图重写波次。
+
+### 遗留
+- ItemCreator 26.2 私有仓本机无 SSH/HTTPS 权限，尚未本地构建与修依赖 warning。
+
+---
+
 ## 2026-07-24 — Plan 10：单结构 NBT 地图加载
 
 ### 做了什么
