@@ -9,13 +9,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.util.*;
 
-/** 读 plugins/Maggoteers/maps/actN/<mapId>/ 的 points.yml + 4 象限 nbt 清单。 */
+/** 读 plugins/Maggoteers/maps/actN/<mapId>/ 的 points.yml + structure.nbt 是否存在。 */
 public final class MapRepository {
 
-    public record MapEntry(String mapId, MapPoints points, Set<String> nbtFiles, File dir,
-                           Map<String, List<WavesConfig.PoolEntry>> specialWaves) {
-        public boolean hasNbt(String quad) { return nbtFiles.contains(quad + ".nbt"); }
-    }
+    public record MapEntry(String mapId, MapPoints points, boolean hasStructure, File dir,
+                           Map<String, List<WavesConfig.PoolEntry>> specialWaves) {}
 
     private static final Map<String, List<MapEntry>> BY_ACT = new HashMap<>();
     private static final Random RNG = new Random();
@@ -44,11 +42,9 @@ public final class MapRepository {
                 if (!pf.isFile()) continue;
                 var cfg = YamlConfiguration.loadConfiguration(pf);
                 MapPoints points = parsePoints(cfg);
-                Set<String> nbts = new HashSet<>();
-                for (String q : List.of("nw", "sw", "ne", "se")) {
-                    if (new File(mapDir, q + ".nbt").isFile()) nbts.add(q + ".nbt");
-                }
-                entries.add(new MapEntry(mapDir.getName(), points, nbts, mapDir, parseSpecialWaves(mapDir)));
+                boolean hasStructure = new File(mapDir, "structure.nbt").isFile();
+                entries.add(new MapEntry(mapDir.getName(), points, hasStructure, mapDir,
+                        parseSpecialWaves(mapDir)));
             }
             BY_ACT.put(act, entries);
         }

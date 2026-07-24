@@ -38,7 +38,7 @@ class RunPlannerTest {
     private MapLibrary oneMapLib() {
         MapPoints pts = new MapPoints(new Vec3(0.5, 65, 0.5), Map.of(
                 "1", new Vec3(8, 65, 8), "boss", new Vec3(0, 65, 0)));
-        MapEntry entry = new MapEntry("m1", pts, Set.of(), null, Map.of());
+        MapEntry entry = new MapEntry("m1", pts, false, null, Map.of());
         Map<String, List<MapEntry>> byAct = new HashMap<>();
         for (String act : List.of("act1", "act2", "act3")) byAct.put(act, List.of(entry));
         return new MapLibrary(byAct);
@@ -133,7 +133,7 @@ class RunPlannerTest {
 
         MapEntry entry = new MapEntry("m1",
                 new MapPoints(new Vec3(0.5, 65, 0.5), Map.of("1", new Vec3(8, 65, 8), "boss", new Vec3(0, 65, 0))),
-                Set.of(), null, Map.of("strong", List.of(new WavesConfig.PoolEntry("s_special", 999))));
+                false, null, Map.of("strong", List.of(new WavesConfig.PoolEntry("s_special", 999))));
         Map<String, List<MapEntry>> byAct = new HashMap<>();
         byAct.put("act1", List.of(entry));
         byAct.put("act2", oneMapLib().maps("act2"));

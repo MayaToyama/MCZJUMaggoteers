@@ -82,7 +82,7 @@ MenuFacade.registerMenu("maggoteers_shop", ShopMenu.class);   // 供 /menu 或 N
 | Hook | 我们做什么 |
 |---|---|
 | `onGameInit()` | 第一个玩家加入等待时：**异步**启动 `RunPlanner`（生成剧本）+ **异步预读 NBT**。⚠️ **不在这里建世界**——`WorldCreator.createWorld()` 必须主线程，建世界的调度放在 `onGameStart` 的就绪门闩内（见下）。返回 true。 |
-| `onGameStart()` | ⚠️ **此方法返回 `void`、不能阻塞**（MGC 调完立即置 `RUNNING`）。故这里**只启动一个"就绪门闩"** `runTaskTimer`：轮询 `RunPlan` 是否就绪（异步产物）；**一旦就绪，由该门闩任务在主线程执行** `WorldService.createWorld()` + 粘贴 Act 1 的 4 象限 → 传送玩家到 Act 1 `playerSpawn` → 初始化各 `PlayerState`（`reviveCount=config.lives.default`、冒险模式）→ `PoolBuilder` 合并解锁（含职业池）→ 发全员初始装备（§9.4）→ 为每人开 `ClassSelectMenu`，**全员选完（或倒计时兜底）后** → 启动 `WaveScheduler`。门闩未就绪期间玩家暂留等待点。**建世界的主线程责任唯一落在 onGameStart 门闩内（G4），避免 init/start 双触发。** |
+| `onGameStart()` | ⚠️ **此方法返回 `void`、不能阻塞**（MGC 调完立即置 `RUNNING`）。故这里**只启动一个"就绪门闩"** `runTaskTimer`：轮询 `RunPlan` 是否就绪（异步产物）；**一旦就绪，由该门闩任务在主线程执行** `WorldService.createWorld()` + 粘贴 Act 1 的 `structure.nbt` → 传送玩家到 Act 1 `playerSpawn` → 初始化各 `PlayerState`（`reviveCount=config.lives.default`、冒险模式）→ `PoolBuilder` 合并解锁（含职业池）→ 发全员初始装备（§9.4）→ 为每人开 `ClassSelectMenu`，**全员选完（或倒计时兜底）后** → 启动 `WaveScheduler`。门闩未就绪期间玩家暂留等待点。**建世界的主线程责任唯一落在 onGameStart 门闩内（G4），避免 init/start 双触发。** |
 | `onGameEnd()` | 胜利：记通关时间榜 + 结算账户货币；失败：按进度结算（少额）。统一走 `cleanup()`。 |
 | `onGameAbort()` | 运行中全员退出：直接 `cleanup()`。 |
 | `onGameCancel()` | 等待阶段取消（未开局）：取消异步任务、删半成品世界。 |
@@ -131,7 +131,7 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
 |---|---|
 | `MaggoteersPlugin` | 主类；注册 + 生命周期总调度 |
 | `game/` | `MaggoteersGame`、`MaggoteersRoom`、`MaggoteersDeathStrategy` |
-| `world/` | `WorldService`（建/卸/删/清理孤立）、`MapRepository`（读图）、`StructurePaster`（粘贴 4 象限 NBT）、`VoidGenerator` |
+| `world/` | `WorldService`（建/卸/删/清理孤立）、`MapRepository`（读图）、`StructurePaster`（粘贴单文件 `structure.nbt`）、`VoidGenerator` |
 | `plan/` | `RunPlanner`（异步种子化）、`RunPlan`、`SeededRng` |
 | `wave/` | `WaveEngine`、`WaveScheduler`（单可暂停状态机）、`WaveRuntime`、模型 `WaveSpec/SpawnStep` |
 | `mob/` | `MobFactory`（原版实体+系数+词缀+装备）、`AffixService` |
@@ -160,8 +160,8 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
   Structure s = Bukkit.getStructureManager().loadStructure(nbtFile); // 直接吃 java.io.File
   s.place(world, new BlockVector(x,y,z), true, StructureRotation.NONE, Mirror.NONE, 0, 1.0f, new Random());
   ```
-- **懒粘贴减卡顿**：开局只粘 Act 1 的 4 个象限；进 Act 2/3 时再粘该层 4 个。
-- **层原点**（`config.yml` `act_origins`）：如 Act1=(0,64,0)、Act2=(1024,64,0)、Act3=(2048,64,0)；4 象限 NBT 在原点基础上按固定 NW/SW/NE/SE 偏移。
+- **懒粘贴减卡顿**：开局只粘 Act 1 的 `structure.nbt`；进 Act 2/3 时再粘该层 `structure.nbt`。
+- **层原点**（`config.yml` `act_origins`）：如 Act1=(0,64,0)、Act2=(1024,64,0)、Act3=(2048,64,0)；`structure.nbt` 原点角对齐层原点，往 +X/+Y/+Z 展开。
 - **销毁**：传送玩家回主世界 → `unloadWorld(false)` → **异步**递归删目录。
 - **孤立世界清理（开机）**：`onEnable` 扫描 `Bukkit.getWorlds()` + 世界容器目录，凡 `maggoteers_*` 一律卸载删除（防崩服残留）。
 
@@ -169,9 +169,9 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
 ```
 plugins/Maggoteers/maps/
   act1/<mapId>/  例如 ruined_keep/
-      nw.nbt sw.nbt ne.nbt se.nbt      # 结构方块导出的 4 象限
-      points.yml                        # playerSpawn + spawnPoints{编号→相对坐标}
-      special_waves.yml                 # 本图专属波（引用 waves.yml 的 strategy id + 池 + weight）
+      structure.nbt                   # 结构方块导出的整图
+      points.yml                      # playerSpawn + spawnPoints{编号→相对坐标}
+      special_waves.yml               # 本图专属波（引用 waves.yml 的 strategy id + 池 + weight）
   act2/...  act3/...
 ```
 `points.yml`：
@@ -183,6 +183,7 @@ spawnPoints:
   boss: { x: 0,  y: 65, z: 0 }      # Boss 刷怪点（waves.yml 里 point: boss 引用它）
 ```
 > 所有坐标相对该图原点；运行时绝对坐标 = `act_origins[act] + 相对值`。**绝对坐标绝不出现在配置里。**
+> 相对坐标须按结构原点书写（结构往 +X/+Y/+Z）；缺 `structure.nbt` 时铺玻璃平台兜底（示例 `points.yml` 可含负坐标以适配居中平台）。
 > **刷怪点校验（G3）**：`waves.yml` 里 `steps[].point` 用到的每个编号（含 `boss`）**必须**在该图 `points.yml` 有定义；`RunPlanner` 解析时校验，缺失则启动/reload 报错指到具体 strategy。
 
 ### 5.3 抽图
@@ -229,7 +230,7 @@ SPAWNING ──(按 delaySec 推进游标, 到点的 step 立即刷)──► AC
 ACTIVE   ──(livingMobs==0)──► CLEARED(发通关奖励) ──► REST(30s, 升级菜单; 全员同意可跳过/延长)
 REST     ──(到时/跳过)──► 下一波 | 本层 Boss 死 ► 进下一层 | Act3 Boss 死 ► VICTORY
 ```
-- **跨层**：本层 Boss 清除 → `WorldService` 粘贴下一层 4 象限 → 全员传送新 `playerSpawn` → scheduler 从该层 wave 0 继续。
+- **跨层**：本层 Boss 清除 → `WorldService` 粘贴下一层 `structure.nbt` → 全员传送新 `playerSpawn` → scheduler 从该层 wave 0 继续。
 
 ### 7.4 waves.yml 草案
 ```yaml
@@ -522,7 +523,7 @@ MCZJUGameCore.getLeaderboardManager()
 - **PlayerData 改动忘 `setModified(true)`**：不会落盘——封装一层 setter 提醒。
 - **MGC 版本**：设计基线 **1.0.7**（Paper 26.2）。⚠️ 本地 clone 若仍为 **1.0.0（过时）**，核对 API 须看 GitHub **1.0.7** tag。
 - **净化技巧待实测（D1）**：`ADD_POTION` 0 秒 255 级抵消不一定成立；fallback 走 damage-cancel。
-- **结构粘贴主线程掉帧（D8）**：4 象限粘贴主线程瞬时完成会掉几 tick；接受。已改为"进层时粘该层"（非开局一次性粘 12 个）摊薄。
+- **结构粘贴主线程掉帧（D8）**：粘贴该层 `structure.nbt` 主线程瞬时完成会掉几 tick；接受。已改为"进层时粘该层"（非开局一次性粘三层）摊薄。
 - **缩放开局锁定（D8）**：人数中途减少时仍按开局人数算难度（偏难）；接受。
 
 ---

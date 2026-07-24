@@ -5,6 +5,23 @@
 
 ---
 
+## 2026-07-24 — Plan 10：单结构 NBT 地图加载
+
+### 做了什么
+- `MapEntry`：`hasStructure` 取代四象限 `nbtFiles`；探测 `structure.nbt`。
+- `StructurePaster`：层原点单次粘贴；缺文件仍 64×64 玻璃兜底。
+- `CLAUDE.md` §5 与相关「4 象限」表述同步。
+
+### 决策与原因
+- 硬切换、固定文件名、原点角对齐——与结构方块工作流一致，少配置分支。
+- 不保留四象限兼容；示例相对坐标在有真实 NBT 后需按结构原点重写。
+
+### 遗留
+- 运维导出并放置各图 `structure.nbt`；按结构重写 `points.yml`。
+- in-game：有/无 nbt 两种路径冒烟。
+
+---
+
 ## 2026-07-24 — Plan 9：Paper 26.2 + MGC 1.0.7 升级（ItemCreator 暂不装）
 
 ### 做了什么
