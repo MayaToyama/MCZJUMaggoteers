@@ -44,7 +44,7 @@ public final class ClassSelectGate {
                 io.mczju.maggoteers.item.ItemService.spendOneKind(p, io.mczju.maggoteers.item.ItemKind.CLASS_TICKET);
             }
             RewardOption opt = fallbackPool.get(rng.nextInt(fallbackPool.size()));
-            io.mczju.maggoteers.reward.RewardService.apply(p, opt);
+            io.mczju.maggoteers.reward.RewardService.apply(p, opt, game);
             markChosen(game, id);
         }
     }

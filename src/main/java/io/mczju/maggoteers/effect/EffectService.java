@@ -2,6 +2,7 @@ package io.mczju.maggoteers.effect;
 
 import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.state.PlayerState;
+import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
@@ -30,14 +31,23 @@ public final class EffectService {
 
     /** 应用一条效果：merge 进 PlayerState；常驻型立即施加派生视图。 */
     public static void apply(Player p, PlayerEffect incoming) {
-        PlayerState st = PlayerStateManager.get(currentGame(p), p.getUniqueId());
-        if (st == null) { LOG.warning("EffectService.apply: 无 PlayerState " + p.getName()); return; }
-        // merge（堆叠/合并）
+        apply(p, incoming, currentGame(p));
+    }
+
+    public static void apply(Player p, PlayerEffect incoming, io.mczju.maggoteers.game.MaggoteersGame game) {
+        if (game == null) {
+            LOG.warning("EffectService.apply: game null " + p.getName());
+            return;
+        }
+        PlayerState st = PlayerStateManager.get(game, p.getUniqueId());
+        if (st == null) {
+            LOG.warning("EffectService.apply: 无 PlayerState " + p.getName());
+            return;
+        }
         var merged = EffectStacker.merge(st.effects(), incoming);
         st.effects().clear();
         st.effects().addAll(merged);
-        // 常驻型 → 立即施加派生视图
-        if (incoming.isPermanent()) {
+        if (incoming.isPermanent() && incoming.effect() != Effect.AURA) {
             applyDerived(p, incoming);
         }
     }
@@ -48,7 +58,7 @@ public final class EffectService {
         if (st == null) return;
         stripDerived(p, st.effects());
         for (PlayerEffect e : new ArrayList<>(st.effects())) {
-            if (e.isPermanent()) applyDerived(p, e);
+            if (e.isPermanent() && e.effect() != Effect.AURA) applyDerived(p, e);
         }
     }
 
@@ -165,10 +175,25 @@ public final class EffectService {
                 io.mczju.maggoteers.state.PlayerStateManager.addReviveCount(game, p.getUniqueId(), count);
             }
             case ADD_ATTRIBUTE -> {
-                // 触发型一次性 ADD_ATTRIBUTE（少见；按常驻同样施加，靠 expiry 控制去留）
                 applyAttribute(p, e);
             }
+            case AURA -> activateAura(p, e, game);
         }
+    }
+
+    /** 触发型 AURA：交互后写入 fireTrigger=null 的携带条目（保留 expiry）。 */
+    private static void activateAura(Player p, PlayerEffect e, io.mczju.maggoteers.game.MaggoteersGame game) {
+        if (e.effect() != Effect.AURA) return;
+        PlayerState st = PlayerStateManager.get(game, p.getUniqueId());
+        if (st != null) {
+            st.effects().removeIf(x -> x.id().equals(e.id()) && x.fireTrigger() != null);
+        }
+        PlayerEffect active = new PlayerEffect(
+                e.id(), Effect.AURA, e.params().copy(), null,
+                e.expiryTrigger(), e.expiryCharges(),
+                0, null, e.stack(), e.upgradeMax(), e.cooldownSec());
+        active.setLevel(e.level());
+        apply(p, active);
     }
 
     // —— 派生视图施加（常驻型）——

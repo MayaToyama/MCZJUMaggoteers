@@ -5,6 +5,7 @@ import com.github.mczjuops.mczjugamecore.menu.Menu;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
+import io.mczju.maggoteers.reward.RewardOption;
 import io.mczju.maggoteers.reward.RewardPool;
 import io.mczju.maggoteers.reward.RewardService;
 import io.mczju.maggoteers.wave.WaveScheduler;
@@ -58,6 +59,11 @@ public class RestMenu extends Menu {
             p.sendMessage(Component.text("奖励池未配置：" + poolId, NamedTextColor.RED));
             return;
         }
+        List<RewardOption> offers = RewardService.draw(poolId, 3, new java.util.Random(), p);
+        if (offers.isEmpty()) {
+            p.sendMessage(Component.text("当前没有可选奖励。", NamedTextColor.RED));
+            return;
+        }
         if (ItemService.countKind(p, currencyKind) < pool.cost()) {
             p.sendMessage(Component.text("货币不足！", NamedTextColor.RED));
             return;
@@ -67,7 +73,7 @@ public class RestMenu extends Menu {
             return;
         }
         p.closeInventory();
-        MenuFacade.open("maggoteers-pick", p, game, poolId);
+        MenuFacade.open("maggoteers-pick", p, game, offers);
     }
 
     private static ItemStack btn(Material mat, String name, String loreLine, int countHint) {

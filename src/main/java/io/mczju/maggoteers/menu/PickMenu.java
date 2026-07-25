@@ -14,8 +14,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /** 3 选 1 奖励（休整菜单入口；货币已在 RestMenu 扣除）。 */
 public class PickMenu extends Menu {
@@ -24,11 +24,11 @@ public class PickMenu extends Menu {
     private final AbstractGame game;
     private final List<RewardOption> offers;
 
+    @SuppressWarnings("unchecked")
     public PickMenu(Player player, Object... args) {
         super(player, args);
         this.game = (AbstractGame) args[0];
-        String poolId = (String) args[1];
-        this.offers = RewardService.draw(poolId, 3, new Random(), player);
+        this.offers = (List<RewardOption>) args[1];
     }
 
     @Override protected String getTitle() { return "3 选 1"; }
@@ -41,23 +41,38 @@ public class PickMenu extends Menu {
             RewardOption opt = offers.get(i);
             setSlot(SLOTS[i], icon(opt), (clicker, ev) -> {
                 Player p = clicker.player();
-                RewardService.apply(p, opt);
+                boolean ok = RewardService.apply(p, opt, game);
                 p.closeInventory();
-                MenuFacade.open("maggoteers-rest", p, game);
+                if (ok) {
+                    MenuFacade.open("maggoteers-rest", p, game);
+                } else {
+                    p.sendMessage(Component.text("请重试或联系管理员。", NamedTextColor.GRAY));
+                }
             });
         }
     }
 
     private static ItemStack icon(RewardOption opt) {
-        ItemStack stack = ItemService.createItem(opt.item(), 1).orElse(new ItemStack(Material.PAPER));
+        Material mat = opt.icon() != null ? opt.icon() : switch (opt.category()) {
+            case WEAPON -> Material.IRON_SWORD;
+            case STAT -> Material.GOLDEN_APPLE;
+            case SUPPLY -> Material.CHEST;
+        };
+        ItemStack stack = (opt.item() != null && !opt.item().isBlank())
+                ? ItemService.createItem(opt.item(), 1).orElse(new ItemStack(mat))
+                : new ItemStack(mat);
         ItemMeta meta = stack.getItemMeta();
         if (meta != null) {
             meta.displayName(Component.text(opt.displayPlain(), NamedTextColor.AQUA)
                     .decoration(TextDecoration.ITALIC, false));
+            var lore = new ArrayList<Component>();
             if (opt.description() != null && !opt.description().isBlank()) {
-                meta.lore(List.of(Component.text(opt.description(), NamedTextColor.GRAY)
-                        .decoration(TextDecoration.ITALIC, false)));
+                lore.add(Component.text(opt.description(), NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false));
             }
+            lore.add(Component.text("▶ 点击选择", NamedTextColor.YELLOW)
+                    .decoration(TextDecoration.ITALIC, false));
+            meta.lore(lore);
             stack.setItemMeta(meta);
         }
         return stack;

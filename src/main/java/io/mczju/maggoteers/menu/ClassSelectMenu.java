@@ -54,7 +54,7 @@ public class ClassSelectMenu extends Menu {
                     p.sendMessage(Component.text("需要手持职业选择券才能确认！", NamedTextColor.RED));
                     return;
                 }
-                RewardService.apply(p, opt);
+                RewardService.apply(p, opt, game);
                 ClassSelectGate.markChosen(game, p.getUniqueId());
                 p.closeInventory();
                 p.sendMessage(Component.text("职业已选定！", NamedTextColor.GREEN));

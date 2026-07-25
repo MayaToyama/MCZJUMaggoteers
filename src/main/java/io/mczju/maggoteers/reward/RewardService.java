@@ -1,11 +1,16 @@
 package io.mczju.maggoteers.reward;
 
+import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.effect.Effect;
 import io.mczju.maggoteers.effect.EffectKeys;
+import io.mczju.maggoteers.effect.EffectService;
 import io.mczju.maggoteers.effect.PlayerEffect;
 import io.mczju.maggoteers.effect.Stack;
+import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.item.ItemService;
+import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
 import io.mczju.maggoteers.wave.RewardItem;
 import net.kyori.adventure.text.Component;
@@ -45,7 +50,6 @@ public final class RewardService {
         }
         LOG.info("RewardService 已加载 " + POOLS.size() + " 个奖励池。");
 
-        // 校验：option.item 引用的物品必须可创建（ItemService 已初始化）
         for (var pool : POOLS.values()) {
             for (var opt : pool.options()) {
                 if (opt.item() != null && !opt.item().isBlank()
@@ -60,7 +64,6 @@ public final class RewardService {
 
     public static RewardPool pool(String id) { return POOLS.get(id); }
 
-    /** 所有奖励池 id（局外商店枚举 requires_unlock 商品用）。 */
     public static java.util.Set<String> allPoolIds() { return java.util.Collections.unmodifiableSet(POOLS.keySet()); }
 
     public static void grantClearRewards(Collection<? extends Player> players, List<RewardItem> rewards) {
@@ -72,7 +75,6 @@ public final class RewardService {
         }
     }
 
-    /** 从池中随机抽 n 个不同选项（不足则全给）。unique 已选过的排除；requires_unlock 暂恒可见（Plan 7 接 unlocks）。 */
     public static List<RewardOption> draw(String poolId, int n, Random rng, Player viewer) {
         RewardPool pool = POOLS.get(poolId);
         if (pool == null || pool.options().isEmpty()) return List.of();
@@ -86,80 +88,87 @@ public final class RewardService {
                 : io.mczju.maggoteers.unlock.UnlockRegistry.unlocksOf(viewer);
         List<RewardOption> visible = new ArrayList<>();
         for (RewardOption o : pool.options()) {
-            if (o.unique() && acquired.contains(o.id())) continue;                 // §12.2 unique
-            if (o.requiresUnlock() && !unlocked.contains(o.id())) continue;        // §12.2 requires_unlock
+            if (o.unique() && acquired.contains(o.id())) continue;
+            if (o.requiresUnlock() && !unlocked.contains(o.id())) continue;
             visible.add(o);
         }
         Collections.shuffle(visible, rng);
         return visible.subList(0, Math.min(n, visible.size()));
     }
 
-    /** 向后兼容重载（无 viewer → 不过滤）。 */
     public static List<RewardOption> draw(String poolId, int n, Random rng) {
         return draw(poolId, n, rng, null);
     }
 
-    public static void apply(Player player, RewardOption opt) {
-        if (opt == null) return;
-        switch (opt.category()) {
-            case SUPPLY, WEAPON -> {
-                ItemService.give(player, opt.item(), opt.amount());
-            }
-            case STAT -> {
-                if (opt.effect() == io.mczju.maggoteers.effect.Effect.GRANT_REVIVE) {
-                    var gpe = new com.github.mczjuops.mczjugamecore.player.PlayerExt(player);
-                    if (gpe.isInGame()) {
-                        int count = opt.params() == null ? 1
-                                : opt.params().getOrDefault(io.mczju.maggoteers.effect.EffectKeys.COUNT, 1);
-                        io.mczju.maggoteers.state.PlayerStateManager.addReviveCount(
-                                gpe.getGame(), player.getUniqueId(), count);
-                    }
-                } else {
-                    applyStat(player, opt);
-                }
-            }
-        }
-        // 记入本局已选（unique 用于 draw 过滤；UPGRADE_LEVEL 用于 level 计数）
+    public static boolean apply(Player player, RewardOption opt) {
         var pe = new PlayerExt(player);
-        if (pe.isInGame()) {
-            var ps = PlayerStateManager.get(pe.getGame(), player.getUniqueId());
-            if (ps != null) ps.acquiredUnique().add(opt.id());
-        }
-        player.sendMessage(Component.text(
-                "获得：" + opt.displayPlain(), NamedTextColor.GREEN));
+        if (!pe.isInGame()) return false;
+        return apply(player, opt, pe.getGame());
     }
 
-    /** STAT 选项 → 建成 PlayerEffect → EffectService.apply。 */
-    private static void applyStat(Player player, RewardOption opt) {
-        if (!opt.isStatEffect()) return;   // 配置不全则不发
+    public static boolean apply(Player player, RewardOption opt, AbstractGame game) {
+        if (opt == null || game == null) return false;
+        PlayerState ps = PlayerStateManager.get(game, player.getUniqueId());
+        if (ps == null) {
+            LOG.warning("RewardService.apply: 无 PlayerState option=" + opt.id() + " uuid=" + player.getUniqueId());
+            player.sendMessage(Component.text("奖励未能应用（本局状态异常）", NamedTextColor.RED));
+            return false;
+        }
+        try {
+            switch (opt.category()) {
+                case SUPPLY, WEAPON -> ItemService.give(player, opt.item(), opt.amount());
+                case STAT -> {
+                    if (opt.effect() == Effect.GRANT_REVIVE) {
+                        int count = opt.params() == null ? 1
+                                : opt.params().getOrDefault(EffectKeys.COUNT, 1);
+                        PlayerStateManager.addReviveCount(game, player.getUniqueId(), count);
+                    } else if (!applyStat(player, opt, game)) {
+                        player.sendMessage(Component.text("奖励未能应用（效果配置无效）", NamedTextColor.RED));
+                        return false;
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            LOG.warning("RewardService.apply 失败 " + opt.id() + ": " + ex.getMessage());
+            player.sendMessage(Component.text("奖励应用失败：" + opt.id(), NamedTextColor.RED));
+            return false;
+        }
+        ps.acquiredUnique().add(opt.id());
+        player.sendMessage(Component.text("获得：" + opt.displayPlain(), NamedTextColor.GREEN));
+        return true;
+    }
+
+    private static boolean applyStat(Player player, RewardOption opt, AbstractGame game) {
+        if (!opt.isStatEffect()) {
+            LOG.warning("RewardService: STAT 配置不完整 id=" + opt.id());
+            return false;
+        }
+        if (!(game instanceof MaggoteersGame mg)) return false;
         int level = 1;
-        io.mczju.maggoteers.effect.EffectContext params = opt.params().copy();   // C1: 不污染共享 RewardOption
+        io.mczju.maggoteers.effect.EffectContext params = opt.params().copy();
         PlayerEffect pe;
-        // UPGRADE_LEVEL：按玩家已 acquired 次数定 level（amp/value 随 level 缩放）
         if (opt.stack() == Stack.UPGRADE_LEVEL) {
             final int UPGRADE_MAX = 4;
-            var pExt = new PlayerExt(player);
-            var ps = pExt.isInGame() ? PlayerStateManager.get(pExt.getGame(), player.getUniqueId()) : null;
+            PlayerState ps = PlayerStateManager.get(game, player.getUniqueId());
             int curLevel = ps == null ? 0
                     : ps.effects().stream().filter(e -> e.id().equals(opt.id()))
-                            .mapToInt(io.mczju.maggoteers.effect.PlayerEffect::level).max().orElse(0);
+                            .mapToInt(PlayerEffect::level).max().orElse(0);
             level = Math.min(curLevel + 1, UPGRADE_MAX);
-            // 药水 amp 随 level：amp = baseAmp + (level-1)
             Integer baseAmp = params.get(EffectKeys.AMP);
             if (baseAmp != null) params.put(EffectKeys.AMP, baseAmp + (level - 1));
             pe = new PlayerEffect(
                     opt.id(), opt.effect(), params, opt.trigger(),
-                    null, 0, 0, null, opt.stack(), UPGRADE_MAX, 0);
+                    opt.expiryTrigger(), opt.expiryCharges(), 0, null, opt.stack(), UPGRADE_MAX, 0);
         } else {
             pe = new PlayerEffect(
                     opt.id(), opt.effect(), params, opt.trigger(),
-                    null, 0, 0, null, opt.stack(), 0, 0);
+                    opt.expiryTrigger(), opt.expiryCharges(), 0, null, opt.stack(), 0, 0);
         }
         pe.setLevel(level);
-        io.mczju.maggoteers.effect.EffectService.apply(player, pe);
+        EffectService.apply(player, pe, mg);
+        return true;
     }
 
-    /** 根据层/波类型解析池 id（weak 波→weak 池，boss 步→boss 池）。 */
     public static String poolForWave(int actIndex, String tier) {
         return "act" + (actIndex + 1) + "_" + tier;
     }

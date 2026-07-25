@@ -5,6 +5,95 @@
 
 ---
 
+## 2026-07-25 — Smoke 第二轮（乘客 expand + 三选一 apply 链）
+
+### 做了什么
+- **`WaveSpec.expand()`** 复制 `passengers`（修复强怪骑乘波裸坐骑）；`WaveSpecTest` 增补用例。
+- **三选 1**：RestMenu 先 `draw` 再扣费；PickMenu 接收预抽 `offers`；`RewardService.apply(player, opt, game)` 返回 boolean，绑定 `PlayerState`，失败红字/成功绿字；`EffectService.apply` 显式 game 重载。
+- **`GameRegistries.attribute`**：legacy `generic.*` + 1.21 短名双路径。
+
+### 文档
+- Spec/plan：`docs/superpowers/specs/2026-07-25-smoke-round2-design.md`、`plans/2026-07-25-smoke-round2.md`。
+
+### 遗留
+- 本地 shell 无 `mvn`；请在 IntelliJ 跑 `mvn test` 后部署测试服 smoke。
+
+## 2026-07-25 — Smoke 修复 + 骑乘步 v1（spec OK 已实现）
+
+### 做了什么
+- **AURA**：`AttributeModifierKeys` 修复 Paper 26.2 modifier key。
+- **骑乘步**：递归 `passengers`、+1tick 挂载、`MountPassengerLimits`/`MountControllerResolver`/`MountedSquadRegistry`+AI（5tick）；`waves.yml` 尸壳骆驼/僵尸马/炽足兽（含嵌套炽足兽塔）；act1–3 strong 池混 roll。
+- **夜视** `player.night_vision`；**隐身**空瓶头盔；**旋风斩** CRIT 弧段螺旋 + sweep 音效。
+
+### 文档
+- Spec/plan：`docs/superpowers/specs/2026-07-25-smoke-fixes-design.md`、`plans/2026-07-25-smoke-fixes.md`。
+
+## 2026-07-24 — 旋风斩 FX + 五件魔法物（法杖/圣剑/三环 AURA）
+
+### 做了什么
+- **旋风斩** `maggoteers:test_blade`：`SPIRAL_RADIUS` + `ANGRY_VILLAGER` + `ENTITY_RAVAGER_ROAR`（items + `magic_fx.weapons`）。
+- **ItemCreator**：`healing_staff`（钻石矛模型木棍）、`excalibur`；`HealingStaffHandler`（25s/5格/+3心）、`ExcaliburHandler`（10s/准星长度光束+路径伤害）；`MaggoteersPlugin` 注册 handler。
+- **三选一 AURA**：`a1s_ring_strength`（7格 +4 攻，`THICK_RING`+ENCHANT）、`a1s_ring_regen`（7格再生，`SMOOTH_EXPAND_RING`）、`a1s_slow_field`（10格 -30% 移速 + `mark_head`/`DOT_ABOVE`）；武器奖励 `a1s_healing_staff` / `a1s_excalibur` 入 `act1_strong` 池。
+
+### 决策与原因
+- 主动武器走 tier-2 handler + `use_fx`；被动环走 AURA + `carrier_fx`/`mark_fx` 与 `AuraService` 已有刷新链。
+
+### 遗留
+- 本地未跑 `mvn test`（环境无 mvn）；上服后 `/maggoteers debug give` 实机验粒子与音效。
+
+## 2026-07-24 — AURA 团队/对敌光环（v1 已实现）
+
+### 做了什么
+- `Effect.AURA`、`AuraService.refresh`（1s）、友/敌 grant、HEAL 脉冲、`RewardOption` grant/expiry 解析。
+- 示例：`a1s_war_banner` / `a1s_medic_field` / `a1s_miasma`；`AuraParamsTest`。
+- 计划：`docs/superpowers/plans/2026-07-24-team-aura-effect.md`。
+
+### 决策与原因
+- 派生 buff 在接收者实体；携带者死亡 `stripAllFromSource`；局末 `clearGame`。
+
+### 遗留
+- 局内实测；`debug aura`；怪物出圈精确 removePotionEffect。
+
+## 2026-07-24 — 乘客怪 / 调试 / 夜天 / 进层准备 / 魔法 FX
+
+### 做了什么
+- **waves.yml `passengers[]`**：`StepCfg`/`SpawnStep`/`MobFactory.spawnStepGroup`；乘客走与主体相同的 coeff×affix×scaling。
+- **调试**：`debug jumpto|jump|spawnmob|effects`；`WaveScheduler.debugSeekWave/debugShiftWave`。
+- **`world.time_lock: night`**（默认），心跳内重设时间防日照。
+- **`act_enter.prep_sec: 10`**：进层 Phase `PREP` 后再开波。
+- **`magic_fx` + `use_fx`**：六种粒子预设 + 加粗圆环；`TestBladeHandler` 走 `MagicFxService`。
+- 设计文档：`docs/superpowers/specs/2026-07-24-gameplay-polish-design.md`。
+
+### 决策与原因
+- 乘客单独追踪 UUID，与 WaveEngine 死亡/扫尾一致。
+- 调试跳波清怪并直接 `beginWave`，跳过休整与进层 PREP。
+- 魔法 FX 预设用短任务动画（SPIRAL/RIPPLE/SMOOTH），参数可配置 radius/ray/density。
+
+### 遗留
+- 本地需 `mvn test` 验证；Paper `Registry.SOUNDS` 若编译报错可退回纯 `Sound.valueOf`。
+- 示例骆驼+乘客 strategy 尚未写入默认 `waves.yml`（仅 schema 支持）。
+
+## 2026-07-24 — 波次 delay 语义 + 剧本 RNG / 可观测性
+
+### 做了什么
+- **`delay` 改为步前等待（相对上一步）**：`WaveSpec.expand()` 按 steps 顺序与 `repeat` 累加时间轴，不再使用「距本波开始的绝对 delay + period 补间」。`RunPlanner` 不再按 `delaySec` 排序 steps，保留 `waves.yml` 书写顺序。
+- **强怪 roll 独立性**：`RunPlanner` 用 `rollSalt(tier,index)` 派生 RNG，避免旧 `derive(200+i)` 跨层撞车导致多波共用同一随机序列。
+- **`WaveSpec.strategyId`**：剧本写入所 roll 的 strategy id；开战广播与 **`/maggoteers debug plan`** 输出每层每波 `[序号:tier=id]`，便于核对「全图 strong 都是 s1_crp_many」类问题。
+- **`SeededRng.weightedIndex`**：跳过 weight≤0 的池条目；`WaveDefinitions` 深拷贝 pool 列表防误改。
+- **配置**：`waves.yml` act3 去掉重复 `weak:` 键；资源注释标明 delay 语义。
+- **单测**：`WaveSpecTest` 对齐新展开时间轴；新增 `StrongWaveRollTest`（强怪池多样性，需本地 `mvn test`）。
+
+### 决策与原因
+- 策划口径「步前延时」与 repeat 链式累加一致；`s1_crp_many` 等若需轮与轮之间的空档，应把**该轮首 step 的 delay** 配大，而不是引擎用 period 硬补 1 tick。
+- strategyId + debug plan 把「池子配置 vs 剧本 vs 刷怪」拆开，避免 repeat 时序 bug 与 roll bug 混在一起排查。
+
+### 遗留
+- 步前语义下 `s1_crp_many`（repeat:3、首步 delay:0）第二轮会与第一轮末步同 tick 叠刷；若需间隔，在 waves.yml 把 repeat 轮首步 delay 改为 6（或单独 strategy）。
+- 改 `waves.yml` 后须**重启服**（`WavesConfig` 仅 onEnable 加载）；部署 jar 建议 `mvn clean package`。
+- in-game 验证：新 jar + `/maggoteers debug plan` 强怪 strategy 列表。
+
+---
+
 ## 2026-07-24 — ItemCreator 1.1.0（Paper 26.2 main）+ GameRules 新名
 
 ### 做了什么
