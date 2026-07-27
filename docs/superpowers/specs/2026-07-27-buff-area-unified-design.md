@@ -1,10 +1,11 @@
 # BUFF_AREA Unified Design
 
-> **Status:** Ready for implementation plan  
+> **Status:** Ready for implementation plan (post-review revision)  
 > **Date:** 2026-07-27  
+> **Revision:** v1.1 — review fixes (`hit_target`, weapon mark recipients, listener semantics, RewardOption parsing)  
 > **Depends on:** `2026-07-27-config-magic-abilities-design.md` (shared `executeMagicEffect`, FX presets, targets vocabulary)
 
-**Summary:** Add `Effect.BUFF_AREA` — a shared magic effect that applies timed vanilla potions to self / allies / enemies. Same execution core for weapon right-click (`use_ability`) and reward STAT combat triggers (`ON_KILL` / `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN`). FX (caster ring + optional mark on hit target / attacker) is config-driven per entry.
+**Summary:** Add `Effect.BUFF_AREA` — shared magic effect applying timed vanilla potions. Same core for weapon right-click (`use_ability`) and reward STAT combat triggers (`ON_KILL` / `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN`). Targets: `self` | `allies` | `enemies` | `hit_target`. FX: caster ring + optional marks.
 
 ---
 
@@ -14,7 +15,11 @@
 
 - Weapon `use_ability` only supports `DAMAGE_AREA` / `DAMAGE_BEAM` / `HEAL_AREA` — cannot apply potion buffs/debuffs.
 - Reward STAT can only potion-buff **self** via `ADD_POTION` (permanent or fireTrigger → self only).
-- No config path for: right-click team Resistance, kill → team buff, hit → mark + debuff enemy, take damage → self Absorption.
+- No config path for:
+  - right-click → team Resistance (AoE allies)
+  - kill → team buff
+  - hit → **debuff the hit entity** (`targets: hit_target`)
+  - take damage from enemy → self Absorption
 
 ### 1.2 Success criteria
 
@@ -23,40 +28,41 @@
 | Zero-Java weapons | New buff staff = `items/*.yml` `use_ability` only |
 | Shared core | Weapon + STAT use one `BUFF_AREA` implementation |
 | Trigger separation | Right-click via `use_ability`; combat via `rewards.yml` `trigger:` |
-| Configurable FX | Caster `fx` + optional `mark_fx` / `mark_on` independently for weapon and STAT |
-| Potion merge | Amp/duration rules (see §5) |
+| Hit-target debuff | `targets: hit_target` applies potions **only** to `ctx.hitTarget` |
+| Configurable FX | Caster `fx` + mark rules (weapon vs STAT differ — see §6.3) |
+| Potion merge | Higher new amp replaces; equal → longer duration; lower new amp ignored (§5) |
 
 ### 1.3 Out of scope (v1)
 
-- `targets: both` (buff allies + debuff enemies in one cast) — defer to v1.1
-- `targets: hit_target` as a target selector for potion apply (v1 uses `targets` for who gets potions; `mark_on` only for FX mark)
+- `targets: both` (buff allies + debuff enemies in one cast)
+- `also_hit_target` (AoE ∪ hitTarget)
 - Writing timed buffs into `PlayerState` (Bukkit potions only)
-- STAT `fireTrigger: ON_INTERACT` (weapon `use_ability` covers interact; keep validator ban)
-- Permanent / aura-style carrier (use existing `AURA` reward)
-- Per-potion FX (one caster fx + one mark fx per ability fire)
+- STAT `fireTrigger: ON_INTERACT` (weapon `use_ability` covers interact)
+- Permanent / aura-style carrier (use existing `AURA`)
+- Per-potion FX
+- **ON_DAMAGE_DEALT via Projectile** (bow/arrow as damager) — deferred; melee `damager instanceof Player` only this phase
+- Special merge vs permanent `ADD_POTION` / AURA potions — **author convention only** (avoid same potion type)
 
 ---
 
 ## 2. Architecture
 
 ```
-Effect.BUFF_AREA  (execution body: potions[] + targets + radius + FX)
+Effect.BUFF_AREA  (potions[] + targets + radius + FX)
         ▲
-        │
    ┌────┴────────────────────────────┐
-   │                                 │
 use_ability (weapon)          PlayerEffect fireTrigger (STAT)
 ConfigMagicHandler            EffectService.executeEffect
 → executeAbility              → executeMagicEffect
 FX: use_ability.fx            FX: params.fx
-    + optional mark_fx            + optional mark_fx / mark_on
+mark: each potion recipient   mark: mark_on + TriggerContext
 ```
 
 | Data | Source | Notes |
 |------|--------|-------|
-| Weapon ability | `ItemAbilityRegistry` by item id | Not in PlayerState |
-| STAT effect | `PlayerState.effects()` | Existing `PlayerEffect` model |
-| Spell power | N/A for BUFF_AREA | Does **not** apply `MAGIC_DAMAGE` multiplier |
+| Weapon ability | `ItemAbilityRegistry` | Not in PlayerState |
+| STAT effect | `PlayerState.effects()` | Existing `PlayerEffect` |
+| Spell power | N/A | Does **not** apply `MAGIC_DAMAGE` |
 
 ---
 
@@ -64,132 +70,154 @@ FX: use_ability.fx            FX: params.fx
 
 ### 3.1 Weapons (main-hand right-click)
 
-- Semantics = interact; **no** `trigger:` field on items.
-- Requires: main hand, `use_ability`, alive run participant.
-- CD: `use_ability.cooldown_sec` via `CooldownService` (unchanged).
+- No `trigger:` on items; CD via `use_ability.cooldown_sec`.
+- Left-click melee does **not** fire weapon abilities (unchanged).
 
 ### 3.2 Reward STAT — allowed `fireTrigger` for `BUFF_AREA`
 
-| Value | When | `mark_on` useful |
-|-------|------|------------------|
-| `ON_KILL` | Killer kills entity | `hit_target` = dead entity |
-| `ON_DAMAGE_DEALT` | Player damages entity | `hit_target` = damaged entity |
-| `ON_DAMAGE_TAKEN` | Player takes damage | `attacker` if LivingEntity damager |
+| Value | When | Context |
+|-------|------|---------|
+| `ON_KILL` | Killer kills entity | `hitTarget` = victim |
+| `ON_DAMAGE_DEALT` | Player **melee** damages entity (`damager instanceof Player`) | `hitTarget` = victim |
+| `ON_DAMAGE_TAKEN` | Player damaged by **enemy attack** only (see §3.4) | `attacker` = resolved enemy LivingEntity |
 
-**Forbidden as fireTrigger (unchanged whitelist + BUFF_AREA-specific):**
+**Forbidden fireTrigger:** `ON_INTERACT`, lifecycle/tick triggers (unchanged whitelist).
 
-- `ON_INTERACT` — use `use_ability` instead
-- Lifecycle / tick: `ON_WAVE_CLEAR`, `ON_ACT_ENTER`, `ON_GAME_END`, `ON_REVIVE`, `ON_DEATH`, `ON_TICK_1S`
+**Load rules:**
 
-**Load rules for `effect: BUFF_AREA`:**
+- STAT `BUFF_AREA` **must** have `fireTrigger` (no permanent BUFF_AREA STAT).
+- Weapon path has no fireTrigger.
 
-- Must have `fireTrigger` when loaded from `rewards.yml` (no permanent BUFF_AREA STAT).
-- Weapon path has no fireTrigger (instant cast).
+### 3.3 Combat listener: per-player + context (**behavior change**)
 
-`RewardLoadValidator` / `ItemAbilityRegistry`: reject invalid targets / empty potions / unknown potion / duration_ticks ≤ 0 with warn+skip.
+Replace game-wide `fireTrigger(game, …)` for combat with:
 
-### 3.3 Combat listener change (required)
+```text
+fireTriggerPlayer(game, involvedPlayer, trigger, TriggerContext)
+```
 
-Today `EffectListener` calls game-wide `fireTrigger(game, ON_KILL)` without entity context. For `mark_on` and correct ownership:
+| Event | Involved player | Context |
+|-------|-----------------|---------|
+| Kill | killer | hitTarget = dead entity |
+| Damage dealt | damager player (melee only) | hitTarget = damaged entity |
+| Damage taken | damaged player | attacker = enemy LivingEntity (see §3.4) |
 
-- Switch combat fires to **`fireTriggerPlayer(game, player, trigger, TriggerContext)`** for the involved player only:
-  - Kill → killer
-  - Damage dealt → damager player
-  - Damage taken → damaged player
-- Pass `TriggerContext(fired, hitTarget, attacker)`.
+**Migration note (explicit):** Existing rewards `a1w_lifesteal` (`ON_KILL`+`HEAL`), `a2w_vamp` (`ON_DAMAGE_DEALT`+`HEAL`) currently fire for **all** teammates under game-wide `fireTrigger`. After this change only the **acting player** triggers — correct semantics; document as intentional fix, not a regression.
 
-This also fixes pre-existing over-firing (all teammates' `ON_DAMAGE_DEALT` effects when one player hits).
+### 3.4 ON_DAMAGE_TAKEN — enemy attacks only
+
+**Fire when:**
+
+- `EntityDamageByEntityEvent` and the damaging party resolves to a **non-ally LivingEntity** (“enemy”):
+  - Direct: damager is LivingEntity and not an ally run participant
+  - Projectile: damager is Projectile, `getShooter()` is LivingEntity enemy (mob arrow etc.)
+- Ally / self / environmental (fall, fire tick, drowning, etc.) → **do not** fire `ON_DAMAGE_TAKEN`
+
+**Attacker field:** resolved enemy LivingEntity (shooter if projectile). Always non-null when the trigger fires.
+
+**Note:** Projectile resolution here is **only** for damage-taken enemy detection. `ON_DAMAGE_DEALT` still requires `damager instanceof Player` (no bow on-hit this phase — §1.3).
+
+### 3.5 ON_DAMAGE_DEALT — melee only (v1)
+
+```text
+if (!(event.getDamager() instanceof Player)) return; // no Projectile→shooter yet
+```
+
+Bow/trident on-hit passives deferred.
 
 ---
 
 ## 4. Schema
 
-### 4.1 Shared `params` (weapon `use_ability.params` and STAT `params`)
+### 4.1 Shared `params`
 
 ```yaml
 params:
-  radius: 6.0                 # ignored when targets: self
-  targets: allies             # self | allies | enemies
+  radius: 6.0                 # required >0 for allies|enemies; ignored for self|hit_target
+  targets: allies             # self | allies | enemies | hit_target
   include_self: true          # allies only; default true
-  enemy_scope: tracked        # enemies only; tracked | all_living (same as DAMAGE_AREA)
+  enemy_scope: tracked        # enemies only; tracked | all_living
   potions:
     - { potion: RESISTANCE, amp: 0, duration_ticks: 200 }
     - { potion: REGENERATION, amp: 0, duration_ticks: 100 }
-  fx:                         # optional caster-centered FX
+  fx:                         # optional caster FX (STAT); weapon prefers use_ability.fx
     preset: RIPPLE_RINGS
     radius: 6.0
     particle: HAPPY_VILLAGER
-    sound: ENTITY_PLAYER_LEVELUP
-  mark_fx:                    # optional entity mark FX
+  mark_fx:                    # optional
     preset: DOT_ABOVE
     particle: SOUL_FIRE_FLAME
-  mark_on: hit_target         # none | hit_target | attacker (default none)
+  mark_on: hit_target         # STAT only meaningful: none | hit_target | attacker
 ```
 
 | Field | Notes |
 |-------|-------|
-| `potions[]` | ≥1 required; potion name via `GameRegistries.potionEffect` |
-| `duration_ticks` | Must be > 0 |
-| `amp` | Potion amplifier (0 = level I) |
-| `targets: self` | Only caster; ignore radius |
-| `targets: allies` | `AllyTargeting.alliesInRadius` |
-| `targets: enemies` | Same resolution as `DAMAGE_AREA` (`TargetResolver` / enemy_scope) |
-| `fx` | Same schema as `use_ability.fx` / AURA fx (`MagicFxBuilder`) |
-| `mark_fx` | Same schema; played on marked entity location |
-| `mark_on` | Who gets `mark_fx`; ignored if no context or entity null |
+| `potions[]` | ≥1 required; `amp` default **0**; `duration_ticks` must be **>0** |
+| `targets` omit | Default **`allies`** (align HEAL_AREA) via `MagicEffectParams.withDefaults` |
+| `targets: self` | Caster only; ignore radius |
+| `targets: allies` | `AllyTargeting.alliesInRadius`; `include_self` default true |
+| `targets: enemies` | Same as DAMAGE_AREA (`TargetResolver` + `enemy_scope`) |
+| `targets: hit_target` | **Only** `ctx.hitTarget`; if null → no potions (weapon path always null → empty) |
+| `radius` | Default e.g. `5.0` for allies/enemies; validate `>0` when those targets used |
+| `fx` / `mark_fx` | Same schema as AURA / weapon FX (`MagicFxBuilder`) |
 
 ### 4.2 Weapon YAML
 
 ```yaml
-maggoteers:buff_staff:
-  material: STICK
-  pdc:
-    - key: maggoteers:id
-      type: STRING
-      value: maggoteers:buff_staff
-  use_ability:
-    cooldown_sec: 20
-    effect: BUFF_AREA
-    params:
-      radius: 6.0
-      targets: allies
-      include_self: true
-      potions:
-        - { potion: RESISTANCE, amp: 0, duration_ticks: 200 }
-    fx:
-      preset: RIPPLE_RINGS
-      radius: 6.0
+use_ability:
+  cooldown_sec: 20
+  effect: BUFF_AREA
+  params:
+    radius: 6.0
+    targets: allies          # hit_target is useless on weapons (warn if set — see §6.3)
+    include_self: true
+    potions:
+      - { potion: RESISTANCE, amp: 0, duration_ticks: 200 }
+    mark_fx:                 # played on each potion recipient
+      preset: DOT_ABOVE
       particle: HAPPY_VILLAGER
+  fx:
+    preset: RIPPLE_RINGS
+    radius: 6.0
+    particle: HAPPY_VILLAGER
 ```
 
-Weapon FX: prefer top-level `use_ability.fx` (existing merge). If also `params.fx`, **`use_ability.fx` wins** for caster FX (same override idea as ability-level fx today). `params.mark_fx` / `mark_on` still read from params.
+- Caster FX: **`use_ability.fx` wins** over `params.fx`.
+- Weapon **does not** use `mark_on` / TriggerContext for marks (see §6.3).
 
 ### 4.3 STAT reward YAML
 
 ```yaml
-- id: a1s_kill_team_resist
+- id: a1s_hit_poison
   category: STAT
   unique: true
-  trigger: ON_KILL
+  trigger: ON_DAMAGE_DEALT
   effect: BUFF_AREA
   params:
-    radius: 8.0
-    targets: allies
-    include_self: true
+    targets: hit_target
     potions:
-      - { potion: RESISTANCE, amp: 0, duration_ticks: 160 }
+      - { potion: POISON, amp: 0, duration_ticks: 60 }
     fx:
-      preset: SPIRAL_RADIUS
-      radius: 8.0
-      particle: TOTEM_OF_UNDYING
+      preset: THICK_RING
+      radius: 1.5
+      particle: ITEM_SLIME
     mark_fx:
       preset: DOT_ABOVE
-      particle: SOUL_FIRE_FLAME
+      particle: ANGRY_VILLAGER
     mark_on: hit_target
-  display: "<aqua>击杀：团队抗性"
+  display: "<green>淬毒：命中上毒"
 ```
 
-STAT caster FX lives in `params.fx` (rewards already parse nested fx via `MagicFxBuilder`).
+**Parsing (must implement — not present today):** `RewardOption.parseParams` currently only handles `carrier_fx` / `mark_fx`. Add:
+
+| Key | Storage |
+|-----|---------|
+| `fx` | `EffectKeys.FX` (new) nested EffectContext |
+| `mark_on` | `EffectKeys.MARK_ON` (new) String |
+| `potions` | `EffectKeys.POTIONS` (new) list structure (immutable copy in `EffectContext.copyDeep`) |
+| `targets` / `include_self` / `enemy_scope` / `radius` | existing keys where present |
+
+Unknown keys remain ignored; these three must **not** be dropped.
 
 ---
 
@@ -197,13 +225,19 @@ STAT caster FX lives in `params.fx` (rewards already parse nested fx via `MagicF
 
 When applying potion type `T` with amp `A` and duration `D` to an entity that already has `T`:
 
-1. Existing amp **>** A → **ignore** new buff  
-2. Existing amp **==** A → keep the one with **longer remaining duration** (compare remaining ticks vs D)  
-3. Existing amp **<** A → **replace** with new buff  
+1. Existing amp **>** new A → **ignore** new buff  
+2. Existing amp **==** new A → keep **longer remaining duration**  
+3. Existing amp **<** new A → **replace** with new buff  
 
-Implement as pure `PotionMerge.shouldApply(existingAmp, existingRemainingTicks, newAmp, newDurationTicks) -> boolean` (+ apply helper). Unit-test all three cases and “no existing → apply”.
+Locked wording (§11): **higher new amp replaces; equal → longer duration; lower new amp ignored.**
 
-Use `LivingEntity.addPotionEffect(..., true)` only when merge says apply (force replace when winning).
+`PotionMerge.shouldApply(...)` pure helper + unit tests.
+
+Apply with `addPotionEffect(effect, true)` when merge says apply. Flags align trigger `ADD_POTION`: `ambient=false`, `particles=true`.
+
+### 5.1 Conflict with permanent ADD_POTION / AURA
+
+**Author convention (v1):** do not use the same potion type on permanent/`AURA` grants and `BUFF_AREA`. No runtime priority between PlayerState resync and BUFF_AREA. Document in plugin-config reference.
 
 ---
 
@@ -214,73 +248,76 @@ Use `LivingEntity.addPotionEffect(..., true)` only when merge says apply (force 
 ```java
 public record TriggerContext(
     Trigger fired,
-    LivingEntity hitTarget,   // ON_DAMAGE_DEALT / ON_KILL victim
-    LivingEntity attacker     // ON_DAMAGE_TAKEN damager if LivingEntity
+    LivingEntity hitTarget,
+    LivingEntity attacker
 ) {
-    public static TriggerContext empty(Trigger fired) {
-        return new TriggerContext(fired, null, null);
+    public static TriggerContext empty() {
+        return new TriggerContext(null, null, null);
     }
 }
 ```
 
-### 6.2 Execution
+### 6.2 Execution (avoid double caster FX)
 
 ```
 Weapon:
-  CooldownService.tryUse → play use_ability.fx → executeAbility
-    → executeMagicEffect(BUFF_AREA, params, weaponFx, TriggerContext.empty(null))
+  CooldownService.tryUse
+  → MagicFxService.play(use_ability.fx)          # caster FX once (handler only)
+  → executeAbility → executeMagicEffect(BUFF_AREA, params, null, empty)
+      → resolve potion targets
+      → PotionMerge apply
+      → weapon mark: for each recipient with mark_fx → play mark (no mark_on)
 
 STAT:
   fireTriggerPlayer(..., ctx)
-    → executeEffect → executeMagicEffect(BUFF_AREA, params, null, ctx)
-        → resolve caster FX from params.fx (if present) → MagicFxPresets.play(caster, fx)
-        → resolve targets by params.targets
-        → for each target × each potion: PotionMerge + addPotionEffect
-        → if mark_on + mark_fx + entity present: MagicFxPresets on entity
+  → executeEffect → executeMagicEffect(BUFF_AREA, params, null, ctx)
+      → if params.fx present → MagicFxPresets.play(caster, fx)   # once
+      → resolve targets (incl. hit_target)
+      → PotionMerge apply
+      → if mark_on + mark_fx + entity → mark once
 ```
 
-`executeEffect` switch adds:
+**Weapon:** do **not** pass/play `weaponFx` again inside `executeMagicEffect` (HEAL_AREA already ignores it; BUFF_AREA must not double-play caster FX).
 
-```java
-case BUFF_AREA -> executeMagicEffect(..., e.params(), null, triggerCtx);
-```
-
-Extend `executeMagicEffect` / `executeEffect` signatures to accept optional `TriggerContext` (default empty for effects that ignore it).
+`executeEffect` adds `case BUFF_AREA -> executeMagicEffect(...)`.
 
 ### 6.3 Mark resolution
 
-| `mark_on` | Entity |
-|-----------|--------|
-| `none` / omit | No mark |
-| `hit_target` | `ctx.hitTarget()` |
-| `attacker` | `ctx.attacker()` |
+| Path | Mark behavior |
+|------|----------------|
+| **Weapon** | If `mark_fx` present → play on **each entity that received at least one potion**. Ignore `mark_on`. If `targets: hit_target` on weapon → load **warn** (always empty recipients). |
+| **STAT** | `mark_on: none` → no mark. `hit_target` → `ctx.hitTarget()`. `attacker` → `ctx.attacker()`. Missing entity → silent skip. |
 
-Missing entity → skip mark silently (no warn spam).
+### 6.4 Target resolution summary
 
-### 6.4 Not PlayerState
+| `targets` | Potion recipients |
+|-----------|-------------------|
+| `self` | Caster |
+| `allies` | Allies in radius (+ include_self) |
+| `enemies` | Enemies in radius per enemy_scope |
+| `hit_target` | Singleton `{ctx.hitTarget}` or empty |
 
-Timed potions are Bukkit-only. Expiry is vanilla. No charm / collectible interaction beyond existing STAT grant if the option is mapped.
+### 6.5 Not PlayerState
+
+Timed potions are Bukkit-only.
 
 ---
 
 ## 7. Validation
 
-### 7.1 Load-time (`ItemAbilityRegistry` + `RewardLoadValidator` / reward parse)
-
 | Check | Action |
 |-------|--------|
-| `effect: BUFF_AREA` + empty / missing `potions` | warn + skip ability / option |
-| Unknown potion name | warn + skip that potion entry; if none left → skip ability |
-| `duration_ticks ≤ 0` | warn + skip that potion entry |
-| `targets` not in `{self,allies,enemies}` | warn + skip |
+| Empty / missing `potions` | warn + skip |
+| Unknown potion / `duration_ticks ≤ 0` | warn + skip entry; if none left → skip ability |
+| `targets` not in `{self,allies,enemies,hit_target}` | warn + skip |
+| Omit `targets` | default `allies` (not skip) |
+| `allies`/`enemies` with `radius ≤ 0` | warn + skip |
 | STAT without fireTrigger | warn + skip |
-| STAT fireTrigger not in combat whitelist | warn + skip |
-| `mark_on` invalid | warn; treat as none |
+| Forbidden fireTrigger | warn + skip |
+| Weapon `targets: hit_target` | warn (ability may load but does nothing useful) |
+| Invalid `mark_on` | warn; treat as none |
 
-### 7.2 Runtime
-
-- No allies in radius → still play caster fx; potions applied to empty set  
-- Dead / invalid mark entity → skip mark  
+`MagicEffectParams.withDefaults(BUFF_AREA)`: default `targets=allies`, `include_self=true`, `enemy_scope=tracked`, default radius when needed.
 
 ---
 
@@ -289,35 +326,39 @@ Timed potions are Bukkit-only. Expiry is vanilla. No charm / collectible interac
 | File | Change |
 |------|--------|
 | `Effect.java` | Add `BUFF_AREA` |
-| `EffectKeys.java` | Keys for potions list / mark_on if needed (or reuse nested EffectContext) |
-| `PotionMerge.java` | **Create** — pure merge logic |
+| `EffectKeys.java` | `FX`, `MARK_ON`, `POTIONS` (+ list type) |
+| `EffectContext.java` | Deep-copy `POTIONS` / nested `FX` |
+| `PotionMerge.java` | **Create** |
 | `TriggerContext.java` | **Create** |
-| `EffectService.java` | `BUFF_AREA` branch; thread TriggerContext |
-| `EffectListener.java` | Per-player fire + context |
+| `EffectService.java` | BUFF_AREA branch; TriggerContext through executeEffect |
+| `EffectListener.java` | Per-player fire; melee dealt; enemy-only taken (+ projectile shooter for **taken** only) |
 | `MagicEffectParams.java` | Defaults + validateBuffArea |
-| `ItemAbilityRegistry.java` | Parse `potions[]`, validate BUFF_AREA |
-| `RewardOption.java` | Parse `potions[]` in params (list of maps) |
+| `ItemAbilityRegistry.java` | Parse `potions[]`, validate |
+| `RewardOption.java` | Parse `fx`, `mark_on`, `potions[]` (critical) |
 | `RewardLoadValidator.java` | BUFF_AREA rules |
-| `items/maggoteers.yml` | Sample buff staff (optional smoke) |
-| `rewards.yml` | Optional 1 sample STAT (optional) |
-| Tests | `PotionMergeTest`, validator tests |
+| Sample YAML | Optional buff staff + optional STAT |
+| Tests | PotionMerge; validator; fireTriggerPlayer isolation; hit_target; enemies≠allies |
 
 ---
 
 ## 9. Testing
 
-- `PotionMergeTest`: three rules + no-existing  
-- Validator: reject empty potions, bad targets, STAT without trigger, ON_INTERACT still forbidden  
-- Manual smoke: buff staff right-click → allies get Resistance + fx; kill STAT → team buff + mark on corpse  
+- `PotionMergeTest`: higher/equal/lower amp + no-existing  
+- Validator: empty potions, bad targets, STAT w/o trigger, ON_INTERACT forbidden  
+- Listener: only killer gets ON_KILL effects (not teammates)  
+- `targets: enemies` does not buff allies  
+- `targets: hit_target` applies only to victim when context present  
+- Weapon: mark on each recipient; no caster FX double-play  
+- Manual: buff staff; hit-poison STAT; enemy-hit Absorption; fall damage does **not** fire ON_DAMAGE_TAKEN  
 
 ---
 
 ## 10. Doc sync (with implementation)
 
-- `CLAUDE.md` §10 Effect catalog + weapon guide  
-- `.cursor/skills/maggoteers-plugin-config/reference.md` — BUFF_AREA params  
-- `docs/dev-log.md` — dated entry  
-- Cross-link from magic-abilities design as extension  
+- `CLAUDE.md` §10 + weapon guide  
+- plugin-config `reference.md`  
+- `docs/dev-log.md`  
+- Cross-link magic-abilities design  
 
 ---
 
@@ -325,24 +366,39 @@ Timed potions are Bukkit-only. Expiry is vanilla. No charm / collectible interac
 
 | Topic | Decision |
 |-------|----------|
-| Effect type | New `BUFF_AREA` (not overload HEAL_AREA) |
+| Effect type | New `BUFF_AREA` |
 | Status kind | Vanilla timed potions only |
-| Multi-potion | `potions[]` list |
-| Targets v1 | `self` \| `allies` \| `enemies` |
-| Merge | Higher amp wins; same amp → longer duration; lower amp → replace |
-| FX | Independent caster `fx` + optional `mark_fx`/`mark_on` for weapon and STAT |
-| Interact | Weapon `use_ability` only; STAT bans ON_INTERACT |
-| Combat fire | Per-player + `TriggerContext` |
+| Multi-potion | `potions[]` |
+| Targets v1 | `self` \| `allies` \| `enemies` \| **`hit_target`** |
+| Targets default | **`allies`** if omitted |
+| Hit debuff | `hit_target` = potions only on `ctx.hitTarget` (not AoE+mark mismatch) |
+| Merge | Higher new amp replaces; equal → longer duration; **lower new amp ignored** |
+| Permanent conflict | Author avoid same type; no runtime special-case |
+| Weapon mark | **Each potion recipient** gets `mark_fx`; ignore `mark_on` |
+| STAT mark | `mark_on` + TriggerContext |
+| Weapon caster FX | Handler only; core does not re-play |
+| Interact | Weapon `use_ability`; STAT bans ON_INTERACT |
+| Combat fire | Per-player + context; **intentional** fix for team-wide HEAL triggers |
+| ON_DAMAGE_DEALT | Melee Player damager only (no Projectile→shooter this phase) |
+| ON_DAMAGE_TAKEN | Enemy melee/arrow only; **no** environmental; attacker always set when fired |
 | PlayerState | Do not store timed buffs |
+| PotionEffect flags | ambient=false, particles=true |
+| amp default | 0 |
 
 ---
 
-## Appendix: Review checklist
+## Appendix: Review checklist (v1.1)
 
 | Issue | Resolution |
 |-------|------------|
-| Weapon vs STAT duplication | Shared `executeMagicEffect(BUFF_AREA)` |
-| ON_INTERACT on rewards | Still forbidden; weapon path covers |
-| Mark without context | Silent skip |
-| Spell power | Not applied to potions |
-| Game-wide combat fire | Fix to per-player as part of this work |
+| §1.1 hit debuff vs AoE | Added `targets: hit_target` |
+| §11 merge wording | Aligned with §5 (lower new amp ignored) |
+| rewards parse `fx`/`potions` | Explicit RewardOption + EffectKeys work |
+| Weapon mark empty context | Mark each recipient instead |
+| Permanent potion clash | Author convention |
+| targets omit | Default allies |
+| ON_DAMAGE_TAKEN env | Do not fire |
+| Projectile on dealt | Out of scope v1 |
+| Projectile on taken | Resolve shooter to detect enemy + fill attacker |
+| Per-player fire | Documented migration for lifesteal/vamp |
+| Double caster FX | Weapon: handler only |
