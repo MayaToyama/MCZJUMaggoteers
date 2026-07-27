@@ -29,12 +29,22 @@ public final class SeededRng {
         double r = random.nextDouble() * total;
         double acc = 0;
         for (int i = 0; i < weights.length; i++) {
-            acc += Math.max(0, weights[i]);
-            if (r <= acc) return i;
+            double w = Math.max(0, weights[i]);
+            if (w <= 0) continue;
+            acc += w;
+            if (r < acc) return i;
         }
         return weights.length - 1;
     }
 
-    /** 派生子序列：seed ^ salt（保证不同 salt 得到不同独立流，同 salt 可重放）。 */
-    public SeededRng derive(long salt) { return new SeededRng(seed ^ salt); }
+    /** 派生子序列：混合 seed 与 salt，降低 {@code seed ^ salt} 跨层/跨波碰撞。 */
+    public SeededRng derive(long salt) {
+        return new SeededRng(mix64(seed + salt * 0x9E3779B97F4A7C15L));
+    }
+
+    private static long mix64(long z) {
+        z = (z ^ (z >>> 33)) * 0xff51afd7ed558ccdL;
+        z = (z ^ (z >>> 33)) * 0xc4ceb9fe1a85ec53L;
+        return z ^ (z >>> 33);
+    }
 }

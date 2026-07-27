@@ -1,0 +1,42 @@
+# Sample charm items (rabbit foot icons). Stats are applied via rewards.yml PlayerEffect.
+maggoteers:charm_magic_10:
+  material: RABBIT_FOOT
+  customName: "<light_purple>法术强度护符"
+  lore:
+    - "<gray>+10% 魔法伤害"
+  glint: true
+
+maggoteers:charm_kill_shock:
+  material: RABBIT_FOOT
+  customName: "<red>震击护符"
+  lore:
+    - "<gray>击杀范围伤害"
+  glint: true
+
+maggoteers:charm_resist_1:
+  material: RABBIT_FOOT
+  customName: "<aqua>抗性护符 I"
+  lore:
+    - "<gray>抗性 I"
+  glint: true
+
+maggoteers:charm_resist_2:
+  material: RABBIT_FOOT
+  customName: "<aqua>抗性护符 II"
+  lore:
+    - "<gray>抗性 II"
+  glint: true
+
+maggoteers:charm_resist_3:
+  material: RABBIT_FOOT
+  customName: "<aqua>抗性护符 III"
+  lore:
+    - "<gray>抗性 III"
+  glint: true
+
+maggoteers:charm_resist_4:
+  material: RABBIT_FOOT
+  customName: "<aqua>抗性护符 IV"
+  lore:
+    - "<gray>抗性 IV"
+  glint: true

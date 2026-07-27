@@ -23,6 +23,14 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.World;
+import io.mczju.maggoteers.effect.Effect;
+import io.mczju.maggoteers.effect.EffectContext;
+import io.mczju.maggoteers.effect.EffectKeys;
+import io.mczju.maggoteers.effect.EffectService;
+import io.mczju.maggoteers.effect.PlayerEffect;
+import io.mczju.maggoteers.effect.Stack;
+import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.List;
@@ -67,6 +75,9 @@ public class MaggoteersGame extends AbstractGame {
     public boolean isInClassSelectPhase() {
         return outcome == GameOutcome.IN_PROGRESS && plannedActs != null && !wavesStarted;
     }
+
+    /** 调试用：本局预生成剧本（波次未开或进行中均可读）。 */
+    public List<ActPlan> getPlannedActs() { return plannedActs; }
 
     public void win() {
         if (outcome != GameOutcome.IN_PROGRESS) return;
@@ -137,6 +148,11 @@ public class MaggoteersGame extends AbstractGame {
         ActPlan act1 = plannedActs.get(0);
         ActSpawnHelper.pasteAndTeleport(this, act1, 0);
         RunScoreboard.start(this);
+        if (MaggoteersPlugin.getInstance().getConfig().getBoolean("player.night_vision", true)) {
+            for (PlayerExt pe : getPlayers()) {
+                grantRunNightVision(pe.player());
+            }
+        }
 
         sender().info("<yellow>已进入第 1 层地图 · 请选择职业（右键职业选择券可重新打开菜单）");
         for (PlayerExt pe : getPlayers()) {
@@ -167,9 +183,22 @@ public class MaggoteersGame extends AbstractGame {
         wavesStarted = true;
         io.mczju.maggoteers.effect.EffectListener.startTick();
         WaveScheduler.start(this, plannedActs);
-        sender().info("<green>卫戍协议 开战！三层共 "
+        int prep = MaggoteersPlugin.getInstance().getConfig().getInt("act_enter.prep_sec", 10);
+        sender().info("<green>卫戍协议 已就绪！"
+                + (prep > 0 ? " 地图准备 " + prep + " 秒后开战。" : "")
+                + " 三层共 "
                 + plannedActs.stream().mapToInt(a -> a.waves().size()).sum() + " 波。每人复活 "
                 + MaggoteersPlugin.getInstance().getConfig().getInt("lives.default", 2) + " 次。");
+    }
+
+    private static void grantRunNightVision(Player player) {
+        EffectContext ctx = new EffectContext();
+        ctx.put(EffectKeys.POTION, PotionEffectType.NIGHT_VISION);
+        ctx.put(EffectKeys.AMP, 0);
+        PlayerEffect pe = new PlayerEffect(
+                "run_night_vision", Effect.ADD_POTION, ctx, null,
+                null, 0, 0, null, Stack.REPLACE, 0, 0);
+        EffectService.apply(player, pe);
     }
 
     private void cleanupRun() {
@@ -212,6 +241,7 @@ public class MaggoteersGame extends AbstractGame {
         ClassSelectGate.clear(this);
         PlayerStateManager.destroyAll(this);
         WorldService.cleanup(this);
+        io.mczju.maggoteers.effect.AuraService.clearGame(this);
     }
 
     @Override protected void onGameCancel() { cleanupRun(); }

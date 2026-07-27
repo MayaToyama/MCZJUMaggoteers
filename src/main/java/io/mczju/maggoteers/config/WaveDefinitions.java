@@ -1,6 +1,7 @@
 package io.mczju.maggoteers.config;
 
 import io.mczju.maggoteers.config.WavesConfig.PoolEntry;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -10,7 +11,15 @@ public record WaveDefinitions(
         Map<String, Map<String, List<PoolEntry>>> pools) {
     public WaveDefinitions {
         strategies = Map.copyOf(strategies);
-        pools = Map.copyOf(pools);
+        Map<String, Map<String, List<PoolEntry>>> poolsCopy = new HashMap<>();
+        for (var actEntry : pools.entrySet()) {
+            Map<String, List<PoolEntry>> tierCopy = new HashMap<>();
+            for (var tierEntry : actEntry.getValue().entrySet()) {
+                tierCopy.put(tierEntry.getKey(), List.copyOf(tierEntry.getValue()));
+            }
+            poolsCopy.put(actEntry.getKey(), Map.copyOf(tierCopy));
+        }
+        pools = Map.copyOf(poolsCopy);
     }
 
     public SpawnStrategyCfg strategy(String id) { return strategies.get(id); }

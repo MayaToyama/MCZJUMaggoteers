@@ -9,11 +9,13 @@ reward_pools:
         description: "高生命，木剑开局"
         category: WEAPON
         item: maggoteers:wooden_sword
+
       - id: class_striker
         display: "<red>突击手"
         description: "测试之刃，高伤害"
         category: WEAPON
         item: maggoteers:test_blade
+        
       - id: class_medic
         display: "<green>医疗兵"
         description: "应急口粮 x2"
@@ -46,8 +48,8 @@ reward_pools:
         category: STAT
         effect: ADD_ATTRIBUTE
         params: { attr: ATTACK_DAMAGE, op: PERCENT, value: 0.10 }
+        unique: true
         stack: ADD
-        icon: IRON_SWORD
       - id: a1w_lifesteal
         display: "<dark_red>嗜血"
         description: "击杀回 2 心"
@@ -55,24 +57,24 @@ reward_pools:
         trigger: ON_KILL
         effect: HEAL
         params: { amount: 4.0 }
+        unique: true
         stack: IGNORE
-        icon: GOLDEN_APPLE
       - id: a1w_flat_hp
         display: "<green>+2 最大生命(扁平)"
         description: "常驻 +2 MAX_HEALTH FLAT"
         category: STAT
         effect: ADD_ATTRIBUTE
         params: { attr: MAX_HEALTH, op: FLAT, value: 2.0 }
+        unique: true
         stack: ADD
-        icon: APPLE
       - id: a1w_speed_pct
         display: "<green>+5% 移速"
         description: "常驻 +5% MOVEMENT_SPEED"
         category: STAT
         effect: ADD_ATTRIBUTE
         params: { attr: MOVEMENT_SPEED, op: PERCENT, value: 0.05 }
+        unique: true
         stack: ADD
-        icon: LEATHER_BOOTS
       - id: a1w_magic_blade
         display: "<aqua>魔法测试刃"
         description: "右键触发范围伤害的测试武器(ON_INTERACT 地基)"
@@ -106,17 +108,160 @@ reward_pools:
         category: STAT
         effect: ADD_POTION
         params: { potion: RESISTANCE, amp: 0, duration_ticks: 0 }
+        unique: true
         stack: UPGRADE_LEVEL
-        icon: SHIELD
       - id: a1s_damage_area
         display: "<red>震击(击杀范围伤害)"
         description: "击杀时对周围敌人造成 3 伤害，半径 4"
         category: STAT
         trigger: ON_KILL
         effect: DAMAGE_AREA
-        params: { damage: 3.0, radius: 4.0 }
+        params: { damage: 3.0, radius: 4.0, targets: enemies, enemy_scope: tracked }
+        unique: true
         stack: ADD
-        icon: TNT
+      - id: a1s_magic_dmg
+        display: "<light_purple>+10% 法术强度"
+        description: "魔法伤害 +10%（可与武器叠加）"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params: { attr: MAGIC_DAMAGE, op: PERCENT, value: 0.10 }
+        unique: true
+        stack: ADD
+      - id: a1s_war_banner
+        display: "<gold>战旗"
+        description: "12 格内队友 +8% 攻击"
+        category: STAT
+        effect: AURA
+        params:
+          radius: 12.0
+          targets: allies
+          grant:
+            effect: ADD_ATTRIBUTE
+            attr: ATTACK_DAMAGE
+            op: PERCENT
+            value: 0.08
+          carrier_fx:
+            preset: THICK_RING
+            particle: TOTEM_OF_UNDYING
+            radius: 12.0
+            density: 36
+        unique: true
+        stack: ADD
+      - id: a1s_medic_field
+        display: "<green>医疗力场"
+        description: "8 格内每秒 +1 心（队友）"
+        category: STAT
+        effect: AURA
+        params:
+          radius: 8.0
+          targets: allies
+          grant:
+            effect: HEAL
+            amount: 2.0
+          grant_pulse_sec: 1
+          carrier_fx:
+            preset: THICK_RING
+            particle: HEART
+            radius: 8.0
+            density: 32
+        unique: true
+        stack: ADD
+      - id: a1s_miasma
+        display: "<dark_green>瘴气"
+        description: "6 格内波次怪物中毒"
+        category: STAT
+        effect: AURA
+        params:
+          radius: 6.0
+          targets: enemies
+          enemy_scope: tracked
+          grant:
+            effect: ADD_POTION
+            potion: POISON
+            amp: 0
+          carrier_fx:
+            preset: THICK_RING
+            particle: ENCHANT
+            radius: 6.0
+            density: 32
+        unique: true
+        stack: ADD
+      - id: a1s_ring_strength
+        display: "<gold>力量之环"
+        description: "7 格内队友 +4 攻击力"
+        category: STAT
+        effect: AURA
+        params:
+          radius: 7.0
+          targets: allies
+          grant:
+            effect: ADD_ATTRIBUTE
+            attr: ATTACK_DAMAGE
+            op: FLAT
+            value: 4.0
+          carrier_fx:
+            preset: THICK_RING
+            particle: ENCHANT
+            radius: 7.0
+            density: 32
+        unique: true
+        stack: ADD
+      - id: a1s_ring_regen
+        display: "<green>恢复之环"
+        description: "7 格内队友获得生命恢复"
+        category: STAT
+        effect: AURA
+        params:
+          radius: 7.0
+          targets: allies
+          grant:
+            effect: ADD_POTION
+            potion: REGENERATION
+            amp: 0
+          carrier_fx:
+            preset: SMOOTH_EXPAND_RING
+            particle: HAPPY_VILLAGER
+            radius: 7.0
+            expand_steps: 20
+            density: 40
+        unique: true
+        stack: ADD
+      - id: a1s_slow_field
+        display: "<blue>寒霜领域"
+        description: "10 格内波次怪物减速 30%，头顶标记"
+        category: STAT
+        effect: AURA
+        unique: true
+        params:
+          radius: 10.0
+          targets: enemies
+          enemy_scope: tracked
+          mark_head: true
+          grant:
+            effect: ADD_ATTRIBUTE
+            attr: MOVEMENT_SPEED
+            op: PERCENT
+            value: -0.30
+          mark_fx:
+            preset: DOT_ABOVE
+            particle: SNOWFLAKE
+            density: 24
+          carrier_fx:
+            preset: THICK_RING
+            particle: SNOWFLAKE
+            radius: 10.0
+            density: 28
+        stack: ADD
+      - id: a1s_healing_staff
+        display: "<green>治疗法杖"
+        description: "右键范围治疗队友"
+        category: WEAPON
+        item: maggoteers:healing_staff
+      - id: a1s_excalibur
+        display: "<light_purple>Ex咖喱棒"
+        description: "右键圣剑光束"
+        category: WEAPON
+        item: maggoteers:excalibur
 
   act1_boss:
     cost: 1
@@ -141,8 +286,8 @@ reward_pools:
         category: STAT
         effect: GRANT_REVIVE
         params: { count: 1 }
+        unique: true
         stack: ADD
-        icon: TOTEM_OF_UNDYING
 
   act2_weak:
     cost: 1
@@ -157,8 +302,8 @@ reward_pools:
         category: STAT
         effect: ADD_ATTRIBUTE
         params: { attr: MOVEMENT_SPEED, op: PERCENT, value: 0.15 }
+        unique: true
         stack: ADD
-        icon: LEATHER_BOOTS
       - id: a2w_vamp
         display: "<dark_red>吸血"
         description: "攻击回复 1 心"
@@ -166,8 +311,8 @@ reward_pools:
         trigger: ON_DAMAGE_DEALT
         effect: HEAL
         params: { amount: 2.0 }
+        unique: true
         stack: IGNORE
-        icon: RED_STAINED_GLASS
       - id: a2w_lone_wolf
         display: "<gray>孤狼"
         description: "+20% 移速(唯一)"
@@ -175,7 +320,6 @@ reward_pools:
         effect: ADD_ATTRIBUTE
         params: { attr: MOVEMENT_SPEED, op: PERCENT, value: 0.20 }
         stack: ADD
-        icon: LEATHER_BOOTS
         unique: true
       - id: a2w_magic_blade
         display: "<aqua>魔法测试刃"
@@ -196,25 +340,24 @@ reward_pools:
         category: STAT
         effect: ADD_POTION
         params: { potion: STRENGTH, amp: 0, duration_ticks: 0 }
+        unique: true
         stack: UPGRADE_LEVEL
-        icon: BLAZE_POWDER
-      - id: a2s_damage_area_interact
-        display: "<red>冲击波(右键)"
-        description: "右键触发范围伤害，半径 5 伤害 4"
+      - id: a2s_magic_dmg
+        display: "<light_purple>+15% 法术强度"
+        description: "魔法伤害 +15%"
         category: STAT
-        trigger: ON_INTERACT
-        effect: DAMAGE_AREA
-        params: { damage: 4.0, radius: 5.0 }
+        effect: ADD_ATTRIBUTE
+        params: { attr: MAGIC_DAMAGE, op: PERCENT, value: 0.15 }
+        unique: true
         stack: ADD
-        icon: FIRE_CHARGE
       - id: a2s_dmg_stack
         display: "<red>+8% 攻击(可叠加)"
         description: "常驻 +8% ATTACK_DAMAGE，可叠加多层"
         category: STAT
         effect: ADD_ATTRIBUTE
         params: { attr: ATTACK_DAMAGE, op: PERCENT, value: 0.08 }
+        unique: true
         stack: ADD
-        icon: IRON_SWORD
 
   act2_boss:
     cost: 1
@@ -230,7 +373,6 @@ reward_pools:
         effect: GRANT_REVIVE
         params: { count: 1 }
         stack: ADD
-        icon: TOTEM_OF_UNDYING
         unique: true
 
   act3_weak:
@@ -246,24 +388,24 @@ reward_pools:
         category: STAT
         effect: ADD_ATTRIBUTE
         params: { attr: MAX_HEALTH, op: PERCENT, value: 0.10 }
+        unique: true
         stack: ADD
-        icon: APPLE
       - id: a3w_regen
         display: "<light_green>再生(可升级)"
         description: "再生 I，重复抽到升级（最多 4 级）"
         category: STAT
         effect: ADD_POTION
         params: { potion: REGENERATION, amp: 0, duration_ticks: 0 }
+        unique: true
         stack: UPGRADE_LEVEL
-        icon: GOLDEN_CARROT
       - id: a3w_speed_potion
         display: "<blue>急速(可升级)"
         description: "速度 I，重复抽到升级（最多 4 级）"
         category: STAT
         effect: ADD_POTION
         params: { potion: SPEED, amp: 0, duration_ticks: 0 }
+        unique: true
         stack: UPGRADE_LEVEL
-        icon: SUGAR
       - id: a3w_magic_blade
         display: "<aqua>魔法测试刃"
         description: "右键触发范围伤害的测试武器(ON_INTERACT 地基)"
@@ -284,7 +426,6 @@ reward_pools:
         effect: ADD_ATTRIBUTE
         params: { attr: ARMOR_TOUGHNESS, op: PERCENT, value: 0.10 }
         stack: ADD
-        icon: IRON_CHESTPLATE
         unique: true
       - id: a3s_damage_area_kill
         display: "<red>爆裂(击杀范围伤害)"
@@ -293,8 +434,8 @@ reward_pools:
         trigger: ON_KILL
         effect: DAMAGE_AREA
         params: { damage: 5.0, radius: 5.0 }
+        unique: true
         stack: ADD
-        icon: TNT
 
   act3_boss:
     cost: 1
@@ -310,5 +451,4 @@ reward_pools:
         effect: GRANT_REVIVE
         params: { count: 2 }
         stack: ADD
-        icon: NETHER_STAR
         unique: true

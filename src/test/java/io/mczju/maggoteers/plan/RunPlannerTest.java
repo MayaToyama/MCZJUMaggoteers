@@ -1,7 +1,7 @@
 package io.mczju.maggoteers.plan;
 
 import io.mczju.maggoteers.config.*;
-import io.mczju.maggoteers.wave.Vec3;
+import io.mczju.maggoteers.wave.*;
 import io.mczju.maggoteers.world.MapLibrary;
 import io.mczju.maggoteers.world.MapRepository.MapEntry;
 import org.bukkit.entity.EntityType;
@@ -61,7 +61,7 @@ class RunPlannerTest {
     }
 
     private AffixService affixes() {
-        Affix armored = new Affix("armored", 2, 1, 1, 1, List.of(), null, "装甲");
+        Affix armored = new Affix("armored", 2, 1, 1, 1, List.of(), "装甲");
         return AffixService.forTesting(Map.of("armored", armored));
     }
 
@@ -173,5 +173,42 @@ class RunPlannerTest {
             if (acts.get(0).waves().get(3).expand().get(0).type() == EntityType.SKELETON) specialHits++;
         }
         assertTrue(specialHits > 45, "specialHits=" + specialHits);
+    }
+
+    @Test
+    void carriesIndependentInfernalConfigForAllSpawnKinds() {
+        PassengerCfg passenger = new PassengerCfg(
+                EntityType.SKELETON, 1, new CoeffCfg(1, 1, 1), List.of(),
+                new InfernalCfg(1, List.of("archer")),
+                List.of(), List.of(), List.of());
+        DeathSpawnCfg death = new DeathSpawnCfg(
+                EntityType.SILVERFISH, 1, new CoeffCfg(1, 1, 1), List.of(),
+                new InfernalCfg(2, List.of("berserk")), List.of(), List.of());
+        StepCfg root = new StepCfg(
+                "1", EntityType.ZOMBIE, 1, new CoeffCfg(1, 1, 1), 0, List.of(),
+                new InfernalCfg(3, List.of("sprint")),
+                List.of(), List.of(death), List.of(passenger));
+        SpawnStrategyCfg im = new SpawnStrategyCfg("w_im", List.of(root), 1, List.of());
+
+        Map<String, SpawnStrategyCfg> strategies = new HashMap<>(simpleDefs().strategies());
+        strategies.put("w_im", im);
+        Map<String, Map<String, List<WavesConfig.PoolEntry>>> pools = new HashMap<>();
+        for (String act : List.of("act1", "act2", "act3")) {
+            pools.put(act, Map.of(
+                    "weak", List.of(new WavesConfig.PoolEntry("w_im", 1)),
+                    "strong", List.of(new WavesConfig.PoolEntry("s_strong", 1)),
+                    "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
+        }
+
+        SpawnStep step = RunPlanner.plan(
+                1L, 1, new WaveDefinitions(strategies, pools),
+                oneMapLib(), scaling(), affixes(), cfg())
+                .get(0).waves().get(0).steps().get(0);
+
+        assertEquals(List.of("sprint"), step.infernal().affixes());
+        assertEquals(List.of("archer"), step.passengers().get(0).infernal().affixes());
+        assertEquals(List.of("berserk"), step.onDeath().get(0).infernal().affixes());
+        assertNotEquals(step.infernal(), step.passengers().get(0).infernal());
+        assertNotEquals(step.infernal(), step.onDeath().get(0).infernal());
     }
 }

@@ -1,6 +1,7 @@
 package io.mczju.maggoteers.state;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
+import io.mczju.maggoteers.game.MaggoteersGame;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.attribute.Attribute;
@@ -9,6 +10,7 @@ import org.bukkit.entity.Player;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -29,7 +31,27 @@ public final class PlayerStateManager {
         return m == null ? null : m.get(uuid);
     }
 
-    /** 场上是否还有冒险模式（参战）玩家。 */
+    /** 按玩家 UUID 查找所在对局（不依赖 MGC {@code getGame()} 实例是否一致）。 */
+    public static MaggoteersGame gameForPlayer(UUID uuid) {
+        for (var e : BY_GAME.entrySet()) {
+            if (e.getValue().containsKey(uuid) && e.getKey() instanceof MaggoteersGame mg) {
+                return mg;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 本局仍在役：有 {@link PlayerState} 且 {@link PlayerState#isAlive()}。
+     * 不检查 GameMode（测试/创造模式切换不影响光环、治疗等）。
+     */
+    public static boolean isRunParticipant(AbstractGame game, Player p) {
+        if (p == null || !p.isOnline() || game == null) return false;
+        PlayerState st = get(game, p.getUniqueId());
+        return st != null && st.isAlive();
+    }
+
+    /** 场上是否还有仍在役玩家（仅看 PlayerState）。 */
     public static boolean isAnyAlive(AbstractGame game) {
         Map<UUID, PlayerState> m = BY_GAME.get(game);
         if (m == null) return false;
@@ -72,6 +94,16 @@ public final class PlayerStateManager {
     /** 结束钩子：清掉本局所有玩家状态。 */
     public static void destroyAll(AbstractGame game) {
         BY_GAME.remove(game);
+    }
+
+    /** 仍有 PlayerState 的对局（含 MGC gameList 未收录的运行中实例）。 */
+    public static Set<AbstractGame> gamesWithState() {
+        return Set.copyOf(BY_GAME.keySet());
+    }
+
+    public static Set<UUID> uuidsInGame(AbstractGame game) {
+        Map<UUID, PlayerState> m = BY_GAME.get(game);
+        return m == null ? Set.of() : Set.copyOf(m.keySet());
     }
 
     private PlayerStateManager() {}

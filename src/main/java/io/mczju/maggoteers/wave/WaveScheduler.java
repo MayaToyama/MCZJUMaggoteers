@@ -14,6 +14,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
@@ -23,7 +24,7 @@ import java.util.*;
  */
 public final class WaveScheduler {
 
-    public enum Phase { SPAWNING, ACTIVE, CLEARED, REST, DONE }
+    public enum Phase { PREP, SPAWNING, ACTIVE, CLEARED, REST, DONE }
 
     public record RunSnapshot(
             int actIndex, String mapId, int waveIndex, int waveCount,
@@ -31,6 +32,7 @@ public final class WaveScheduler {
     ) {
         public String phaseName() {
             return switch (phase) {
+                case PREP -> "准备";
                 case SPAWNING -> "刷怪";
                 case ACTIVE -> "战斗";
                 case CLEARED -> "清场";
@@ -48,6 +50,7 @@ public final class WaveScheduler {
         Phase phase = Phase.SPAWNING;
         long waveStartTicks;
         long restEndTicks;
+        long prepEndTicks;
         int stepCursor = 0;
         List<SpawnStep> currentExpanded = List.of();
         WaveRuntime runtime;
@@ -80,6 +83,11 @@ public final class WaveScheduler {
         WaveEngine.stop(game);
     }
 
+    /** 波次状态机仍跟踪的对局（不依赖 MGC gameList）。 */
+    public static java.util.Set<AbstractGame> activeGames() {
+        return java.util.Collections.unmodifiableSet(CURSORS.keySet());
+    }
+
     /** 结算用：返回 {actIndex, wavesClearedInCurrentAct}（无 cursor 返回 {0,0}）。 */
     public static int[] progress(AbstractGame game) {
         Cursor c = CURSORS.get(game);
@@ -93,6 +101,9 @@ public final class WaveScheduler {
         ActPlan act = c.acts.get(c.actIndex);
         int restLeft = c.phase == Phase.REST
                 ? Math.max(0, (int) ((c.restEndTicks - Bukkit.getCurrentTick()) / 20L)) : 0;
+        if (c.phase == Phase.PREP) {
+            restLeft = Math.max(0, (int) ((c.prepEndTicks - Bukkit.getCurrentTick()) / 20L));
+        }
         return new RunSnapshot(c.actIndex, act.mapId(), c.waveIndex, act.waves().size(),
                 c.phase, c.lastTier, restLeft);
     }
@@ -118,6 +129,49 @@ public final class WaveScheduler {
         return c != null && c.phase == Phase.REST;
     }
 
+    /** 是否处于进层准备倒计时（此期间不刷怪）。 */
+    public static boolean isPrepPhase(AbstractGame game) {
+        Cursor c = CURSORS.get(game);
+        return c != null && c.phase == Phase.PREP;
+    }
+
+    /**
+     * 调试：跳到指定层/波（0-based）。清当前怪、跳过休整；跨层时会重新粘贴结构并传送。
+     */
+    public static boolean debugSeekWave(AbstractGame game, int actIndex, int waveIndex) {
+        Cursor c = CURSORS.get(game);
+        if (c == null || c.phase == Phase.DONE) return false;
+        if (actIndex < 0 || actIndex >= c.acts.size()) return false;
+        if (waveIndex < 0 || waveIndex >= c.acts.get(actIndex).waves().size()) return false;
+        WaveEngine.killAllTracked(game);
+        if (actIndex != c.actIndex) {
+            pasteActForCursor(game, c, actIndex);
+            c.actIndex = actIndex;
+        }
+        beginWave(game, c, waveIndex);
+        return true;
+    }
+
+    /** 调试：相对当前层波次偏移（可跨层，waveIndex 钳制在目标层范围内）。 */
+    public static boolean debugShiftWave(AbstractGame game, int delta) {
+        Cursor c = CURSORS.get(game);
+        if (c == null || c.phase == Phase.DONE || delta == 0) return false;
+        int act = c.actIndex;
+        int wave = c.waveIndex + delta;
+        while (wave < 0 && act > 0) {
+            act--;
+            wave += c.acts.get(act).waves().size();
+        }
+        while (wave >= c.acts.get(act).waves().size() && act + 1 < c.acts.size()) {
+            wave -= c.acts.get(act).waves().size();
+            act++;
+        }
+        if (act < 0 || act >= c.acts.size()) return false;
+        int max = c.acts.get(act).waves().size();
+        if (wave < 0 || wave >= max) return false;
+        return debugSeekWave(game, act, wave);
+    }
+
     public static void pause(AbstractGame game) {
         Cursor c = CURSORS.get(game);
         if (c != null && c.task != null) { c.task.cancel(); c.task = null; }
@@ -130,6 +184,14 @@ public final class WaveScheduler {
 
     private static void enterAct(AbstractGame game, Cursor c, int actIndex) {
         c.actIndex = actIndex;
+        pasteActForCursor(game, c, actIndex);
+        ActPlan act = c.acts.get(actIndex);
+        broadcast(game, Component.text("▶ 进入第 " + (actIndex + 1) + " 层 · " + act.mapId(), NamedTextColor.GOLD));
+        io.mczju.maggoteers.effect.EffectService.fireTrigger((MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_ACT_ENTER);
+        beginActPrep(game, c);
+    }
+
+    private static void pasteActForCursor(AbstractGame game, Cursor c, int actIndex) {
         ActPlan act = c.acts.get(actIndex);
         World w = WorldService.get(game);
         if (w == null) return;
@@ -147,9 +209,17 @@ public final class WaveScheduler {
             pe.player().teleport(loc);
             pe.player().setFallDistance(0f);
         });
-        broadcast(game, Component.text("▶ 进入第 " + (actIndex + 1) + " 层 · " + act.mapId(), NamedTextColor.GOLD));
-        io.mczju.maggoteers.effect.EffectService.fireTrigger((MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_ACT_ENTER);
-        beginWave(game, c, 0);
+    }
+
+    private static void beginActPrep(AbstractGame game, Cursor c) {
+        int prepSec = MaggoteersPlugin.getInstance().getConfig().getInt("act_enter.prep_sec", 10);
+        if (prepSec <= 0) {
+            beginWave(game, c, 0);
+            return;
+        }
+        c.phase = Phase.PREP;
+        c.prepEndTicks = Bukkit.getCurrentTick() + prepSec * 20L;
+        broadcast(game, Component.text("⏳ 地图准备 " + prepSec + " 秒…", NamedTextColor.YELLOW));
     }
 
     private static void beginWave(AbstractGame game, Cursor c, int waveIndex) {
@@ -163,7 +233,8 @@ public final class WaveScheduler {
         c.runtime = (c.runtime == null) ? WaveEngine.start(game) : c.runtime;
         c.runtime.cleared = false;
         broadcast(game, Component.text("▶ 第 " + (waveIndex + 1) + " / "
-                + c.acts.get(c.actIndex).waves().size() + " 波", NamedTextColor.RED));
+                + c.acts.get(c.actIndex).waves().size() + " 波 · " + c.lastTier
+                + (spec.strategyId().isBlank() ? "" : " · " + spec.strategyId()), NamedTextColor.RED));
     }
 
     private static String tierForWave(Cursor c, int waveIndex) {
@@ -182,8 +253,13 @@ public final class WaveScheduler {
     private static void tick(AbstractGame game, Cursor c) {
         if (c.phase == Phase.DONE) return;
         if (c.runtime != null) WaveEngine.tick(c.runtime);
+        World tw = WorldService.get(game);
+        if (tw != null) WorldService.applyTimeLock(tw);
 
         switch (c.phase) {
+            case PREP -> {
+                if (Bukkit.getCurrentTick() >= c.prepEndTicks) beginWave(game, c, 0);
+            }
             case SPAWNING -> {
                 long elapsed = Bukkit.getCurrentTick() - c.waveStartTicks;
                 World w = WorldService.get(game);
@@ -231,9 +307,10 @@ public final class WaveScheduler {
         int restSec = MaggoteersPlugin.getInstance().getConfig().getInt("rest.duration_sec", 30);
         c.restEndTicks = Bukkit.getCurrentTick() + restSec * 20L;
         c.phase = Phase.REST;
-        for (var pe : game.getPlayers()) {
-            if (pe.player().getGameMode() == org.bukkit.GameMode.ADVENTURE) {
-                MenuFacade.open("maggoteers-rest", pe.player(), game);
+        for (UUID uuid : io.mczju.maggoteers.state.PlayerStateManager.uuidsInGame(game)) {
+            Player pl = Bukkit.getPlayer(uuid);
+            if (pl != null && io.mczju.maggoteers.state.PlayerStateManager.isRunParticipant(game, pl)) {
+                MenuFacade.open("maggoteers-rest", pl, game);
             }
         }
     }

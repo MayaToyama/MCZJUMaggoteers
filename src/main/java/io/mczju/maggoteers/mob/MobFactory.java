@@ -1,32 +1,138 @@
 package io.mczju.maggoteers.mob;
 
-import io.mczju.maggoteers.wave.SpawnStep;
+import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.config.InfernalCfg;
+import io.mczju.maggoteers.integration.InfernalMobsBridge;
+import io.mczju.maggoteers.item.ItemService;
+import io.mczju.maggoteers.wave.*;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.Hoglin;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.PiglinAbstract;
+import org.bukkit.entity.Slime;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.Material;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
 /**
- * 在指定世界生成一只原版怪，套 {@link SpawnStep} 的最终倍率（hpMult/dmgMult/speedMult）。
- * 借鉴前代 VampireSurvivor WaveManager.spawnMob/applyAttributes。Plan 2：无词缀药水/装备（默认空）。
+ * 生成原版怪 + 骑乘步（延迟挂载、嵌套乘客）+ 尺寸/寻敌/装备/死亡召唤配置。
  */
 public final class MobFactory {
     private static final Logger LOG = Logger.getLogger("Maggoteers");
 
+    /** 3×3 九宫格第 {@code index % 9} 格（相对 base 整格偏移 -1/0/+1）。 */
+    public static Location spawnPadLocation(Location base, int index) {
+        int cell = Math.floorMod(index, 9);
+        return base.clone().add(cell % 3 - 1, 0, cell / 3 - 1);
+    }
+
+    /** 生成一步的全部根坐骑；乘客 tick+1 挂载，每实体 {@code track} 回调。 */
+    public static void spawnStepGroup(Location baseLoc, SpawnStep step,
+                                      BiConsumer<LivingEntity, MobSpawnProfile> track) {
+        for (int i = 0; i < step.count(); i++) {
+            Location loc = spawnPadLocation(baseLoc, i);
+            LivingEntity mount = spawnMount(loc, step);
+            if (mount == null) continue;
+            track.accept(mount, MobSpawnProfile.fromStep(step));
+            if (!step.passengers().isEmpty()) {
+                List<PassengerSpawn> passengerTree = step.passengers();
+                Bukkit.getScheduler().runTaskLater(MaggoteersPlugin.getInstance(), () -> {
+                    if (!mount.isValid() || mount.isDead()) return;
+                    List<LivingEntity> direct = new ArrayList<>();
+                    mountPassengerTree(mount, passengerTree, track, direct);
+                    LivingEntity controller = MountControllerResolver.resolve(mount, direct, passengerTree);
+                    MountedSquadRegistry.register(mount, controller);
+                }, 1L);
+            }
+        }
+    }
+
+    /** @deprecated 使用 {@link #spawnStepGroup(Location, SpawnStep, BiConsumer)} */
+    public static List<LivingEntity> spawnStepGroup(Location baseLoc, SpawnStep step) {
+        List<LivingEntity> out = new ArrayList<>();
+        spawnStepGroup(baseLoc, step, (le, p) -> out.add(le));
+        return out;
+    }
+
     public static LivingEntity spawn(Location loc, SpawnStep step) {
+        return spawnMount(loc, step);
+    }
+
+    private static void mountPassengerTree(LivingEntity carrier, List<PassengerSpawn> nodes,
+                                           BiConsumer<LivingEntity, MobSpawnProfile> track,
+                                           List<LivingEntity> directChildrenOut) {
+        int slots = MountPassengerLimits.directPassengerLimit(carrier)
+                - carrier.getPassengers().size();
+        for (PassengerSpawn node : nodes) {
+            if (slots <= 0) {
+                LOG.warning("坐骑 " + carrier.getType() + " 直接乘客已满，跳过 " + node.type());
+                break;
+            }
+            LivingEntity child = spawnPassengerEntity(carrier.getLocation(), node);
+            if (child == null) continue;
+            track.accept(child, MobSpawnProfile.fromPassenger(node));
+            mountPassengerTree(child, node.passengers(), track, null);
+            if (!carrier.addPassenger(child)) {
+                LOG.warning("addPassenger 失败：" + carrier.getType() + " <- " + child.getType());
+                child.remove();
+                continue;
+            }
+            slots--;
+            if (directChildrenOut != null) directChildrenOut.add(child);
+        }
+    }
+
+    public static LivingEntity spawnDeathMob(Location loc, DeathSpawn ds) {
+        if (loc.getWorld() == null) return null;
+        try {
+            var raw = loc.getWorld().spawnEntity(loc, ds.type());
+            if (!(raw instanceof LivingEntity le)) {
+                raw.remove();
+                return null;
+            }
+            le.setRemoveWhenFarAway(false);
+            applyMobStats(le, ds.hpMult(), ds.dmgMult(), ds.speedMult(), ds.scaleMult(), ds.followRangeMult());
+            applyName(le, ds.affixes());
+            applyAffixPotions(le, ds.affixes(), ds.potions());
+            applyAffixVisuals(le, ds.affixes());
+            InfernalMobsBridge.mechanize(le, ds.infernal());
+            applyEquipment(le, ds.equipment());
+            if (le instanceof Mob m) m.setAware(true);
+            return le;
+        } catch (Exception e) {
+            LOG.warning("死亡召唤失败 " + ds.type() + "：" + e.getMessage());
+            return null;
+        }
+    }
+
+    private static LivingEntity spawnMount(Location loc, SpawnStep step) {
         if (loc.getWorld() == null) return null;
         try {
             var raw = loc.getWorld().spawnEntity(loc, step.type());
-            if (!(raw instanceof LivingEntity le)) { raw.remove(); return null; }
+            if (!(raw instanceof LivingEntity le)) {
+                raw.remove();
+                return null;
+            }
             le.setRemoveWhenFarAway(false);
-            applyMultipliers(le, step.hpMult(), step.dmgMult(), step.speedMult());
-            applyName(le, step);
-            applyAffixPotions(le, step);
-            if (le instanceof Mob m) m.setAware(true);
+            applyMobStats(le, step.hpMult(), step.dmgMult(), step.speedMult(),
+                    step.scaleMult(), step.followRangeMult());
+            applyName(le, step.affixes());
+            applyAffixPotions(le, step.affixes(), step.potions());
+            applyAffixVisuals(le, step.affixes());
+            InfernalMobsBridge.mechanize(le, step.infernal());
+            applyEquipment(le, step.equipment());
+            MountPassengerLimits.prepareMount(le);
             return le;
         } catch (Exception e) {
             LOG.warning("生成怪物失败 " + step.type() + "：" + e.getMessage());
@@ -34,7 +140,75 @@ public final class MobFactory {
         }
     }
 
-    /** hpMult/dmgMult/speedMult 直接乘到基础属性（Plan 3：这些值已是 coeff×affix×scaling）。 */
+    public static LivingEntity spawnPassengerEntity(Location loc, PassengerSpawn ps) {
+        if (loc.getWorld() == null) return null;
+        try {
+            var raw = loc.getWorld().spawnEntity(loc, ps.type());
+            if (!(raw instanceof LivingEntity le)) {
+                raw.remove();
+                return null;
+            }
+            le.setRemoveWhenFarAway(false);
+            applyMobStats(le, ps.hpMult(), ps.dmgMult(), ps.speedMult(),
+                    ps.scaleMult(), ps.followRangeMult());
+            applyName(le, ps.affixes());
+            applyAffixPotions(le, ps.affixes(), ps.potions());
+            applyAffixVisuals(le, ps.affixes());
+            InfernalMobsBridge.mechanize(le, ps.infernal());
+            applyEquipment(le, ps.equipment());
+            MountPassengerLimits.prepareMount(le);
+            if (le instanceof Mob m) m.setAware(true);
+            return le;
+        } catch (Exception e) {
+            LOG.warning("生成乘客失败 " + ps.type() + "：" + e.getMessage());
+            return null;
+        }
+    }
+
+    /** 调试用：在玩家位置生成带词缀的怪。 */
+    public static LivingEntity spawnDebugMob(Location loc, org.bukkit.entity.EntityType type,
+                                             double hpMult, double dmgMult, double spdMult,
+                                             List<String> affixIds) {
+        SpawnStep fake = new SpawnStep(
+                new Vec3(loc.getX(), loc.getY(), loc.getZ()),
+                type, 1, hpMult, dmgMult, spdMult, 1.0, 1.0, 1.0,
+                0, affixIds, List.of(), InfernalCfg.NONE, List.of(), List.of(), List.of());
+        return spawnMount(loc, fake);
+    }
+
+    private static void applyMobStats(LivingEntity le, double hpMult, double dmgMult, double speedMult,
+                                      double scaleMult, double followRangeMult) {
+        // setSize 会重置 hp/dmg/speed，必须在 applyMultipliers 之前
+        ensureCombatSlimeSize(le);
+        double gScale = globalScaleMult();
+        double gFollow = globalFollowRangeMult();
+        applyMultipliers(le, hpMult, dmgMult, speedMult);
+        applyScale(le, scaleMult * gScale);
+        applyFollowRange(le, followRangeMult * gFollow);
+        preventOverworldZombification(le);
+    }
+
+    /** Size≤1 不伤人；局内一律至少 Size 2。分裂由 {@code SlimeSplitEvent} 取消。 */
+    private static void ensureCombatSlimeSize(LivingEntity le) {
+        if (le instanceof Slime slime && slime.getSize() < 2) {
+            slime.setSize(2);
+        }
+    }
+
+    /** 主世界虚空图里猪灵/疣猪兽默认会转化；局内刷怪一律免疫。 */
+    private static void preventOverworldZombification(LivingEntity le) {
+        if (le instanceof PiglinAbstract piglin) piglin.setImmuneToZombification(true);
+        else if (le instanceof Hoglin hoglin) hoglin.setImmuneToZombification(true);
+    }
+
+    private static double globalScaleMult() {
+        return MaggoteersPlugin.getInstance().getConfig().getDouble("mob_attributes.scale", 1.0);
+    }
+
+    private static double globalFollowRangeMult() {
+        return MaggoteersPlugin.getInstance().getConfig().getDouble("mob_attributes.follow_range", 1.0);
+    }
+
     private static void applyMultipliers(LivingEntity le, double hpMult, double dmgMult, double spdMult) {
         AttributeInstance hp = le.getAttribute(Attribute.MAX_HEALTH);
         if (hp != null) {
@@ -48,25 +222,123 @@ public final class MobFactory {
         if (spd != null) spd.setBaseValue(spd.getBaseValue() * Math.max(0.0001, spdMult));
     }
 
-    private static void applyName(LivingEntity le, SpawnStep step) {
-        if (!step.affixes().isEmpty()) {
-            le.customName(Component.text(String.join(" ", step.affixes())));
+    private static void applyScale(LivingEntity le, double mult) {
+        if (Math.abs(mult - 1.0) < 1.0e-6) return;
+        AttributeInstance scale = le.getAttribute(Attribute.SCALE);
+        if (scale == null) {
+            LOG.fine(le.getType() + " 无 SCALE 属性，忽略 scale 配置");
+            return;
+        }
+        scale.setBaseValue(scale.getBaseValue() * Math.max(0.05, mult));
+    }
+
+    private static void applyFollowRange(LivingEntity le, double mult) {
+        if (Math.abs(mult - 1.0) < 1.0e-6) return;
+        AttributeInstance fr = le.getAttribute(Attribute.FOLLOW_RANGE);
+        if (fr == null) return;
+        fr.setBaseValue(fr.getBaseValue() * Math.max(0.1, mult));
+    }
+
+    static void applyEquipment(LivingEntity le, List<MobEquipment> equipment) {
+        if (equipment == null || equipment.isEmpty()) return;
+        EntityEquipment eq = le.getEquipment();
+        if (eq == null) return;
+        for (MobEquipment entry : equipment) {
+            if (entry.itemId().isBlank()) continue;
+            ItemStack stack = ItemService.createItem(entry.itemId(), 1).orElse(null);
+            if (stack == null) {
+                LOG.warning("怪物装备物品不存在（ItemCreator）：" + entry.itemId());
+                continue;
+            }
+            EquipmentSlot slot = parseSlot(entry.slot());
+            if (slot == null) {
+                LOG.warning("未知装备槽 " + entry.slot() + "，物品 " + entry.itemId());
+                continue;
+            }
+            setSlot(eq, slot, stack);
+        }
+    }
+
+    private static EquipmentSlot parseSlot(String raw) {
+        if (raw == null || raw.isBlank()) return EquipmentSlot.HAND;
+        return switch (raw.toUpperCase()) {
+            case "HEAD", "HELMET" -> EquipmentSlot.HEAD;
+            case "CHEST", "CHESTPLATE" -> EquipmentSlot.CHEST;
+            case "LEGS", "LEGGINGS" -> EquipmentSlot.LEGS;
+            case "FEET", "BOOTS" -> EquipmentSlot.FEET;
+            case "MAIN_HAND", "HAND", "MAIN" -> EquipmentSlot.HAND;
+            case "OFF_HAND", "OFFHAND" -> EquipmentSlot.OFF_HAND;
+            default -> null;
+        };
+    }
+
+    private static void setSlot(EntityEquipment eq, EquipmentSlot slot, ItemStack stack) {
+        switch (slot) {
+            case HEAD -> {
+                eq.setHelmet(stack);
+                eq.setHelmetDropChance(0f);
+            }
+            case CHEST -> {
+                eq.setChestplate(stack);
+                eq.setChestplateDropChance(0f);
+            }
+            case LEGS -> {
+                eq.setLeggings(stack);
+                eq.setLeggingsDropChance(0f);
+            }
+            case FEET -> {
+                eq.setBoots(stack);
+                eq.setBootsDropChance(0f);
+            }
+            case HAND -> {
+                eq.setItemInMainHand(stack);
+                eq.setItemInMainHandDropChance(0f);
+            }
+            case OFF_HAND -> {
+                eq.setItemInOffHand(stack);
+                eq.setItemInOffHandDropChance(0f);
+            }
+            default -> { }
+        }
+    }
+
+    private static void applyName(LivingEntity le, List<String> affixes) {
+        if (affixes != null && !affixes.isEmpty()) {
+            le.customName(Component.text(String.join(" ", affixes)));
             le.setCustomNameVisible(true);
         }
     }
 
-    /** 词缀药水（mob-self：affix.on() 非 hit-player 的药水施加给怪自身）。 */
-    private static void applyAffixPotions(org.bukkit.entity.LivingEntity le, SpawnStep step) {
+    static void applyAffixVisuals(LivingEntity le, List<String> affixIds) {
+        if (affixIds == null || !affixIds.contains("invisible")) return;
+        EntityEquipment eq = le.getEquipment();
+        if (eq == null) return;
+        ItemStack bottle = new ItemStack(Material.GLASS_BOTTLE);
+        eq.setHelmet(bottle);
+        eq.setHelmetDropChance(0f);
+    }
+
+    private static void applyAffixPotions(LivingEntity le, List<String> affixIds,
+                                          List<PotionSpec> stepPotions) {
         var affixSvc = io.mczju.maggoteers.config.AffixService.getInstance();
-        for (String affixId : step.affixes()) {
-            var a = affixSvc.get(affixId);
-            if (a == null || "hit-player".equals(a.on())) continue;
-            for (var ps : a.potions()) {
+        if (affixIds != null) {
+            for (String affixId : affixIds) {
+                var a = affixSvc.get(affixId);
+                if (a == null) continue;
+                for (var ps : a.potions()) {
+                    var type = io.mczju.maggoteers.util.GameRegistries.potionEffect(ps.effect());
+                    if (type != null) le.addPotionEffect(new org.bukkit.potion.PotionEffect(type, ps.dur(), ps.amp()));
+                }
+            }
+        }
+        if (stepPotions != null) {
+            for (var ps : stepPotions) {
                 var type = io.mczju.maggoteers.util.GameRegistries.potionEffect(ps.effect());
                 if (type != null) le.addPotionEffect(new org.bukkit.potion.PotionEffect(type, ps.dur(), ps.amp()));
             }
         }
     }
 
+    /** 战斗触发型词缀已退役；所有 affix 药水均在刷怪时施加。 */
     private MobFactory() {}
 }

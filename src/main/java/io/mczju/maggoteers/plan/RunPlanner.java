@@ -38,24 +38,25 @@ public final class RunPlanner {
         ScalingConfig.Scaling snap = scaling.scaleFor(playerCount);
         List<ActPlan> out = new ArrayList<>(3);
         for (int i = 0; i < ACTS.length; i++) {
-            out.add(planAct(root.derive(i), ACTS[i], defs, maps, snap, affixes, cfg));
+            out.add(planAct(root, i, ACTS[i], defs, maps, snap, affixes, cfg));
         }
         return out;
     }
 
-    private static ActPlan planAct(SeededRng actRng, String act, WaveDefinitions defs, MapLibrary maps,
+    private static ActPlan planAct(SeededRng root, int actIndex, String act, WaveDefinitions defs, MapLibrary maps,
                                    ScalingConfig.Scaling snap, AffixService affixes, RunConfig cfg) {
         List<MapEntry> avail = maps.maps(act);
         if (avail.isEmpty()) throw new IllegalStateException(act + " 无可用地图");
+        SeededRng actRng = root.derive(1_000L + actIndex);
         MapEntry map = avail.get(actRng.nextInt(avail.size()));
         Vec3 origin = cfg.origin(act);
 
         List<WaveSpec> waves = new ArrayList<>();
         for (int i = 0; i < cfg.weak(act); i++)
-            waves.add(rollWave(actRng.derive(100 + i), act, "weak", map, origin, defs, snap, affixes));
+            waves.add(rollWave(root.derive(wavePickSalt(actIndex, "weak", i)), act, "weak", map, origin, defs, snap, affixes));
         for (int i = 0; i < cfg.strong(act); i++)
-            waves.add(rollWave(actRng.derive(200 + i), act, "strong", map, origin, defs, snap, affixes));
-        waves.add(rollWave(actRng.derive(300), act, "boss", map, origin, defs, snap, affixes));
+            waves.add(rollWave(root.derive(wavePickSalt(actIndex, "strong", i)), act, "strong", map, origin, defs, snap, affixes));
+        waves.add(rollWave(root.derive(wavePickSalt(actIndex, "boss", 0)), act, "boss", map, origin, defs, snap, affixes));
 
         return new ActPlan(map.mapId(), Coords.resolve(origin, map.points().playerSpawn()), waves);
     }
@@ -67,11 +68,14 @@ public final class RunPlanner {
         if (base.isEmpty()) throw new IllegalStateException(act + "/" + tier + " 池为空");
 
         double[] weights = base.stream().mapToDouble(WavesConfig.PoolEntry::weight).toArray();
-        SpawnStrategyCfg strat = defs.strategy(base.get(rng.weightedIndex(weights)).strategy());
-        if (strat == null) throw new IllegalStateException("strategy 未定义: " + base);
+        int picked = rng.weightedIndex(weights);
+        String pickedId = base.get(picked).strategy();
+        SpawnStrategyCfg strat = defs.strategy(pickedId);
+        if (strat == null) throw new IllegalStateException("strategy 未定义: " + pickedId);
+
+        SeededRng countRng = rng.derive(50_000L);
 
         List<StepCfg> ordered = new ArrayList<>(strat.steps());
-        ordered.sort(Comparator.comparingInt(StepCfg::delaySec));
 
         List<SpawnStep> steps = new ArrayList<>();
         for (StepCfg sc : ordered) {
@@ -82,17 +86,88 @@ public final class RunPlanner {
                             + "（strategy=" + strat.id() + "，G3）");
             List<Affix> resolved = affixes.resolve(sc.affixes());
             Compose.MobScale ms = Compose.compose(sc.coeff(), resolved, snap);
-            int resolvedCount = ScalingConfig.rollCount(sc.count(), snap.mobCount(), rng);
+            int resolvedCount = ScalingConfig.rollCount(sc.count(), snap.mobCount(), countRng);
+            List<PassengerSpawn> passengerSpawns = buildPassengerTrees(sc.passengers(), affixes, snap, countRng);
+            List<DeathSpawn> onDeath = buildDeathSpawns(sc.onDeath(), affixes, snap, countRng);
             steps.add(new SpawnStep(
                     Coords.resolve(origin, rel), sc.type(), resolvedCount,
                     ms.hp(), ms.dmg(), ms.speed(), ms.drop(),
+                    ms.scale(), ms.followRange(),
                     sc.delaySec() * 20,
                     sc.affixes(),
-                    resolved.stream().flatMap(a -> a.potions().stream()).toList()));
+                    resolved.stream().flatMap(a -> a.potions().stream()).toList(),
+                    sc.infernal(),
+                    sc.equipment(),
+                    onDeath,
+                    passengerSpawns));
         }
         List<RewardItem> rewards = strat.clearReward().stream()
                 .map(r -> new RewardItem(r.item(), r.amount())).toList();
-        return new WaveSpec(steps, strat.repeat(), rewards);
+        return new WaveSpec(pickedId, steps, strat.repeat(), rewards);
+    }
+
+    /** 全局剧本 seed 下每次池 roll 的唯一盐（含层序 / tier / 层内序号）。 */
+    private static long wavePickSalt(int actIndex, String tier, int waveIndexInTier) {
+        int tierCode = switch (tier) {
+            case "weak" -> 1;
+            case "strong" -> 2;
+            case "boss" -> 3;
+            default -> 0;
+        };
+        return (actIndex + 1L) * 1_000_000L + tierCode * 10_000L + waveIndexInTier;
+    }
+
+    private static List<PassengerSpawn> buildPassengerTrees(List<PassengerCfg> configs,
+                                                            AffixService affixes,
+                                                            ScalingConfig.Scaling snap,
+                                                            SeededRng countRng) {
+        if (configs == null || configs.isEmpty()) return List.of();
+        List<PassengerSpawn> out = new ArrayList<>();
+        for (PassengerCfg pc : configs) {
+            List<Affix> pa = affixes.resolve(pc.affixes());
+            Compose.MobScale pms = Compose.compose(pc.coeff(), pa, snap);
+            int pcnt = ScalingConfig.rollCount(pc.count(), snap.mobCount(), countRng);
+            List<PassengerSpawn> nested = buildPassengerTrees(pc.passengers(), affixes, snap, countRng);
+            List<DeathSpawn> onDeath = buildDeathSpawns(pc.onDeath(), affixes, snap, countRng);
+            for (int i = 0; i < pcnt; i++) {
+                out.add(new PassengerSpawn(
+                        pc.type(), pms.hp(), pms.dmg(), pms.speed(), pms.drop(),
+                        pms.scale(), pms.followRange(),
+                        pc.affixes(),
+                        pa.stream().flatMap(a -> a.potions().stream()).toList(),
+                        pc.infernal(),
+                        pc.equipment(),
+                        onDeath,
+                        nested));
+            }
+        }
+        return out;
+    }
+
+    private static List<DeathSpawn> buildDeathSpawns(List<DeathSpawnCfg> configs,
+                                                     AffixService affixes,
+                                                     ScalingConfig.Scaling snap,
+                                                     SeededRng countRng) {
+        if (configs == null || configs.isEmpty()) return List.of();
+        List<DeathSpawn> out = new ArrayList<>();
+        for (DeathSpawnCfg dc : configs) {
+            List<Affix> da = affixes.resolve(dc.affixes());
+            Compose.MobScale dms = Compose.compose(dc.coeff(), da, snap);
+            int dcnt = ScalingConfig.rollCount(dc.count(), snap.mobCount(), countRng);
+            List<DeathSpawn> nested = buildDeathSpawns(dc.onDeath(), affixes, snap, countRng);
+            for (int i = 0; i < dcnt; i++) {
+                out.add(new DeathSpawn(
+                        dc.type(), 1,
+                        dms.hp(), dms.dmg(), dms.speed(), dms.drop(),
+                        dms.scale(), dms.followRange(),
+                        dc.affixes(),
+                        da.stream().flatMap(a -> a.potions().stream()).toList(),
+                        dc.infernal(),
+                        dc.equipment(),
+                        nested));
+            }
+        }
+        return out;
     }
 
     /** 从 config.yml 读层原点 + 每层波数，构造纯 {@link RunConfig}。 */

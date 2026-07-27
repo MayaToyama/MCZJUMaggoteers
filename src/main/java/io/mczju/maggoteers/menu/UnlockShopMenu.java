@@ -4,6 +4,7 @@ import com.github.mczjuops.mczjugamecore.menu.Menu;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import io.mczju.maggoteers.persist.MaggoteersPlayerData;
+import io.mczju.maggoteers.reward.CollectibleService;
 import io.mczju.maggoteers.reward.RewardOption;
 import io.mczju.maggoteers.reward.RewardService;
 import net.kyori.adventure.text.Component;
@@ -68,12 +69,16 @@ public class UnlockShopMenu extends Menu {
     }
 
     private static ItemStack icon(RewardOption o, int cost, boolean owned) {
-        ItemStack s = new ItemStack(owned ? Material.ENCHANTED_BOOK : (o.icon() != null ? o.icon() : Material.PAPER));
+        ItemStack base = owned ? new ItemStack(Material.ENCHANTED_BOOK)
+                : CollectibleService.preview(o.id(), 1).orElse(new ItemStack(Material.PAPER));
+        ItemStack s = base.clone();
         ItemMeta m = s.getItemMeta();
         if (m != null) {
-            m.displayName(Component.text(o.displayPlain(), owned ? NamedTextColor.GREEN : NamedTextColor.AQUA)
-                    .decoration(TextDecoration.ITALIC, false));
-            var lore = new ArrayList<Component>();
+            if (s.getType() == Material.PAPER) {
+                m.displayName(Component.text(o.displayPlain(), owned ? NamedTextColor.GREEN : NamedTextColor.AQUA)
+                        .decoration(TextDecoration.ITALIC, false));
+            }
+            var lore = m.lore() != null ? new ArrayList<>(m.lore()) : new ArrayList<Component>();
             lore.add(Component.text(owned ? "已解锁" : ("花费 " + cost + " 卫戍币"), NamedTextColor.YELLOW)
                     .decoration(TextDecoration.ITALIC, false));
             if (o.description() != null && !o.description().isBlank()) {

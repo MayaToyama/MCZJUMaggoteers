@@ -34,7 +34,9 @@ public record WaveSpec(String strategyId, List<SpawnStep> steps, int repeat, Lis
                 out.add(new SpawnStep(
                         s.point(), s.type(), s.count(),
                         s.hpMult(), s.dmgMult(), s.speedMult(), s.dropMult(),
-                        timeline, s.affixes(), s.potions(), s.passengers()));
+                        s.scaleMult(), s.followRangeMult(),
+                        timeline, s.affixes(), s.potions(), s.infernal(),
+                        s.equipment(), s.onDeath(), s.passengers()));
             }
         }
         return out;

@@ -6,6 +6,7 @@ import io.mczju.maggoteers.game.ClassSelectGate;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
+import io.mczju.maggoteers.reward.CollectibleService;
 import io.mczju.maggoteers.reward.RewardOption;
 import io.mczju.maggoteers.reward.RewardService;
 import net.kyori.adventure.text.Component;
@@ -39,15 +40,11 @@ public class ClassSelectMenu extends Menu {
 
     @Override
     protected void setup() {
+        Player viewer = player.player();
         int n = Math.min(SLOTS.length, offers.size());
         for (int i = 0; i < n; i++) {
             RewardOption opt = offers.get(i);
-            Material mat = switch (opt.category()) {
-                case WEAPON -> Material.IRON_SWORD;
-                case STAT -> Material.GOLDEN_APPLE;
-                case SUPPLY -> Material.CHEST;
-            };
-            setSlot(SLOTS[i], icon(opt, mat), (clicker, ev) -> {
+            setSlot(SLOTS[i], icon(opt, viewer), (clicker, ev) -> {
                 Player p = clicker.player();
                 if (ClassSelectGate.hasChosen(game, p.getUniqueId())) return;
                 if (!ItemService.spendOneKind(p, ItemKind.CLASS_TICKET)) {
@@ -65,22 +62,44 @@ public class ClassSelectMenu extends Menu {
         }
     }
 
-    private static ItemStack icon(RewardOption opt, Material mat) {
-        ItemStack stack = ItemService.createItem(opt.item(), 1).orElse(new ItemStack(mat));
+    private ItemStack icon(RewardOption opt, Player viewer) {
+        ItemStack stack = switch (opt.category()) {
+            case WEAPON, SUPPLY -> ItemService.createItem(opt.item(), 1)
+                    .orElse(new ItemStack(Material.PAPER));
+            case STAT -> {
+                if (game instanceof MaggoteersGame mg) {
+                    yield CollectibleService.preview(opt.id(), viewer, mg)
+                            .orElse(fallbackPaper(opt));
+                }
+                yield CollectibleService.preview(opt.id(), 1).orElse(fallbackPaper(opt));
+            }
+        };
+        return appendGuiLore(stack, opt);
+    }
+
+    private static ItemStack fallbackPaper(RewardOption opt) {
+        ItemStack stack = new ItemStack(Material.PAPER);
         ItemMeta meta = stack.getItemMeta();
         if (meta != null) {
             meta.displayName(Component.text(opt.displayPlain(), NamedTextColor.GOLD)
                     .decoration(TextDecoration.ITALIC, false));
-            List<Component> lore = new ArrayList<>();
-            if (opt.description() != null && !opt.description().isBlank()) {
-                lore.add(Component.text(opt.description(), NamedTextColor.GRAY)
-                        .decoration(TextDecoration.ITALIC, false));
-            }
-            lore.add(Component.text("▶ 点击选择", NamedTextColor.YELLOW)
-                    .decoration(TextDecoration.ITALIC, false));
-            meta.lore(lore);
             stack.setItemMeta(meta);
         }
+        return stack;
+    }
+
+    private static ItemStack appendGuiLore(ItemStack stack, RewardOption opt) {
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null) return stack;
+        var lore = meta.lore() != null ? new ArrayList<>(meta.lore()) : new ArrayList<Component>();
+        if (opt.description() != null && !opt.description().isBlank()) {
+            lore.add(Component.text(opt.description(), NamedTextColor.GRAY)
+                    .decoration(TextDecoration.ITALIC, false));
+        }
+        lore.add(Component.text("▶ 点击选择", NamedTextColor.YELLOW)
+                .decoration(TextDecoration.ITALIC, false));
+        meta.lore(lore);
+        stack.setItemMeta(meta);
         return stack;
     }
 }

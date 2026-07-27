@@ -28,7 +28,20 @@
   <build>
     <finalName>Maggoteers-${project.version}</finalName>
     <resources>
-      <resource><directory>src/main/resources</directory><filtering>true</filtering></resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <excludes>
+          <exclude>**/*.nbt</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>**/*.nbt</include>
+        </includes>
+      </resource>
     </resources>
     <plugins>
       <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.13.0</version><configuration><release>25</release></configuration></plugin>

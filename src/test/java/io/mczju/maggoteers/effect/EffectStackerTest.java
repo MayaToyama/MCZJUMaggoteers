@@ -71,7 +71,7 @@ class EffectStackerTest {
     void sweepRemovesOnFirstFireWhenChargesMinusOne() {
         PlayerEffect t = timedIgnored("burst", -1, Trigger.ON_DAMAGE_DEALT);
         List<PlayerEffect> list = new java.util.ArrayList<>(List.of(t));
-        assertEquals(1, EffectStacker.sweepExpiry(list, Trigger.ON_DAMAGE_DEALT));
+        assertEquals(1, EffectStacker.sweepExpiry(list, Trigger.ON_DAMAGE_DEALT).size());
         assertTrue(list.isEmpty());
     }
 
@@ -79,9 +79,9 @@ class EffectStackerTest {
     void sweepCountsDownPositiveCharges() {
         PlayerEffect t = timedIgnored("berry", 2, Trigger.ON_KILL);
         List<PlayerEffect> list = new java.util.ArrayList<>(List.of(t));
-        assertEquals(0, EffectStacker.sweepExpiry(list, Trigger.ON_KILL));  // 2→1，未移除
+        assertTrue(EffectStacker.sweepExpiry(list, Trigger.ON_KILL).isEmpty());  // 2→1，未移除
         assertEquals(1, list.get(0).expiryCharges());
-        assertEquals(1, EffectStacker.sweepExpiry(list, Trigger.ON_KILL));  // 1→0，移除
+        assertEquals(1, EffectStacker.sweepExpiry(list, Trigger.ON_KILL).size());  // 1→0，移除
         assertTrue(list.isEmpty());
     }
 
@@ -89,7 +89,7 @@ class EffectStackerTest {
     void sweepOnlyMatchesFiredTrigger() {
         PlayerEffect t = timedIgnored("x", -1, Trigger.ON_WAVE_CLEAR);
         List<PlayerEffect> list = new java.util.ArrayList<>(List.of(t));
-        assertEquals(0, EffectStacker.sweepExpiry(list, Trigger.ON_KILL));  // 不同 trigger，不动
+        assertTrue(EffectStacker.sweepExpiry(list, Trigger.ON_KILL).isEmpty());  // 不同 trigger，不动
         assertEquals(1, list.size());
     }
 }

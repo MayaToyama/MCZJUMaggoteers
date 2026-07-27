@@ -1,4 +1,5 @@
 # 非券种物品（货币/职业券改由 config.yml items 段配置）
+# ItemCreator 格式见 docs/ICReadme.md；PDC maggoteers:id 供 ItemInteractRouter 识别
 
 maggoteers:revive_coin:
   material: TOTEM_OF_UNDYING
@@ -50,13 +51,307 @@ maggoteers:shop_emerald:
 
 maggoteers:test_blade:
   material: IRON_SWORD
-  customName: "<aqua>测试之刃"
+  customName: "<red>旋风斩"
   lore:
-    - "<yellow>+4 攻击力（测试用）"
+    - "<gray>右键：旋转剑气范围斩"
+    - "<dark_gray>冷却 3 秒"
   enchantments:
     - minecraft:sharpness: 3
   unbreakable: true
+  maxStackSize: 1
+  useCooldown:
+    cooldownGroup: "maggoteers:test_blade"
+    seconds: 3
   pdc:
-    - key: maggoteers:kind
+    - key: maggoteers:id
       type: STRING
-      value: weapon_test
+      value: maggoteers:test_blade
+  use_ability:
+    cooldown_sec: 3
+    effect: DAMAGE_AREA
+    params:
+      damage: 6.0
+      radius: 6.0
+      targets: enemies
+      enemy_scope: tracked
+    fx:
+      preset: SPIRAL_RADIUS
+      radius: 6.0
+      particle: CRIT
+      sound: ENTITY_PLAYER_ATTACK_SWEEP
+      sound_volume: 0.9
+      sound_pitch: 1.1
+      density: 48
+      spiral_ticks: 44
+
+maggoteers:healing_staff:
+  material: STICK
+  itemModel: minecraft:diamond_spear
+  customName: "<green>治疗法杖"
+  lore:
+    - "<gray>右键：5 格内队友 +3 心"
+    - "<dark_gray>冷却 25 秒"
+  glint: true
+  unbreakable: true
+  maxStackSize: 1
+  useCooldown:
+    cooldownGroup: "maggoteers:healing_staff"
+    seconds: 25
+  pdc:
+    - key: maggoteers:id
+      type: STRING
+      value: maggoteers:healing_staff
+  use_ability:
+    cooldown_sec: 25
+    effect: HEAL_AREA
+    params:
+      amount: 6.0
+      radius: 5.0
+      targets: allies
+      include_self: true
+    fx:
+      preset: RIPPLE_RINGS
+      radius: 5.0
+      particle: HAPPY_VILLAGER
+      ripple_rings: 4
+      sound: BLOCK_BEACON_POWER_SELECT
+      sound_volume: 1.0
+      density: 56
+
+maggoteers:excalibur:
+  material: NETHERITE_SWORD
+  customName: "<light_purple>Ex咖喱棒"
+  lore:
+    - "<gold>右键：准星方向圣剑光束"
+    - "<dark_gray>冷却 10 秒"
+  enchantments:
+    - minecraft:sharpness: 5
+  glint: true
+  unbreakable: true
+  maxStackSize: 1
+  useCooldown:
+    cooldownGroup: "maggoteers:excalibur"
+    seconds: 10
+  pdc:
+    - key: maggoteers:id
+      type: STRING
+      value: maggoteers:excalibur
+  use_ability:
+    cooldown_sec: 10
+    effect: DAMAGE_BEAM
+    params:
+      damage: 14.0
+      ray_length: 32.0
+      beam_radius: 1.25
+      targets: enemies
+      enemy_scope: tracked
+    fx:
+      preset: AIM_RAY
+      particle: END_ROD
+      ray_length: 32.0
+      density: 64
+      sound: ENTITY_LIGHTNING_BOLT_THUNDER
+      sound_volume: 0.7
+      sound_pitch: 1.15
+
+# ── 怪物专用装备（waves.yml equipment 引用，不给玩家）────────────────
+maggoteers:mob_iron_spear:
+  material: IRON_SWORD
+  itemModel: minecraft:iron_spear
+  customName: "<gray>铁矛"
+  unbreakable: true
+  attributeModifiers:
+    - attribute: minecraft:attack_damage
+      amount: 6
+      operation: ADD_NUMBER
+      slot: mainhand
+
+maggoteers:mob_gold_spear:
+  material: GOLDEN_SWORD
+  itemModel: minecraft:golden_spear
+  customName: "<gold>金矛"
+  unbreakable: true
+  attributeModifiers:
+    - attribute: minecraft:entity_interaction_range
+      amount: 2
+      operation: ADD_NUMBER
+      slot: mainhand
+    - attribute: minecraft:attack_damage
+      amount: 5
+      operation: ADD_NUMBER
+      slot: mainhand
+
+maggoteers:mob_iron_sword_ub10:
+  material: IRON_SWORD
+  unbreakable: true
+  enchantments:
+    - minecraft:unbreaking: 10
+
+maggoteers:mob_iron_sword_reach:
+  material: IRON_SWORD
+  unbreakable: true
+  enchantments:
+    - minecraft:unbreaking: 10
+  attributeModifiers:
+    - attribute: minecraft:entity_interaction_range
+      amount: 2
+      operation: ADD_NUMBER
+      slot: mainhand
+    - attribute: minecraft:attack_speed
+      amount: -0.2
+      operation: ADD_NUMBER
+      slot: mainhand
+
+maggoteers:mob_iron_axe:
+  material: IRON_AXE
+  unbreakable: true
+
+maggoteers:mob_diamond_axe_sharp5:
+  material: DIAMOND_AXE
+  unbreakable: true
+  enchantments:
+    - minecraft:sharpness: 5
+
+maggoteers:mob_diamond_sword:
+  material: DIAMOND_SWORD
+  unbreakable: true
+
+maggoteers:mob_gold_sword_flame:
+  material: GOLDEN_SWORD
+  unbreakable: true
+  enchantments:
+    - minecraft:fire_aspect: 2
+
+maggoteers:mob_gold_shovel:
+  material: GOLDEN_SHOVEL
+  unbreakable: true
+
+maggoteers:mob_trident:
+  material: TRIDENT
+  unbreakable: true
+
+maggoteers:mob_bow:
+  material: BOW
+  unbreakable: true
+
+maggoteers:mob_bow_power1:
+  material: BOW
+  unbreakable: true
+  enchantments:
+    - minecraft:power: 1
+
+maggoteers:mob_bow_power2:
+  material: BOW
+  unbreakable: true
+  enchantments:
+    - minecraft:power: 2
+
+maggoteers:mob_bow_power4:
+  material: BOW
+  unbreakable: true
+  enchantments:
+    - minecraft:power: 4
+
+maggoteers:mob_bow_power5:
+  material: BOW
+  unbreakable: true
+  enchantments:
+    - minecraft:power: 5
+
+maggoteers:mob_bow_punch2:
+  material: BOW
+  unbreakable: true
+  enchantments:
+    - minecraft:punch: 2
+
+maggoteers:mob_bow_flame_punch:
+  material: BOW
+  unbreakable: true
+  enchantments:
+    - minecraft:flame: 1
+    - minecraft:punch: 1
+
+maggoteers:mob_crossbow:
+  material: CROSSBOW
+  unbreakable: true
+
+maggoteers:mob_crossbow_power2:
+  material: CROSSBOW
+  unbreakable: true
+  enchantments:
+    - minecraft:piercing: 2
+
+maggoteers:mob_crossbow_power3:
+  material: CROSSBOW
+  unbreakable: true
+  enchantments:
+    - minecraft:piercing: 3
+
+maggoteers:mob_crossbow_flame:
+  material: CROSSBOW
+  unbreakable: true
+  enchantments:
+    - minecraft:flame: 1
+
+maggoteers:mob_crossbow_flame_quick:
+  material: CROSSBOW
+  unbreakable: true
+  enchantments:
+    - minecraft:flame: 1
+    - minecraft:quick_charge: 1
+
+maggoteers:mob_iron_helmet_ub10:
+  material: IRON_HELMET
+  unbreakable: true
+  enchantments:
+    - minecraft:unbreaking: 10
+
+maggoteers:mob_iron_chest_ub10:
+  material: IRON_CHESTPLATE
+  unbreakable: true
+  enchantments:
+    - minecraft:unbreaking: 10
+
+maggoteers:mob_iron_legs_ub10:
+  material: IRON_LEGGINGS
+  unbreakable: true
+  enchantments:
+    - minecraft:unbreaking: 10
+
+maggoteers:mob_iron_boots_ub10:
+  material: IRON_BOOTS
+  unbreakable: true
+  enchantments:
+    - minecraft:unbreaking: 10
+
+maggoteers:mob_gold_helmet:
+  material: GOLDEN_HELMET
+  unbreakable: true
+
+maggoteers:mob_gold_chest:
+  material: GOLDEN_CHESTPLATE
+  unbreakable: true
+
+maggoteers:mob_gold_legs:
+  material: GOLDEN_LEGGINGS
+  unbreakable: true
+
+maggoteers:mob_gold_boots:
+  material: GOLDEN_BOOTS
+  unbreakable: true
+
+maggoteers:mob_diamond_helmet:
+  material: DIAMOND_HELMET
+  unbreakable: true
+
+maggoteers:mob_diamond_chest:
+  material: DIAMOND_CHESTPLATE
+  unbreakable: true
+
+maggoteers:mob_diamond_legs:
+  material: DIAMOND_LEGGINGS
+  unbreakable: true
+
+maggoteers:mob_diamond_boots:
+  material: DIAMOND_BOOTS
+  unbreakable: true

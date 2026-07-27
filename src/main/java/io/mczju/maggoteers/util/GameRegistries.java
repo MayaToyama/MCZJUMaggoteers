@@ -3,6 +3,7 @@ package io.mczju.maggoteers.util;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Registry;
+import io.mczju.maggoteers.effect.VirtualStats;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.EntityType;
 import org.bukkit.potion.PotionEffectType;
@@ -30,12 +31,26 @@ public final class GameRegistries {
         PotionEffectType t = Registry.POTION_EFFECT_TYPE.get(NamespacedKey.minecraft(u.toLowerCase(Locale.ROOT)));
         if (t != null) return t;
         t = Registry.POTION_EFFECT_TYPE.get(NamespacedKey.minecraft(u.toLowerCase(Locale.ROOT).replace('_', '.')));
-        return t;
+        if (t != null) return t;
+        t = PotionEffectType.getByName(u);
+        if (t != null) return t;
+        return PotionEffectType.getByName(u.toLowerCase(Locale.ROOT));
+    }
+
+    public static boolean isVirtualAttribute(String name) {
+        return VirtualStats.parse(name).isPresent();
     }
 
     public static Attribute attribute(String name) {
         if (name == null || name.isBlank()) return null;
+        if (isVirtualAttribute(name)) return null;
         String u = name.trim().toUpperCase(Locale.ROOT);
+        // rewards.yml 使用 ATTACK_DAMAGE 等常量名；onEnable 时 Registry.ATTRIBUTE 可能尚未就绪
+        try {
+            return Attribute.valueOf(u);
+        } catch (IllegalArgumentException ignored) {
+            // 非 enum 名，走 Registry
+        }
         Set<String> candidates = new LinkedHashSet<>();
         if (ATTRIBUTE_LEGACY.containsKey(u)) candidates.add(ATTRIBUTE_LEGACY.get(u));
         String dotted = u.toLowerCase(Locale.ROOT).replace('_', '.');
@@ -78,7 +93,8 @@ public final class GameRegistries {
     private static final java.util.Set<Particle> PARTICLE_ALLOWLIST = java.util.Set.of(
             Particle.FLAME, Particle.SOUL_FIRE_FLAME, Particle.CRIT, Particle.ENCHANT,
             Particle.DUST, Particle.ELECTRIC_SPARK, Particle.WITCH, Particle.DRAGON_BREATH,
-            Particle.END_ROD, Particle.TOTEM_OF_UNDYING, Particle.HAPPY_VILLAGER, Particle.INSTANT_EFFECT
+            Particle.END_ROD, Particle.TOTEM_OF_UNDYING, Particle.HAPPY_VILLAGER, Particle.INSTANT_EFFECT,
+            Particle.HEART, Particle.SNOWFLAKE
     );
 
     /** 解析 Particle；失败时返回 null（调用方保留默认）。 */

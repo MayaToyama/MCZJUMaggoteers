@@ -1,5 +1,6 @@
 package io.mczju.maggoteers.config;
 
+import io.mczju.maggoteers.util.GameRegistries;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EntityType;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -86,15 +87,15 @@ public final class WavesConfig {
             String point = String.valueOf(m.get("point"));
             EntityType type = io.mczju.maggoteers.util.GameRegistries.entityType(String.valueOf(m.get("type")));
             int count = num(m.get("count"), 1).intValue();
-            Map<?, ?> c = m.get("coeff") instanceof Map<?, ?> cm ? cm : Map.of();
-            double hp = num(c.get("hp"), 1.0).doubleValue();
-            double dmg = num(c.get("dmg"), 1.0).doubleValue();
-            double spd = num(c.get("speed"), 1.0).doubleValue();
+            CoeffCfg coeff = MobYamlParser.parseCoeff(m);
             int delay = num(m.get("delay"), 0).intValue();
-            List<String> affixes = new ArrayList<>();
-            Object affRaw = m.get("affixes");
-            if (affRaw instanceof List<?> al) for (Object o : al) affixes.add(String.valueOf(o));
-            steps.add(new StepCfg(point, type, count, new CoeffCfg(hp, dmg, spd), delay, affixes));
+            List<String> affixes = MobYamlParser.parseAffixes(m);
+            InfernalCfg infernal = MobYamlParser.parseInfernal(m);
+            List<PassengerCfg> passengers = MobYamlParser.parsePassengers(m.get("passengers"));
+            steps.add(new StepCfg(point, type, count, coeff, delay, affixes, infernal,
+                    MobYamlParser.parseEquipment(m.get("equipment")),
+                    MobYamlParser.parseOnDeath(m.get("on_death")),
+                    passengers));
         }
         List<RewardItemCfg> rewards = new ArrayList<>();
         for (var m : s.getMapList("clearReward")) {

@@ -1,4 +1,0 @@
-# 本图专属波次：引用 waves.yml 的 strategy id + 池 + 权重（设计要求权重更高）。
-# 抽到本图时并入 act1 对应池。
-strong:
-  - { strategy: s_creeper_rush, weight: 5 }

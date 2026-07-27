@@ -4,8 +4,6 @@ import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import io.mczju.maggoteers.MaggoteersPlugin;
-import io.mczju.maggoteers.effect.EffectService;
-import io.mczju.maggoteers.effect.Trigger;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.item.interact.ItemUseHandler;
 import io.mczju.maggoteers.item.interact.OpenClassMenuHandler;
@@ -56,11 +54,8 @@ public final class ItemInteractRouter implements Listener {
 
     private static final Map<ItemKind, ItemUseHandler> HANDLERS = new EnumMap<>(ItemKind.class);
 
-    /** weapon_id（maggoteers:id）→ handler。未来魔法武器用 {@link #registerHandler} 注册，免改路由核心。 */
+    /** weapon_id（maggoteers:id）→ handler。可选覆盖 config use_ability。 */
     private static final Map<String, ItemUseHandler> WEAPON_HANDLERS = new HashMap<>();
-
-    /** 第三层兜底的默认 CD（秒）。Plan 8 接 item_cooldowns.yml 按物品配。 */
-    private static final int DEFAULT_INTERACT_CD_SEC = 1;
 
     static {
         OpenRestMenuHandler rest = new OpenRestMenuHandler();
@@ -110,35 +105,22 @@ public final class ItemInteractRouter implements Listener {
         // 1) 已知 kind（货币/职业券/复活币…）→ 专用 handler
         ItemUseHandler handler = (kind == null) ? null : HANDLERS.get(kind);
 
-        // 2) 否则：按 weapon_id（maggoteers:id）查注册表（未来魔法武器 handler 挂这里）
+        // 2) 否则：按 weapon_id（maggoteers:id）查注册表（handler 或 use_ability）
         String weaponId = null;
         if (handler == null) {
             weaponId = ItemService.itemIdOf(stack);
             if (weaponId != null) handler = WEAPON_HANDLERS.get(weaponId);
         }
 
-        // 3) 仍无 handler：若是本插件物品（有 id）→ 兜底 fire ON_INTERACT（仅当该玩家持 ON_INTERACT 效果）
+        // 3) 配置驱动 use_ability（无 registerHandler 时）
+        if (handler == null && weaponId != null
+                && io.mczju.maggoteers.effect.ItemAbilityRegistry.get(weaponId).isPresent()) {
+            handler = new io.mczju.maggoteers.item.interact.ConfigMagicHandler();
+        }
+
         if (handler == null) {
             if (weaponId == null) weaponId = ItemService.itemIdOf(stack);
-            if (weaponId == null) return;          // 不是本插件物品
-            // tier-3: 仅有 id、无 handler。仅当该玩家持 ON_INTERACT 效果才触发（避免普通物品右键被拦）
-            PlayerExt pe = new PlayerExt(event.getPlayer());
-            if (!pe.isInGame()) return;
-            AbstractGame game = pe.getGame();
-            if (game == null) return;
-            var ps = io.mczju.maggoteers.state.PlayerStateManager.get(
-                    (MaggoteersGame) game, event.getPlayer().getUniqueId());
-            boolean hasOnInteract = ps != null && ps.effects().stream()
-                    .anyMatch(x -> x.fireTrigger() == Trigger.ON_INTERACT);
-            if (!hasOnInteract) return;   // 不 cancel、不 fire（普通物品右键正常交互：开箱/拉杆等）
-            if (!CooldownService.tryUse(event.getPlayer().getUniqueId(), weaponId, DEFAULT_INTERACT_CD_SEC)) {
-                event.getPlayer().sendMessage(net.kyori.adventure.text.Component.text(
-                        "冷却中…", net.kyori.adventure.text.format.NamedTextColor.GRAY));
-                return;
-            }
-            event.setCancelled(true);
-            EffectService.fireTriggerPlayer(
-                    (MaggoteersGame) game, event.getPlayer(), Trigger.ON_INTERACT);
+            if (weaponId == null) return;
             return;
         }
 
@@ -146,10 +128,11 @@ public final class ItemInteractRouter implements Listener {
         PlayerExt pe = new PlayerExt(event.getPlayer());
         if (!pe.isInGame()) return;
         AbstractGame game = pe.getGame();
-        if (game == null) return;
-        var ps = io.mczju.maggoteers.state.PlayerStateManager.get(
-                (MaggoteersGame) game, event.getPlayer().getUniqueId());
+        MaggoteersGame mg = io.mczju.maggoteers.state.PlayerStateManager.gameForPlayer(event.getPlayer().getUniqueId());
+        if (mg == null) mg = io.mczju.maggoteers.game.AllyTargeting.resolveForPlayer(event.getPlayer(), game);
+        if (mg == null) return;
+        var ps = io.mczju.maggoteers.state.PlayerStateManager.get(mg, event.getPlayer().getUniqueId());
         if (ps == null || !ps.isAlive()) return;
-        handler.onUse(event.getPlayer(), game, stack);
+        handler.onUse(event.getPlayer(), mg, stack);
     }
 }

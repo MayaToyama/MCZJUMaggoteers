@@ -31,7 +31,7 @@
 | 构建 | Maven（`paper-api` / `MCZJUGameCore` 为 provided，不打进 jar） |
 | 硬依赖 | `MCZJUGameCore`（`depend`） |
 | 软依赖 | `MCZJUItemCreator`（`softdepend`；缺失时仅警告，不崩） |
-| 其他 | 无（**不引入** WorldEdit / MythicMobs / InfernalMobs） |
+| 其他 | 无（**不引入** WorldEdit / MythicMobs）；**InfernalMobs** 为可选 `softdepend`，运行时反射接入，**非** Maven 编译依赖 |
 
 > ⚠️ **版本基线**：本设计以 **MGC GitHub `1.0.7`** 为准（Paper 26.2）。`JsonPlayerData`/`getPlayerDataManager()`/`getData()`/`PlayerDataLeaderboard` 自 1.0.4 起存在。核对 API 须看 GitHub **1.0.7** tag，勿用过时本地 clone（1.0.0）。
 
@@ -212,7 +212,7 @@ RunPlan { seed, playerCount, scalingSnapshot,
 
 ### 7.1 配置侧模型
 - `Affix`（词缀，强化层）：`id, hp×, dmg×, speed×, drop×, potions[], on, display`。定义在 `affixes.yml`。
-- `SpawnStep`：`point(id), type, count, coeff{hp,dmg,speed}, affixes[], delaySec`（`delaySec=0` 与上步同刷）。
+- `SpawnStep`：`point(id), type, count, coeff{hp,dmg,speed}, affixes[], delaySec`（**步前等待**：相对上一步刷怪时刻的秒数；首步相对本波开始；`delaySec=0` 表示不额外等待；`repeat` 多轮时上一轮末步之后继续累加）。
 - `SpawnStrategy`（池内一条）：`id, steps[], repeat, clearReward[]`。roll 出来 = 一波。
 - `WavePool`：每层 `weak[]/strong[]/boss[]`，每条 `{strategy, weight}`。
 - 怪物强度 = **`coeff(波次内) × affix(词缀) × scaling(人数)`** 三层叠加。
@@ -245,20 +245,23 @@ strategies:
     clearReward: [ {item: currency_normal, amount: 2} ]   # 每人发
     steps:
       - { point: 1, type: ZOMBIE, count: 5, coeff: {hp: 1.0}, affixes: [], delay: 0 }
-      - { point: 9, type: ZOMBIE, count: 5, coeff: {hp: 1.0}, delay: 5 }   # 5s 后（"先5僵尸,隔5s再5僵尸"）
+      - { point: 9, type: ZOMBIE, count: 5, coeff: {hp: 1.0}, delay: 5 }   # 上一批刷出后 5s 再刷本步
   b_iron_golem_guard:
     steps:
       - { point: boss, type: IRON_GOLEM, count: 1, coeff: {hp: 8.0, dmg: 1.5}, affixes: [armored], delay: 0 }
+      # 可选 IM 技能（主体 / passengers / on_death 各自独立，见 infernal 块）：
+      # - { point: 1, type: ZOMBIE, count: 3, infernal: { level: 3, affixes: [poisonous, sprint] }, delay: 0 }
 ```
 
-### 7.5 affixes.yml
+### 7.5 affixes.yml（Maggoteers 原生出生/倍率词缀）
 ```yaml
 affixes:
   armored: { hp: 2.0, display: "<aqua>装甲" }
   berserk: { dmg: 1.5, speed: 1.2, display: "<red>狂暴" }
-  toxic:   { potions: [{type: POISON, amp: 1, dur: 200}], on: hit-player, display: "<green>毒素" }
   greedy:  { drop: 1.5, display: "<gold>贪婪" }
 ```
+
+**IM 战斗技能**不在 `affixes.yml`，而在 `waves.yml` 各刷怪节点的 `infernal:` 块（`level` 1–100 + 精确 `affixes` 列表；与原生 `affixes:` 命名空间独立、互不继承）。刷怪顺序：原生 stats/affixes → **IM mechanize** → 显式 `equipment`（覆盖 IM 自动装备）。IM 缺失或技能未知时跳过并 warning，实体仍为普通怪且受 WaveEngine 追踪。本插件 mechanize 的 IM 怪在 `EntityDeathEvent` **LOWEST** 提前 `unregisterMob`，**不**触发 IM 掉落/统计/广播/死亡技能。
 
 ### 7.6 config.yml（缩放 / 每层波数 / 全局）
 ```yaml
@@ -302,6 +305,8 @@ world: { cleanup_orphans_on_enable: true }
 ### 9.1 升级菜单（单 GUI，MGC `Menu`）
 按钮：`[普通奖励] [Boss奖励] [跳过休整] [延长休整]`（结构可扩展）。
 - 点 `普通奖励`/`Boss奖励`：扣对应货币 → 弹 3 选 1（从对应池抽 **3 个不同**选项）→ 选 1 应用 → 回主菜单，**可反复**直到货币不足/休整结束。
+- **抽池可见性**（`RewardDrawVisibility`）：**SUPPLY** 可重复；**WEAPON** 每 `id` 一次（`acquiredUnique`）；**STAT** 每 `id` 一次（看 `PlayerState.effects`；**UPGRADE_LEVEL** 未满级仍可抽）；与 `unique:`  YAML 字段解耦（STAT 仍建议写 `unique: true` 便于内容校验）。
+- **STAT 护符**：选中 STAT 时除写入 `PlayerState` 外，按 `collectibles.yml` 映射发放绑定 **护符**（ItemCreator 兔子脚等，PDC `kind=collectible` + `reward_id` + `reward_level`）；GUI 图标来自 ItemCreator 预览，**不再**使用 `rewards.yml` 的 `icon:`。
 - **右键手持货币** = 打开本菜单的快捷方式（与点按钮殊途同归）。
 
 ### 9.2 池选择规则（RunPlan 预定）
@@ -385,17 +390,17 @@ reward_pools:
     cost: 3                     # 每次 3 选 1 消耗
     options:
       - { id: dmg10,   category: STAT, effect: ADD_ATTRIBUTE, params: {attr: ATTACK_DAMAGE, op: PERCENT, value: 0.10},
-          stack: ADD, icon: IRON_SWORD, display: "<red>+10% 伤害" }
+          unique: true, stack: ADD, display: "<red>+10% 伤害" }
       - { id: lifesteal, category: STAT, trigger: ON_KILL, effect: HEAL, params: {amount: 2.0},
-          icon: GOLDEN_APPLE, display: "<dark_red>嗜血：击杀回 2 血" }
+          unique: true, display: "<dark_red>嗜血：击杀回 2 血" }
       - { id: res_up, category: STAT, effect: ADD_POTION, params: {effect: RESISTANCE, amp: 0},
-          stack: UPGRADE_LEVEL{max: 4}, icon: SHIELD, display: "<aqua>抗性(可升级)" }
+          unique: true, stack: UPGRADE_LEVEL{max: 4}, display: "<aqua>抗性(可升级)" }
       - { id: lone_wolf, category: STAT, effect: ADD_ATTRIBUTE, params: {attr: MOVEMENT_SPEED, op: FLAT, value: 0.02},
-          unique: true, icon: LEATHER_BOOTS, display: "<gray>孤狼（唯一）" }
+          unique: true, display: "<gray>孤狼（唯一）" }
       - { id: wrench, category: WEAPON, item: maggoteers:wrench,
-          requires_unlock: true, unlock_cost: 30, icon: CARROT_ON_A_STICK, display: "<gold>扳手" }
+          requires_unlock: true, unlock_cost: 30, display: "<gold>扳手" }
       - { id: heal_potion, category: SUPPLY, item: maggoteers:healing_potion, amount: 2,
-          icon: POTION, display: "<red>治疗药剂×2" }
+          display: "<red>治疗药剂×2" }
   act1_strong: { currency: normal, cost: 5, options: [...] }
   act1_boss:   { currency: boss,   cost: 1, options: [...] }
 ```
@@ -409,18 +414,21 @@ reward_pools:
 | `effect` | STAT 用（见 §10.2） |
 | `item` / `amount` | WEAPON/SUPPLY 用（ItemCreator id） |
 | `params` | effect 的类型化参数 |
-| `icon` | 原生物品图标（GUI 显示） |
-| `display` | MiniMessage 显示文本 |
+| `display` / `description` | MiniMessage 显示文本 / GUI 说明 |
 | `requires_unlock` / `unlock_cost` | true = 需局外商店解锁才能 roll 到；unlock_cost = 商店售价 |
-| `unique` | true = 本局该玩家只能选一次，选后移出其池 |
+| `unique` | STAT 建议 `true`；WEAPON 每 id 一次；**抽池可见性以 `RewardDrawVisibility` 为准**（见 §9） |
 | `stack` | 重复获得的合并策略（见 §10.3）。**触发型被动默认 `IGNORE`**（D7：重复拿到同一条被动不叠加/不刷新，除非显式声明 `ADD`/`REFRESH`） |
 
 ### 12.2 3 选 1 可见性判定
 ```
-可选(player, option) =
+可见(player, option) =
     (!option.requires_unlock || player.持久.unlocks.contains(option.id))
- && (!option.unique         || !player.本局.acquiredUnique.contains(option.id))
+ && RewardDrawVisibility.isVisible(option, player.本局, acquiredUnique)
+    // SUPPLY: 始终可见
+    // WEAPON: !acquiredUnique.contains(id)
+    // STAT: 无同 id 效果，或 UPGRADE_LEVEL 且 level < upgradeMax
 ```
+护符外观见 `collectibles.yml` + `items/collectibles.yml`（`CollectibleRegistry` / `CollectibleService`）。
 > **不足 3 个可见选项时的 fallback（D3）**：按实际可见数开格，**不足位灰显空位**——不补凑、不重复；可见数为 0 则该池按钮禁用并提示。保证"见到的都是真选项"。
 
 ---
@@ -467,7 +475,8 @@ MCZJUGameCore.getLeaderboardManager()
 |---|---|---|
 | 新地图 | `maps/actN/<mapId>/` 加 `structure.nbt` + points.yml（+ special_waves.yml） | 否 |
 | 新波次 | `waves.yml` 加 strategy + 池引用 | 否 |
-| 新词缀 | `affixes.yml` 加条目 | 否 |
+| 新词缀（原生 hp/dmg/速度/掉落/体型） | `affixes.yml` 加条目 | 否 |
+| IM 战斗技能 | `waves.yml` 各节点加 `infernal: { level, affixes }`（需测试服装 InfernalMobs） | 否 |
 | 新奖励（属性/武器/补给） | `rewards.yml` 加 option（武器/补给配 ItemCreator 物品） | 否 |
 | 新触发类型 | `effect/Trigger` 枚举加值 + 对应监听器分发 | **是**（有模板） |
 | 新 Effect 类型 | `effect/Effect` 枚举加值 + `EffectService` 实现 | **是**（有模板） |
@@ -477,17 +486,28 @@ MCZJUGameCore.getLeaderboardManager()
 
 ## 15. 自定义交互物品开发指南（PDC 路由模式）
 
-未来做"旋转刀片"等魔法武器，统一走这套模式（与复活币/货币一致）：
-1. **ItemCreator 造物品**：在 `items/*.yml` 定义，带上 PDC `maggoteers:id = <weapon_id>`（必要时带原生 component 改动）。
-2. **本插件写处理器**：实现一个挂在 `ItemInteractRouter` 上的 handler（按 `<weapon_id>` 注册），在 `PlayerInteract*Event` 时被调用；内部可触发 `PlayerEffect`（`fireTrigger=ON_INTERACT`）或直接执行逻辑。
-3. **效果复用**：能复用 `EffectService` 的就别重写（HEAL/ADD_ATTRIBUTE/DAMAGE_AREA…）。
-> 复杂武器（粒子/飞行物）可参考 `MCZJUMagicItems`（路径见 §17），但**不照搬其专用 BuffType/ParamKeys**，只借范式。
+未来做魔法武器，**优先 `items/*.yml` 的 `use_ability`**（零 Java）：
+
+```yaml
+use_ability:
+  cooldown_sec: 3          # 权威 CD（CooldownService）
+  effect: DAMAGE_AREA      # DAMAGE_AREA | DAMAGE_BEAM | HEAL_AREA
+  params: { damage: 6.0, radius: 6.0, targets: enemies, enemy_scope: tracked }
+  fx: { preset: SPIRAL_RADIUS, particle: CRIT, radius: 6.0 }
+```
+
+路由顺序：ItemKind → `registerHandler`（可选覆盖）→ `ItemAbilityRegistry` → 无则 vanilla 交互。
+
+**Escape hatch**：仅当 Effect 系统表达不了的多段/投射物技能时，才写 `ItemUseHandler` 并 `registerHandler`。
+
+奖励侧法术强度：`rewards.yml` 用 `ADD_ATTRIBUTE` + `attr: MAGIC_DAMAGE` + `op: PERCENT` + `stack: ADD`（虚拟 stat，不写 Bukkit）。奖励 `fireTrigger` 白名单：`ON_KILL` / `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN` 或省略（常驻）；**禁止** `ON_INTERACT`。
 
 ---
 
 ## 16. 构建与运行
 
 - **构建**：`mvn package` → `target/Maggoteers-<ver>.jar`。
+- **Agent 工作流**：`.cursor/skills/maggoteers-build-deploy/` — 用 **IntelliJ 自带 Maven**（JDK 25）跑 `test`/`package`，并拷贝 jar + 常用 YAML 到 **`E:\MCpaper\plugins`**；脚本 `scripts/build-and-deploy.ps1`。
 - **部署**：jar 放 `plugins/`；同目录需有 `MCZJUGameCore`、`MCZJUItemCreator` 两个 jar。
 - **本地无 JDK 时**：Windows IntelliJ 构建，或 WSL 内安装 JDK21 + Maven 后构建。
 - **资产**：首次启动释放 `plugins/Maggoteers/{items,maps}/...` 默认样例。
@@ -498,6 +518,7 @@ MCZJUGameCore.getLeaderboardManager()
 - [ ] `plugins/MCZJUGameCore/rooms/maggoteers/default.json` 存在（由本插件 `onEnable` 自动释放，或 `/mgcop room create maggoteers default`）——否则 `/mgc join maggoteers` 无房间（G1）。
 - [ ] `plugins/Maggoteers/{items,maps}/...` 资产就位（首次启动释放默认样例）。
 - [ ] `MCZJUItemCreator` 已装（否则物品缺失，仅警告不崩）。
+- [ ] 若使用 `infernal:` 块：测试服 `plugins/` 有 **InfernalMobs** JAR；无 IM 时波次仍正常，仅跳过 IM 技能。
 
 ---
 
@@ -525,6 +546,7 @@ MCZJUGameCore.getLeaderboardManager()
 - **净化技巧待实测（D1）**：`ADD_POTION` 0 秒 255 级抵消不一定成立；fallback 走 damage-cancel。
 - **结构粘贴主线程掉帧（D8）**：粘贴该层 `structure.nbt` 主线程瞬时完成会掉几 tick；接受。已改为"进层时粘该层"（非开局一次性粘三层）摊薄。
 - **缩放开局锁定（D8）**：人数中途减少时仍按开局人数算难度（偏难）；接受。
+- **InfernalMobs 反射（IM1）**：仅调用 `mechanizeWithAffixes`；禁用 `morph`/`mama`/`mounted`/`vexsummoner`/`ghost`；反射签名变更会导致整局 bridge 禁用（dedupe warning）。死亡前须 unregister，否则 IM 会发战利品。
 
 ---
 

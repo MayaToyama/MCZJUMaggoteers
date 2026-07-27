@@ -5,6 +5,41 @@
 
 ---
 
+---
+
+## 2026-07-27 — 奖励护符（build display collectibles）
+
+- **做了什么**：`collectibles.yml` + `CollectibleRegistry`/`CollectibleService`；STAT 选中发放绑定护符（PDC `collectible`）；`RewardDrawVisibility` 统一抽池（SUPPLY 可重复、WEAPON/STAT 一次、UPGRADE 未满可抽）；`EffectStacker.sweepExpiry` 返回移除 id → 同步删护符；`EffectService.resync` + 复活路径双向 `CollectibleService.resync`；`RunItemGuardListener` 禁止丢弃/放入容器；开局装备标 `run_gear`；GUI（Pick/Class/Shop）用 ItemCreator 预览；移除 `rewards.yml` `icon:`；样本 `items/collectibles.yml`。
+- **原因**：Spec `2026-07-27-reward-collectibles-design.md`——构筑可见性靠背包护符，玩法真相仍在 `PlayerState`。
+- **决策**：未映射 STAT 仅 warning 不阻断；满级 UPGRADE `apply` 返回 false；护符与效果 level 双向 resync。
+- **遗留**：多数 STAT 尚未配护符条目；`applyStat` amp 与 `EffectStacker` 双 increment 技术债未修。
+
+---
+
+## 2026-07-27 — 配置驱动魔法武器 + 虚拟 MAGIC_DAMAGE
+
+- **做了什么**：`use_ability` 配置武器（`ItemAbilityRegistry` + `ConfigMagicHandler`）；统一魔法核心 `EffectService.executeMagicEffect`（`DAMAGE_AREA`/`DAMAGE_BEAM`/`HEAL_AREA` + `PlayerCombatStats` 乘数 + `TargetResolver` + `MagicDamageContext` 防递归）；虚拟 stat `MAGIC_DAMAGE` 只进 `PlayerState` 不写 Bukkit；删除 `TestBladeHandler`/`ExcaliburHandler`/`HealingStaffHandler`；奖励池移除 `a2s_damage_area_interact`，新增 `a1s_magic_dmg`/`a2s_magic_dmg`；`RewardLoadValidator` 校验 fireTrigger 白名单。
+- **原因**：Spec v1.2 批准——武器与奖励共用伤害核心、零 Java 加武器、法术强度独立叠层；`ON_INTERACT` 奖励与武器路径冲突。
+- **决策**：`use_ability.cooldown_sec` 为权威 CD；FX 三层合并；`registerHandler` 保留为 escape hatch；tier-3 ON_INTERACT 兜底已移除。
+- **遗留**：P5 Lore/计分板显示法术强度；`flame_cleaver` 等进阶 WEAPON 条目待内容作者补全；测试服需重启 + 同步 `items/maggoteers.yml`。
+
+---
+
+- **做了什么**：`waves.yml` 新增 `infernal: { level, affixes }`（主体/乘客/亡语独立配置）；`InfernalMobsBridge` 反射 `mechanizeWithAffixes` + 受管 UUID 追踪；`MobDeathListener` **LOWEST** 提前 `unregisterMob` 抑制 IM 死亡奖励；删除 `AffixTrigger`/`AffixCombatService`/`CombatAffixListener` 及 12 个 `on:` 词缀与默认波次引用。
+- **原因**：内容维护者需在波次 YAML 精确指定 IM 技能；原生 `on:` 监听器与 IM 能力重叠且难维护；不改 IM 源码只能通过反射 + 死亡前注销接入。
+- **决策**：IM 为 `softdepend` 非 Maven 依赖；只调用精确列表入口、不随机补全；禁用 `morph`/`mama`/`mounted`/`vexsummoner`/`ghost`；IM 缺失/失败降级为普通怪仍计入波次；显式 `equipment` 在 mechanize 之后应用；**不**自动把旧战斗词缀迁移为 IM 配置。
+- **遗留**：默认 `waves.yml` 尚未批量加 `infernal:`（需内容作者按需手工添加）；测试服 smoke 需装 IM JAR 后验收。
+
+---
+
+## 2026-07-26 — 词缀战斗触发重构（AffixTrigger）— 已 superseded
+
+- **做了什么**：引入 `AffixTrigger` 枚举（`SPAWN` / `hit-player` / `hit-by-player` / `hit`）与 `AffixCombatService`；`hit` 改为怪受任意伤害时给怪自身 buff；新增 `hit-by-player` 给攻击玩家反伤；迁移 `poisonous`/`sticky` 配置。
+- **原因**：旧 `on: hit` 实现为「玩家打怪 → 玩家 buff」，与 `hidesuwa` 等设计意图相反；字符串 `on` 散落三处无校验。
+- **遗留**：同日被 InfernalMobs 接入方案取代并删除上述代码路径。
+
+---
+
 ## 2026-07-25 — Smoke 第二轮（乘客 expand + 三选一 apply 链）
 
 ### 做了什么

@@ -1,22 +1,33 @@
 package io.mczju.maggoteers.effect;
 
 import io.mczju.maggoteers.MaggoteersPlugin;
-import io.mczju.maggoteers.state.PlayerState;
+import io.mczju.maggoteers.game.AllyTargeting;
+import io.mczju.maggoteers.game.MaggoteersGame;
+import io.mczju.maggoteers.item.fx.MagicFxConfig;
+import io.mczju.maggoteers.item.fx.MagicFxPresets;
+import io.mczju.maggoteers.item.fx.MagicUseFx;
 import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
+import io.mczju.maggoteers.util.GameRegistries;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 import org.bukkit.Bukkit;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -34,7 +45,7 @@ public final class EffectService {
         apply(p, incoming, currentGame(p));
     }
 
-    public static void apply(Player p, PlayerEffect incoming, io.mczju.maggoteers.game.MaggoteersGame game) {
+    public static void apply(Player p, PlayerEffect incoming, MaggoteersGame game) {
         if (game == null) {
             LOG.warning("EffectService.apply: game null " + p.getName());
             return;
@@ -49,6 +60,9 @@ public final class EffectService {
         st.effects().addAll(merged);
         if (incoming.isPermanent() && incoming.effect() != Effect.AURA) {
             applyDerived(p, incoming);
+        } else if (incoming.effect() == Effect.AURA && incoming.fireTrigger() == null
+                && game instanceof MaggoteersGame mg) {
+            AuraService.refresh(mg);
         }
     }
 
@@ -59,6 +73,10 @@ public final class EffectService {
         stripDerived(p, st.effects());
         for (PlayerEffect e : new ArrayList<>(st.effects())) {
             if (e.isPermanent() && e.effect() != Effect.AURA) applyDerived(p, e);
+        }
+        MaggoteersGame game = currentGame(p);
+        if (game != null) {
+            io.mczju.maggoteers.reward.CollectibleService.resync(p, game);
         }
     }
 
@@ -98,7 +116,7 @@ public final class EffectService {
      * @param fired       触发的 trigger
      * @param tickSeconds 仅 ON_TICK_1S 传>0（用于 recurring 累计）；其余传 0
      */
-    public static void fireTrigger(io.mczju.maggoteers.game.MaggoteersGame game, Trigger fired, int tickSeconds) {
+    public static void fireTrigger(MaggoteersGame game, Trigger fired, int tickSeconds) {
         if (game == null) return;
         String key = System.identityHashCode(game) + ":" + fired.name();
         if (!FIRING.add(key)) return;   // 同 (game,trigger) 正在分发 → 防递归
@@ -108,7 +126,9 @@ public final class EffectService {
                 var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
                 if (ps == null || !ps.isAlive()) continue;
                 // 1) 到期扫描
-                EffectStacker.sweepExpiry(ps.effects(), fired);
+                for (String removedId : EffectStacker.sweepExpiry(ps.effects(), fired)) {
+                    io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
+                }
                 // 2) 执行触发型（fireTrigger==fired）
                 for (PlayerEffect e : new ArrayList<>(ps.effects())) {
                     if (e.fireTrigger() == fired) executeEffect(p, e, game);
@@ -126,25 +146,31 @@ public final class EffectService {
     }
 
     /** 便捷重载（无 recurring 计时）。 */
-    public static void fireTrigger(io.mczju.maggoteers.game.MaggoteersGame game, Trigger fired) {
+    public static void fireTrigger(MaggoteersGame game, Trigger fired) {
         fireTrigger(game, fired, 0);
     }
 
     /** 单玩家触发（tier-3 ON_INTERACT 用：只触发该玩家，不波及他人；不做 recurring 计时）。 */
-    public static void fireTriggerPlayer(io.mczju.maggoteers.game.MaggoteersGame game,
-                                          org.bukkit.entity.Player p, Trigger fired) {
+    public static void fireTriggerPlayer(MaggoteersGame game, Player p, Trigger fired) {
         if (game == null) return;
         var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
         if (ps == null || !ps.isAlive()) return;
-        EffectStacker.sweepExpiry(ps.effects(), fired);
+        for (String removedId : EffectStacker.sweepExpiry(ps.effects(), fired)) {
+            io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
+        }
         for (PlayerEffect e : new java.util.ArrayList<>(ps.effects())) {
             if (e.fireTrigger() == fired) executeEffect(p, e, game);
         }
     }
 
+    /** Weapon entry: FX already played by {@link io.mczju.maggoteers.item.interact.ConfigMagicHandler}. */
+    public static void executeAbility(Player p, MaggoteersGame game, ItemAbility ability) {
+        if (p == null || game == null || ability == null) return;
+        executeMagicEffect(p, game, ability.effect(), ability.params(), ability.fx());
+    }
+
     /** 执行一条效果（触发型在 fireTrigger 时调；常驻型在 apply 时已施加）。 */
-    private static void executeEffect(Player p, PlayerEffect e,
-                                      io.mczju.maggoteers.game.MaggoteersGame game) {
+    private static void executeEffect(Player p, PlayerEffect e, MaggoteersGame game) {
         switch (e.effect()) {
             case HEAL -> {
                 double amount = e.params().getOrDefault(EffectKeys.AMOUNT, 0.0);
@@ -152,37 +178,95 @@ public final class EffectService {
                 double max = hp != null ? hp.getValue() : 20.0;
                 p.setHealth(Math.min(max, p.getHealth() + amount));
             }
-            case ADD_POTION -> {   // 限时药水（duration_ticks>0）；常驻药水在 applyDerived 施加
+            case ADD_POTION -> {
                 PotionEffectType type = e.params().get(EffectKeys.POTION);
                 if (type == null) return;
                 int amp = e.params().getOrDefault(EffectKeys.AMP, 0);
                 int dur = e.params().getOrDefault(EffectKeys.DURATION_TICKS, 0);
                 if (dur > 0) p.addPotionEffect(new PotionEffect(type, dur, amp, false, true));
             }
-            case DAMAGE_AREA -> {
-                double radius = e.params().getOrDefault(EffectKeys.RADIUS, 3.0);
-                double dmg = e.params().getOrDefault(EffectKeys.DAMAGE, 0.0);
-                io.mczju.maggoteers.util.ParticleEffects.playAreaRing(p.getWorld(), p.getLocation(), radius);
-                org.bukkit.World w = p.getWorld();
-                for (org.bukkit.entity.Entity en : w.getNearbyEntities(p.getLocation(), radius, radius, radius)) {
-                    if (en instanceof org.bukkit.entity.LivingEntity le && en != p) {
-                        le.damage(dmg, p);
-                    }
-                }
-            }
+            case DAMAGE_AREA, DAMAGE_BEAM, HEAL_AREA ->
+                    executeMagicEffect(p, game, e.effect(), e.params(), null);
             case GRANT_REVIVE -> {
                 int count = e.params().getOrDefault(EffectKeys.COUNT, 1);
-                io.mczju.maggoteers.state.PlayerStateManager.addReviveCount(game, p.getUniqueId(), count);
+                PlayerStateManager.addReviveCount(game, p.getUniqueId(), count);
             }
-            case ADD_ATTRIBUTE -> {
-                applyAttribute(p, e);
-            }
+            case ADD_ATTRIBUTE -> applyAttribute(p, e);
             case AURA -> activateAura(p, e, game);
         }
     }
 
+    private static void executeMagicEffect(Player p, MaggoteersGame game, Effect effect,
+                                           EffectContext rawParams, MagicUseFx weaponFx) {
+        EffectContext params = MagicEffectParams.withDefaults(effect, rawParams);
+        switch (effect) {
+            case DAMAGE_AREA -> {
+                double radius = params.getOrDefault(EffectKeys.RADIUS, 3.0);
+                double baseDmg = params.getOrDefault(EffectKeys.DAMAGE, 0.0);
+                double dmg = baseDmg * PlayerCombatStats.magicDamageMultiplier(game, p.getUniqueId());
+                io.mczju.maggoteers.util.ParticleEffects.playAreaRing(p.getWorld(), p.getLocation(), radius);
+                List<LivingEntity> targets = TargetResolver.collect(game, p, p.getLocation(), radius, effect, params);
+                MagicDamageContext.run(game, p.getUniqueId(), () -> {
+                    for (LivingEntity le : targets) {
+                        le.damage(dmg, p);
+                    }
+                });
+            }
+            case DAMAGE_BEAM -> executeDamageBeam(p, game, params, weaponFx);
+            case HEAL_AREA -> {
+                double radius = params.getOrDefault(EffectKeys.RADIUS, 5.0);
+                double amount = params.getOrDefault(EffectKeys.AMOUNT, 0.0);
+                boolean includeSelf = AuraParams.includeSelf(params);
+                for (Player ally : AllyTargeting.alliesInRadius(game, p, radius, includeSelf)) {
+                    var hp = ally.getAttribute(Attribute.MAX_HEALTH);
+                    double max = hp != null ? hp.getValue() : 20.0;
+                    ally.setHealth(Math.min(max, ally.getHealth() + amount));
+                }
+            }
+            default -> { }
+        }
+    }
+
+    private static void executeDamageBeam(Player p, MaggoteersGame game, EffectContext params, MagicUseFx weaponFx) {
+        double maxRange = params.getOrDefault(EffectKeys.RAY_LENGTH, 32.0);
+        double beamRadius = params.getOrDefault(EffectKeys.BEAM_RADIUS, 1.25);
+        double baseDmg = params.getOrDefault(EffectKeys.DAMAGE, 0.0);
+        double dmg = baseDmg * PlayerCombatStats.magicDamageMultiplier(game, p.getUniqueId());
+
+        Location eye = p.getEyeLocation();
+        Vector dir = eye.getDirection().normalize();
+        Entity target = p.getTargetEntity((int) maxRange);
+        Double targetDist = null;
+        if (target != null) {
+            targetDist = eye.distance(target.getLocation().add(0, target.getHeight() * 0.5, 0));
+        }
+        double length = BeamLogic.resolveLength(maxRange, targetDist);
+
+        MagicUseFx fx = weaponFx != null ? weaponFx : MagicFxConfig.forWeapon(null);
+        fx = new MagicUseFx(fx.sound(), fx.soundVolume(), fx.soundPitch(), fx.preset(), fx.particle(),
+                fx.radius(), length, fx.density(), fx.rippleRings(), fx.expandSteps(), fx.spiralTicks());
+        if (fx.sound() != null) {
+            p.playSound(eye, fx.sound(), fx.soundVolume(), fx.soundPitch());
+        }
+        MagicFxPresets.playBeamAlong(eye, dir, length, fx);
+
+        Set<UUID> hit = new HashSet<>();
+        int steps = Math.max(16, (int) (length * 2));
+        MagicDamageContext.run(game, p.getUniqueId(), () -> {
+            for (int i = 0; i <= steps; i++) {
+                Location pt = eye.clone().add(dir.clone().multiply(length * i / (double) steps));
+                for (Entity en : p.getWorld().getNearbyEntities(pt, beamRadius, beamRadius, beamRadius)) {
+                    if (!(en instanceof LivingEntity le)) continue;
+                    if (!TargetResolver.isTarget(game, p, le, params)) continue;
+                    if (!hit.add(le.getUniqueId())) continue;
+                    le.damage(dmg, p);
+                }
+            }
+        });
+    }
+
     /** 触发型 AURA：交互后写入 fireTrigger=null 的携带条目（保留 expiry）。 */
-    private static void activateAura(Player p, PlayerEffect e, io.mczju.maggoteers.game.MaggoteersGame game) {
+    private static void activateAura(Player p, PlayerEffect e, MaggoteersGame game) {
         if (e.effect() != Effect.AURA) return;
         PlayerState st = PlayerStateManager.get(game, p.getUniqueId());
         if (st != null) {
@@ -199,14 +283,26 @@ public final class EffectService {
     // —— 派生视图施加（常驻型）——
     private static void applyDerived(Player p, PlayerEffect e) {
         switch (e.effect()) {
-            case ADD_ATTRIBUTE -> applyAttribute(p, e);
-            case ADD_POTION    -> applyPotionPermanent(p, e);
-            default -> { /* HEAL/DAMAGE_AREA/GRANT_REVIVE 不是常驻型，触发时执行（Task 4） */ }
+            case ADD_ATTRIBUTE -> {
+                if (!isVirtualAttribute(e)) applyAttribute(p, e);
+            }
+            case ADD_POTION -> applyPotionPermanent(p, e);
+            default -> { }
         }
     }
 
+    private static boolean isVirtualAttribute(PlayerEffect e) {
+        String name = e.params().get(EffectKeys.ATTR_NAME);
+        return name != null && GameRegistries.isVirtualAttribute(name);
+    }
+
     private static void applyAttribute(Player p, PlayerEffect e) {
+        if (isVirtualAttribute(e)) return;
         Attribute attr = e.params().get(EffectKeys.ATTR);
+        if (attr == null) {
+            String name = e.params().get(EffectKeys.ATTR_NAME);
+            if (name != null) attr = GameRegistries.attribute(name);
+        }
         if (attr == null) return;
         AttributeInstance inst = p.getAttribute(attr);
         if (inst == null) return;
@@ -259,10 +355,9 @@ public final class EffectService {
         }
     }
 
-    /** 由 Task 5 监听器持有当前对局引用；这里临时用玩家所在游戏反查。 */
-    private static io.mczju.maggoteers.game.MaggoteersGame currentGame(Player p) {
+    private static MaggoteersGame currentGame(Player p) {
         var pe = new com.github.mczjuops.mczjugamecore.player.PlayerExt(p);
-        return pe.isInGame() ? (io.mczju.maggoteers.game.MaggoteersGame) pe.getGame() : null;
+        return pe.isInGame() ? (MaggoteersGame) pe.getGame() : null;
     }
 
     private EffectService() {}

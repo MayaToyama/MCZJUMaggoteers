@@ -2,6 +2,7 @@ package io.mczju.maggoteers;
 
 import com.github.mczjuops.mczjugamecore.MCZJUGameCore;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
+import io.mczju.maggoteers.integration.InfernalMobsBridge;
 import io.mczju.maggoteers.config.AffixService;
 
 import io.mczju.maggoteers.config.ScalingConfig;
@@ -14,6 +15,7 @@ import io.mczju.maggoteers.listener.MobDeathListener;
 import io.mczju.maggoteers.menu.ClassSelectMenu;
 import io.mczju.maggoteers.menu.PickMenu;
 import io.mczju.maggoteers.menu.RestMenu;
+import io.mczju.maggoteers.reward.CollectibleRegistry;
 import io.mczju.maggoteers.reward.RewardService;
 import io.mczju.maggoteers.world.MapRepository;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -29,29 +31,37 @@ public final class MaggoteersPlugin extends JavaPlugin {
         instance = this;
         saveDefaultConfig();
         saveResourceIfMissing("rewards.yml");
+        saveResourceIfMissing("collectibles.yml");
         io.mczju.maggoteers.world.WorldService.cleanupOrphansOnEnable();
         saveDefaultRooms();
         MCZJUGameCore.getGameManager().registerGame(MaggoteersGame.class, MaggoteersRoom.class);
         MCZJUGameCore.getPlayerDataManager().registerPlayerData("maggoteers", io.mczju.maggoteers.persist.MaggoteersPlayerData.class);
         MCZJUGameCore.getLeaderboardManager().registerLeaderboard("maggoteers_total", io.mczju.maggoteers.persist.MaggoteersTotalLeaderboard.class);
+        InfernalMobsBridge.initialize(this);
         AffixService.load(this);
         WavesConfig.loadFromFile(this);
         MapRepository.load(this);
         ScalingConfig.load(this);
         ItemService.init(this);
-        io.mczju.maggoteers.item.ItemInteractRouter.registerHandler(
-                "maggoteers:test_blade", new io.mczju.maggoteers.item.interact.TestBladeHandler());
+        io.mczju.maggoteers.item.fx.MagicFxConfig.load(this);
+        io.mczju.maggoteers.effect.ItemAbilityRegistry.load(this);
         RewardService.load(this);
+        CollectibleRegistry.load(this);
+        // onEnable 瞬间 Registry 可能未就绪；下一 tick 再解析一次 rewards（属性/药水引用）
+        getServer().getScheduler().runTask(this, () -> {
+            RewardService.load(this);
+            CollectibleRegistry.load(this);
+        });
         MenuFacade.registerMenu("maggoteers-class", ClassSelectMenu.class);
         MenuFacade.registerMenu("maggoteers-rest", RestMenu.class);
         MenuFacade.registerMenu("maggoteers-pick", PickMenu.class);
         MenuFacade.registerMenu("maggoteers-revive", io.mczju.maggoteers.menu.ReviveMenu.class);
         MenuFacade.registerMenu("maggoteers-shop", io.mczju.maggoteers.menu.UnlockShopMenu.class);
         getServer().getPluginManager().registerEvents(new MobDeathListener(), this);
-        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.CombatAffixListener(), this);
         getServer().getPluginManager().registerEvents(new ItemInteractRouter(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.effect.EffectListener(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.PurifyListener(), this);
+        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.RunItemGuardListener(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.GameplayTickListener(), this);
         io.mczju.maggoteers.listener.GameplayTickListener.start();
         var mc = getCommand("maggoteers");
@@ -63,6 +73,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
     public void onDisable() {
         io.mczju.maggoteers.listener.GameplayTickListener.stop();
         io.mczju.maggoteers.effect.EffectListener.stopTick();
+        InfernalMobsBridge.shutdown();
         getLogger().info("Maggoteers disabled.");
     }
 

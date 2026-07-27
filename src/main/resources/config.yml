@@ -2,6 +2,10 @@ wait:
   min_players: 1
 lives:
   default: 2
+# 全局怪物属性倍率（再叠 waves.yml coeff / affixes）
+mob_attributes:
+  scale: 1.0
+  follow_range: 5.0
 initial_equipment: []   # 职业选择后由 reward 发放；如需全员基础装可在此列出 item_id
 class_select:
   timeout_sec: 45
@@ -38,21 +42,74 @@ items:
       - "<dark_gray>选定职业后消耗"
     glint: true
 
-# —— Plan 2 新增 ——
 act_origins:
   act1: [0, 64, 0]
   act2: [1024, 64, 0]
   act3: [2048, 64, 0]
 waves_per_act:
-  act1: { weak: 3, strong: 2 }
-  act2: { weak: 4, strong: 3 }
-  act3: { weak: 4, strong: 3 }
+  act1: { weak: 3, strong: 3 }
+  act2: { weak: 4, strong: 4 }
+  act3: { weak: 1, strong: 4 }
 rest:
   duration_sec: 30
   extend_sec: 15
   extend_max: 2
 map:
   fallback_platform: true
+world:
+  time_lock: night   # night | day | midnight | none
+  cleanup_orphans_on_enable: true
+player:
+  night_vision: true   # 进层冒险模式玩家夜视（配合 time_lock: night）
+act_enter:
+  prep_sec: 10       # 每层地图粘贴后、开波前的准备倒计时（秒）
+
+# 魔法武器右键释放：音效 + 粒子预设（handler 内调用 MagicFxService.play）
+# preset: THICK_RING | SPIRAL_RADIUS | RIPPLE_RINGS | AIM_RAY | SMOOTH_EXPAND_RING | DOT_ABOVE
+# particle: FLAME, SOUL_FIRE_FLAME, CRIT, ENCHANT, ELECTRIC_SPARK, END_ROD, …（见 GameRegistries.particle）
+# AURA 携带者脚下粒子：每次 play 为完整单次动画；间隔内不重复触发
+aura:
+  carrier_fx:
+    default_interval_sec: 3
+    by_preset:
+      SMOOTH_EXPAND_RING: 5
+      THICK_RING: 1
+
+magic_fx:
+  defaults:
+    sound: ENTITY_PLAYER_ATTACK_SWEEP
+    sound_volume: 0.9
+    sound_pitch: 1.05
+    preset: THICK_RING
+    particle: FLAME
+    radius: 4.5
+    ray_length: 12.0
+    density: 64
+    ripple_rings: 4
+    expand_steps: 28
+    spiral_ticks: 18
+  weapons:
+    maggoteers:test_blade:
+      preset: SPIRAL_RADIUS
+      radius: 6.0
+      particle: CRIT
+      sound: ENTITY_PLAYER_ATTACK_SWEEP
+      sound_volume: 0.9
+      sound_pitch: 1.1
+      density: 48
+      spiral_ticks: 44
+    maggoteers:healing_staff:
+      preset: RIPPLE_RINGS
+      radius: 5.0
+      particle: HAPPY_VILLAGER
+      ripple_rings: 4
+      sound: BLOCK_BEACON_POWER_SELECT
+    maggoteers:excalibur:
+      preset: AIM_RAY
+      particle: END_ROD
+      ray_length: 32.0
+      sound: ENTITY_LIGHTNING_BOLT_THUNDER
+      density: 64
 scaling:
   mob_hp:        [1.0, 2.3, 3.6, 5.0]
   mob_damage:    [1.0, 1.15, 1.3, 1.5]

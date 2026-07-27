@@ -1,0 +1,12 @@
+# Maps reward option id -> ItemCreator charm item(s). Appearance only; stats live in rewards.yml.
+collectibles:
+  a1s_magic_dmg:
+    item: maggoteers:charm_magic_10
+  a1s_damage_area:
+    item: maggoteers:charm_kill_shock
+  a1s_resist:
+    items_by_level:
+      1: maggoteers:charm_resist_1
+      2: maggoteers:charm_resist_2
+      3: maggoteers:charm_resist_3
+      4: maggoteers:charm_resist_4

@@ -18,20 +18,23 @@ public final class MapRepository {
     private static final Map<String, List<MapEntry>> BY_ACT = new HashMap<>();
     private static final Random RNG = new Random();
 
+    /** jar 内 bundled 地图：首次启动释放 points.yml / special_waves.yml / structure.nbt（若存在）。 */
+    private static final Map<String, List<String>> BUNDLED_MAP_IDS = Map.of(
+            "act1", List.of("jungle", "desert"),
+            "act2", List.of("graveyard", "badlands"),
+            "act3", List.of("mushrooms"));
+
     public static void load(JavaPlugin plugin) {
         BY_ACT.clear();
         File root = new File(plugin.getDataFolder(), "maps");
-        for (String act : List.of("act1", "act2", "act3")) {
-            String mapId = switch (act) {
-                case "act1" -> "ruined_keep";
-                case "act2" -> "frozen_halls";
-                default -> "obsidian_spire";
-            };
-            String path = "maps/" + act + "/" + mapId + "/points.yml";
-            plugin.saveResource(path, false);
-            if (act.equals("act1")) {
-                plugin.saveResource("maps/act1/ruined_keep/special_waves.yml", false);
+        for (var e : BUNDLED_MAP_IDS.entrySet()) {
+            for (String mapId : e.getValue()) {
+                ensureResource(plugin, "maps/" + e.getKey() + "/" + mapId + "/points.yml");
+                ensureResource(plugin, "maps/" + e.getKey() + "/" + mapId + "/special_waves.yml");
+                ensureResource(plugin, "maps/" + e.getKey() + "/" + mapId + "/structure.nbt");
             }
+        }
+        for (String act : List.of("act1", "act2", "act3")) {
             File actDir = new File(root, act);
             if (!actDir.isDirectory()) continue;
             List<MapEntry> entries = new ArrayList<>();
@@ -98,6 +101,11 @@ public final class MapRepository {
     public static MapEntry pickRandom(String act) {
         List<MapEntry> list = getMaps(act);
         return list.isEmpty() ? null : list.get(RNG.nextInt(list.size()));
+    }
+
+    private static void ensureResource(JavaPlugin plugin, String path) {
+        if (plugin.getResource(path) == null) return;
+        plugin.saveResource(path, false);
     }
 
     private MapRepository() {}

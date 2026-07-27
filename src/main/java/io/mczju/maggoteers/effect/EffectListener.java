@@ -24,12 +24,8 @@ public final class EffectListener implements Listener {
     public static void startTick() {
         if (++tickRef > 1) return;          // 已有心跳，只增引用计数
         tickTask = Bukkit.getScheduler().runTaskTimer(MaggoteersPlugin.getInstance(), () -> {
-            for (com.github.mczjuops.mczjugamecore.game.AbstractGame g :
-                    com.github.mczjuops.mczjugamecore.MCZJUGameCore.getGameManager().getAllGames()) {
-                if (g instanceof io.mczju.maggoteers.game.MaggoteersGame mg) {
-                    EffectService.fireTrigger(mg, Trigger.ON_TICK_1S, 1);
-                }
-            }
+            io.mczju.maggoteers.game.ActiveMaggoteersGames.forEach(mg ->
+                    EffectService.fireTrigger(mg, Trigger.ON_TICK_1S, 1));
         }, 20L, 20L);   // 每秒
     }
 
@@ -53,7 +49,9 @@ public final class EffectListener implements Listener {
     public void onDamageDealt(EntityDamageByEntityEvent e) {
         if (!(e.getDamager() instanceof Player p)) return;
         MaggoteersGame g = gameOf(p);
-        if (g != null) EffectService.fireTrigger(g, Trigger.ON_DAMAGE_DEALT);
+        if (g == null) return;
+        if (MagicDamageContext.shouldSuppressOnDamageDealt(g, p.getUniqueId())) return;
+        EffectService.fireTrigger(g, Trigger.ON_DAMAGE_DEALT);
     }
 
     /** 玩家受击 → ON_DAMAGE_TAKEN。 */

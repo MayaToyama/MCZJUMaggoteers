@@ -1,0 +1,8 @@
+# 本图专属波次（可选）。
+#
+# weak:
+#   - { strategy: w_skeleton_cross, weight: 2 }
+# strong:
+#   - { strategy: s_creeper_flank, weight: 2 }
+# boss:
+#   - { strategy: b_warden_puppet, weight: 2 }

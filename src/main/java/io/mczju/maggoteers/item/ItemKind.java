@@ -9,7 +9,9 @@ public enum ItemKind {
     CLASS_TICKET("class_ticket"),
     REVIVE_COIN("revive_coin"),
     SUPPLY_HEALING("supply_healing"),
-    SHOP_EMERALD("shop_emerald");
+    SHOP_EMERALD("shop_emerald"),
+    COLLECTIBLE("collectible"),
+    RUN_GEAR("run_gear");
 
     private final String pdcValue;
 

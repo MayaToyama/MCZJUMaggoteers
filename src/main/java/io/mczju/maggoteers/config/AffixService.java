@@ -28,7 +28,7 @@ public final class AffixService {
     }
 
     private static Affix parse(String id, ConfigurationSection s) {
-        if (s == null) return new Affix(id, 1, 1, 1, 1, List.of(), null, id);
+        if (s == null) return new Affix(id, 1, 1, 1, 1, List.of(), id);
         List<PotionSpec> pots = new ArrayList<>();
         for (var m : s.getMapList("potions")) {
             pots.add(new PotionSpec((String) m.get("effect"),
@@ -38,7 +38,8 @@ public final class AffixService {
         return new Affix(id,
                 s.getDouble("hp", 1.0), s.getDouble("dmg", 1.0),
                 s.getDouble("speed", 1.0), s.getDouble("drop", 1.0),
-                pots, s.getString("on"), s.getString("display", id));
+                s.getDouble("scale", 1.0), s.getDouble("follow_range", 1.0),
+                pots, s.getString("display", id));
     }
 
     private static Number num(Object v, Number fallback) {
@@ -63,10 +64,11 @@ public final class AffixService {
         return out;
     }
 
-    /** 测试用：直接构造（绕过 Bukkit 文件加载）。 */
+    /** 测试用：直接构造（绕过 Bukkit 文件加载），并设为 getInstance 目标。 */
     public static AffixService forTesting(Map<String, Affix> data) {
         AffixService s = new AffixService();
         s.affixes.putAll(data);
+        INSTANCE = s;
         return s;
     }
 

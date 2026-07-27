@@ -121,15 +121,16 @@ public final class ItemService {
     }
 
     private static void copyDefaultItems(MaggoteersPlugin plugin, File dir) {
-        String name = "maggoteers.yml";
-        File out = new File(dir, name);
-        if (out.exists()) return;
-        var stream = plugin.getResource("items/" + name);
-        if (stream == null) return;
-        try (stream) {
-            java.nio.file.Files.copy(stream, out.toPath());
-        } catch (Exception e) {
-            LOG.warning("释放默认物品 " + name + " 失败：" + e.getMessage());
+        for (String name : new String[]{"maggoteers.yml", "collectibles.yml"}) {
+            File out = new File(dir, name);
+            if (out.exists()) continue;
+            var stream = plugin.getResource("items/" + name);
+            if (stream == null) continue;
+            try (stream) {
+                java.nio.file.Files.copy(stream, out.toPath());
+            } catch (Exception e) {
+                LOG.warning("释放默认物品 " + name + " 失败：" + e.getMessage());
+            }
         }
     }
 
@@ -141,6 +142,7 @@ public final class ItemService {
             case REVIVE_COIN -> "maggoteers:revive_coin";
             case SUPPLY_HEALING -> "maggoteers:supply_healing";
             case SHOP_EMERALD -> "maggoteers:shop_emerald";
+            case COLLECTIBLE, RUN_GEAR -> null;
         };
     }
 
@@ -186,7 +188,15 @@ public final class ItemService {
 
     public static void giveInitialEquipment(Player player) {
         for (String id : MaggoteersPlugin.getInstance().getConfig().getStringList("initial_equipment")) {
-            give(player, id, 1);
+            createItem(id, 1).ifPresent(stack -> {
+                ItemMeta meta = stack.getItemMeta();
+                if (meta != null) {
+                    meta.getPersistentDataContainer().set(kindKey(), PersistentDataType.STRING,
+                            ItemKind.RUN_GEAR.pdcValue());
+                    stack.setItemMeta(meta);
+                }
+                player.getInventory().addItem(stack);
+            });
         }
     }
 

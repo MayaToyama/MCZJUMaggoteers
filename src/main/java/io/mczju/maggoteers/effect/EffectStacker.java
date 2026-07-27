@@ -42,18 +42,18 @@ public final class EffectStacker {
     }
 
     /**
-     * 扫描列表：对 expiryTrigger==fired 的效果扣电荷/移除。返回移除条数（原地修改 list）。
+     * 扫描列表：对 expiryTrigger==fired 的效果扣电荷/移除。返回被移除的效果 id（原地修改 list）。
      */
-    public static int sweepExpiry(List<PlayerEffect> list, Trigger fired) {
-        int removed = 0;
+    public static List<String> sweepExpiry(List<PlayerEffect> list, Trigger fired) {
+        List<String> removed = new ArrayList<>();
         var it = list.iterator();
         while (it.hasNext()) {
             PlayerEffect e = it.next();
             if (e.expiryTrigger() == fired) {
-                if (e.expiryCharges() == -1) { it.remove(); removed++; }
+                if (e.expiryCharges() == -1) { it.remove(); removed.add(e.id()); }
                 else if (e.expiryCharges() > 0) {
                     e.setExpiryCharges(e.expiryCharges() - 1);
-                    if (e.expiryCharges() == 0) { it.remove(); removed++; }
+                    if (e.expiryCharges() == 0) { it.remove(); removed.add(e.id()); }
                 }
             }
         }

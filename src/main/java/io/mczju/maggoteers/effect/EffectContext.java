@@ -20,6 +20,20 @@ public final class EffectContext {
 
     public boolean has(EffectKey<?> key) { return data.containsKey(key); }
 
+    /** 深拷贝 AURA 嵌套段（grant、carrier_fx、mark_fx），供写入 PlayerState。 */
+    public EffectContext copyDeep() {
+        EffectContext c = copy();
+        copyNested(c, EffectKeys.GRANT_PARAMS);
+        copyNested(c, EffectKeys.CARRIER_FX);
+        copyNested(c, EffectKeys.MARK_FX);
+        return c;
+    }
+
+    private static void copyNested(EffectContext parent, EffectKey<EffectContext> key) {
+        EffectContext nested = parent.get(key);
+        if (nested != null) parent.put(key, nested.copy());
+    }
+
     /** 返回浅拷贝（内部 map 独立），避免修改污染共享实例。 */
     public EffectContext copy() {
         EffectContext c = new EffectContext();

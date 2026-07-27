@@ -44,7 +44,7 @@ public final class WorldService {
         w.setGameRule(GameRules.NATURAL_HEALTH_REGENERATION, false);
         w.setGameRule(GameRules.MOB_GRIEFING, false);
         w.setGameRule(GameRules.SPAWN_MOBS, false);
-        w.setTime(1000L); // 白天附近
+        applyTimeLock(w);
         w.setStorm(false);
         w.setThundering(false);
         w.setClearWeatherDuration(Integer.MAX_VALUE);
@@ -55,7 +55,22 @@ public final class WorldService {
     }
 
     public static World get(AbstractGame game) {
-        return worlds.get(game);
+        World w = worlds.get(game);
+        if (w != null) applyTimeLock(w);
+        return w;
+    }
+
+    /** 按 config {@code world.time_lock} 锁定昼夜（默认 night，避免怪物日晒）。 */
+    public static void applyTimeLock(World w) {
+        if (w == null) return;
+        String mode = MaggoteersPlugin.getInstance().getConfig().getString("world.time_lock", "night");
+        if ("none".equalsIgnoreCase(mode)) return;
+        long tick = switch (mode.toLowerCase()) {
+            case "day", "noon" -> 6000L;
+            case "midnight" -> 18000L;
+            default -> 13000L; // night（略深，仍可见）
+        };
+        w.setTime(tick);
     }
 
     public static long getSeed(AbstractGame game) {
