@@ -463,7 +463,8 @@ reward_pools:
         category: STAT
         trigger: ON_ACT_ENTER
         effect: GRANT_REVIVE
-        params: count: 1
+        params:
+          count: 1
         unique: true
         stack: IGNORE
       -
@@ -682,7 +683,8 @@ reward_pools:
         category: STAT
         trigger: ON_WAVE_CLEAR
         effect: HEAL
-        params: amount: 9999.0
+        params:
+          amount: 9999.0
         unique: true
         stack: IGNORE
       -
@@ -1196,7 +1198,8 @@ reward_pools:
         category: STAT
         trigger: ON_KILL
         effect: HEAL
-        params: amount: 4.0
+        params:
+          amount: 4.0
         unique: true
         stack: IGNORE
       -
@@ -1746,7 +1749,8 @@ reward_pools:
         category: STAT
         trigger: ON_DAMAGE_DEALT
         effect: HEAL
-        params: amount: 1.0
+        params:
+          amount: 1.0
         unique: true
         stack: IGNORE
       -
@@ -1755,7 +1759,8 @@ reward_pools:
         category: STAT
         trigger: ON_DAMAGE_TAKEN
         effect: HEAL
-        params: amount: 2.0
+        params:
+          amount: 2.0
         unique: true
         stack: IGNORE
       -
