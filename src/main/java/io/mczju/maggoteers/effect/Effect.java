@@ -9,6 +9,13 @@ public enum Effect {
     DAMAGE_BEAM,     // params: damage, ray_length, beam_radius, targets, enemy_scope
     HEAL_AREA,       // params: amount, radius, targets, include_self
     GRANT_REVIVE,    // params: count
+    BUFF_AREA,       // params: potions[], targets, radius, fx, mark_fx, mark_on
+    /** params: duration_ticks, targets(enemies|hit_target|attacker), radius, enemy_scope, fx, mark_fx, mark_on */
+    DISABLE_AI,
     /** 范围光环：params 见 {@link AuraParams}；grant 嵌套在 params 内。 */
-    AURA
+    AURA,
+    /** params: item (IC id), amount */
+    GRANT_ITEM,
+    /** params: entity, anchor, cleanup, attributes, tamed, projectile, friendly_fire */
+    SUMMON
 }
