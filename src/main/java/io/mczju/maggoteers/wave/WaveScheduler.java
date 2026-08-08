@@ -188,6 +188,7 @@ public final class WaveScheduler {
         ActPlan act = c.acts.get(actIndex);
         broadcast(game, Component.text("▶ 进入第 " + (actIndex + 1) + " 层 · " + act.mapId(), NamedTextColor.GOLD));
         io.mczju.maggoteers.effect.EffectService.fireTrigger((MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_ACT_ENTER);
+        io.mczju.maggoteers.effect.SummonRegistry.onActEnter((MaggoteersGame) game);
         beginActPrep(game, c);
     }
 
@@ -304,6 +305,7 @@ public final class WaveScheduler {
             broadcast(game, Component.text("✔ 本波清除！", NamedTextColor.GREEN));
         }
         io.mczju.maggoteers.effect.EffectService.fireTrigger((MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_WAVE_CLEAR);
+        io.mczju.maggoteers.effect.SummonRegistry.onWaveClear((MaggoteersGame) game);
         int restSec = MaggoteersPlugin.getInstance().getConfig().getInt("rest.duration_sec", 30);
         c.restEndTicks = Bukkit.getCurrentTick() + restSec * 20L;
         c.phase = Phase.REST;

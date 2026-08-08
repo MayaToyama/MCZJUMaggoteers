@@ -20,12 +20,17 @@ public final class EffectContext {
 
     public boolean has(EffectKey<?> key) { return data.containsKey(key); }
 
-    /** 深拷贝 AURA 嵌套段（grant、carrier_fx、mark_fx），供写入 PlayerState。 */
+    /** 深拷贝 AURA 嵌套段（grant、carrier_fx、mark_fx、fx），供写入 PlayerState。 */
     public EffectContext copyDeep() {
         EffectContext c = copy();
         copyNested(c, EffectKeys.GRANT_PARAMS);
         copyNested(c, EffectKeys.CARRIER_FX);
         copyNested(c, EffectKeys.MARK_FX);
+        copyNested(c, EffectKeys.FX);
+        java.util.List<BuffPotionSpec> pots = c.get(EffectKeys.POTIONS);
+        if (pots != null) {
+            c.put(EffectKeys.POTIONS, java.util.List.copyOf(pots));
+        }
         return c;
     }
 

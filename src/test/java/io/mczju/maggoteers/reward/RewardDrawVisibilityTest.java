@@ -7,6 +7,7 @@ import io.mczju.maggoteers.effect.Stack;
 import io.mczju.maggoteers.state.PlayerState;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -20,24 +21,24 @@ class RewardDrawVisibilityTest {
 
     private static RewardOption supply(String id) {
         return new RewardOption(id, "", "", RewardOption.Category.SUPPLY, "maggoteers:x", 1,
-                null, null, null, Stack.ADD, null, 0, false, 0, false);
+                null, null, null, Stack.ADD, null, 0, false, 0, false, 0, List.of());
     }
 
     private static RewardOption weapon(String id) {
         return new RewardOption(id, "", "", RewardOption.Category.WEAPON, "maggoteers:w", 1,
-                null, null, null, Stack.ADD, null, 0, false, 0, false);
+                null, null, null, Stack.ADD, null, 0, false, 0, false, 0, List.of());
     }
 
     private static RewardOption statAdd(String id) {
         return new RewardOption(id, "", "", RewardOption.Category.STAT, null, 1,
                 null, Effect.ADD_ATTRIBUTE, new EffectContext(), Stack.ADD,
-                null, 0, false, 0, true);
+                null, 0, false, 0, true, 0, List.of());
     }
 
     private static RewardOption statUpgrade(String id) {
         return new RewardOption(id, "", "", RewardOption.Category.STAT, null, 1,
                 null, Effect.ADD_POTION, new EffectContext(), Stack.UPGRADE_LEVEL,
-                null, 0, false, 0, true);
+                null, 0, false, 0, true, 0, List.of());
     }
 
     private static PlayerState stateWithEffect(String id, Stack stack, int level, int upgradeMax) {
@@ -47,6 +48,10 @@ class RewardDrawVisibilityTest {
         pe.setLevel(level);
         ps.effects().add(pe);
         return ps;
+    }
+
+    private static RewardPool poolWithCap(int cap) {
+        return new RewardPool("act1_weak", 1, "normal", cap, List.of());
     }
 
     @Test
@@ -66,11 +71,16 @@ class RewardDrawVisibilityTest {
     }
 
     @Test
-    void upgradeVisibleUntilMax() {
+    void upgradeVisibleUntilPoolCap() {
         RewardOption up = statUpgrade("a1s_resist");
-        PlayerState ps = stateWithEffect("a1s_resist", Stack.UPGRADE_LEVEL, 2, 4);
-        assertTrue(RewardDrawVisibility.isVisible(up, ps, Set.of()));
-        ps = stateWithEffect("a1s_resist", Stack.UPGRADE_LEVEL, 4, 4);
-        assertFalse(RewardDrawVisibility.isVisible(up, ps, Set.of()));
+        RewardPool weakPool = poolWithCap(2);
+        PlayerState ps = stateWithEffect("a1s_resist", Stack.UPGRADE_LEVEL, 1, 4);
+        assertTrue(RewardDrawVisibility.isVisible(up, ps, Set.of(), weakPool));
+        ps = stateWithEffect("a1s_resist", Stack.UPGRADE_LEVEL, 2, 4);
+        assertFalse(RewardDrawVisibility.isVisible(up, ps, Set.of(), weakPool));
+
+        RewardPool strongPool = poolWithCap(3);
+        ps = stateWithEffect("a1s_resist", Stack.UPGRADE_LEVEL, 2, 4);
+        assertTrue(RewardDrawVisibility.isVisible(up, ps, Set.of(), strongPool));
     }
 }

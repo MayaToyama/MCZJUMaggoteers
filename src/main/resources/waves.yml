@@ -1637,8 +1637,8 @@ strategies:
         delay: 10
         equipment:
           - { slot: HAND, item: maggoteers:mob_trident }
-      - { point: "5", type: IRON_GOLEM, count: 1, coeff: { hp: 20.0 },infernal: { level: 3, affixes: [molten, vengeance, storm] }, delay: 10 }
-      - { point: boss, type: WARDEN, count: 1, coeff: { hp: 4.0 }, infernal: { level: 3, affixes: [blinding, wardenwrath, confusing] }, delay: 10 }
+      - { point: "5", type: IRON_GOLEM, count: 1, coeff: { hp: 20.0 },infernal: { level: 3, affixes: [molten, vengeance, storm] }, delay: 30 }
+      - { point: boss, type: WARDEN, count: 1, coeff: { hp: 4.0 }, infernal: { level: 3, affixes: [blinding, wardenwrath, confusing] }, delay: 30 }
 
   # 哨兵（b3_sentinel）
   b3_sentinel:
@@ -1746,7 +1746,7 @@ strategies:
       - { point: boss, type: SLIME, count: 1, coeff: { hp: 20.0, scale: 3.0 }, infernal: { level: 3, affixes: [quicksand, necromancer, ghastly] }, delay: 0 }
       - point: "1"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
@@ -1756,47 +1756,47 @@ strategies:
           - { type: SKELETON, count: 1, coeff: { hp: 3.0 }, equipment: [ { slot: HAND, item: maggoteers:mob_bow_flame_punch } ] }
       - point: "1"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: CREEPER, count: 1, coeff: { hp: 20.0, speed: 2.0 }, affixes: [blinding] }
       - point: "1"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: SPIDER, count: 1, coeff: { scale: 0.8, hp: 2.0 } }
       - point: "1"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: WITHER_SKELETON, count: 1, coeff: { hp: 4.0 } }
       - point: "1"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: ZOMBIFIED_PIGLIN, count: 1, coeff: { hp: 2.0, speed: 1.5 }, equipment: [ { slot: HAND, item: maggoteers:mob_gold_spear } ] }
       - point: "2"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
@@ -1806,47 +1806,47 @@ strategies:
           - { type: CREEPER, count: 1, coeff: { hp: 20.0, speed: 2.0 }, affixes: [blinding] }
       - point: "2"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: SPIDER, count: 1, coeff: { scale: 0.8, hp: 2.0 } }
       - point: "2"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: WITHER_SKELETON, count: 1, coeff: { hp: 4.0 } }
       - point: "2"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: ZOMBIFIED_PIGLIN, count: 1, coeff: { hp: 2.0, speed: 1.5 }, equipment: [ { slot: HAND, item: maggoteers:mob_gold_spear } ] }
       - point: "2"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: ENDERMITE, count: 5 }
       - point: "3"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
@@ -1856,47 +1856,47 @@ strategies:
           - { type: SPIDER, count: 1, coeff: { scale: 0.8, hp: 2.0 } }
       - point: "3"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: WITHER_SKELETON, count: 1, coeff: { hp: 4.0 } }
       - point: "3"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: ZOMBIFIED_PIGLIN, count: 1, coeff: { hp: 2.0, speed: 1.5 }, equipment: [ { slot: HAND, item: maggoteers:mob_gold_spear } ] }
       - point: "3"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: ENDERMITE, count: 5 }
       - point: "3"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: CAVE_SPIDER, count: 2 }
       - point: "4"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
@@ -1906,42 +1906,42 @@ strategies:
           - { type: WITHER_SKELETON, count: 1, coeff: { hp: 4.0 } }
       - point: "4"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: ZOMBIFIED_PIGLIN, count: 1, coeff: { hp: 2.0, speed: 1.5 }, equipment: [ { slot: HAND, item: maggoteers:mob_gold_spear } ] }
       - point: "4"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: ENDERMITE, count: 5 }
       - point: "4"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: CAVE_SPIDER, count: 2 }
       - point: "4"
         type: SLIME
-        count: 10
+        count: 5
         affixes: [infected]
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 20
+        delay: 5
         on_death:
           - { type: ZOGLIN, count: 1 }
 

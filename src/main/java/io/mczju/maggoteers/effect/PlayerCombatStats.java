@@ -26,6 +26,7 @@ public final class PlayerCombatStats {
     }
 
     static double magicDamagePercentContribution(PlayerEffect e) {
+        if (e.fireTrigger() != null) return 0.0;
         if (e.effect() != Effect.ADD_ATTRIBUTE) return 0.0;
         String attrName = e.params().get(EffectKeys.ATTR_NAME);
         if (attrName == null || !VirtualStats.isMagicDamage(attrName)) return 0.0;

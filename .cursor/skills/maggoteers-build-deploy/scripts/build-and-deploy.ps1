@@ -20,14 +20,21 @@ if (-not $Mvn) {
     Write-Error "IntelliJ mvn.cmd not found. See .cursor/skills/maggoteers-build-deploy/reference.md"
 }
 
-# 项目需 JDK 25；PATH 默认常为 21。优先 MC 运行时，其次 IntelliJ 工程 JDK。
-if (-not $env:JAVA_HOME -or -not (Test-Path "$env:JAVA_HOME\bin\javac.exe")) {
-    $McJdk = Join-Path $env:APPDATA ".minecraft\runtime\java-runtime-epsilon"
-    if (Test-Path "$McJdk\bin\javac.exe") {
-        $env:JAVA_HOME = $McJdk
-        $env:PATH = "$McJdk\bin;$env:PATH"
-        Write-Host "JAVA_HOME -> $McJdk (Minecraft runtime JDK 25)"
+# JDK 25 required; prefer Minecraft runtime when current Java is not 25.
+$McJdk = Join-Path $env:APPDATA ".minecraft\runtime\java-runtime-epsilon"
+$needsMcJdk = $false
+if (Test-Path "$McJdk\bin\javac.exe") {
+    if (-not $env:JAVA_HOME -or -not (Test-Path "$env:JAVA_HOME\bin\javac.exe")) {
+        $needsMcJdk = $true
+    } else {
+        $ver = cmd /c "`"$env:JAVA_HOME\bin\java.exe`" -version 2>&1"
+        if ($ver -notmatch 'version "25') { $needsMcJdk = $true }
     }
+}
+if ($needsMcJdk) {
+    $env:JAVA_HOME = $McJdk
+    $env:PATH = "$McJdk\bin;$env:PATH"
+    Write-Host "JAVA_HOME -> $McJdk (Minecraft runtime JDK 25)"
 }
 
 $ServerPlugins = "E:\MCpaper\plugins"

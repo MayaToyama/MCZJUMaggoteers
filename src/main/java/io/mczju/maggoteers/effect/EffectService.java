@@ -234,6 +234,7 @@ public final class EffectService {
     /** Weapon entry: FX already played by {@link io.mczju.maggoteers.item.interact.ConfigMagicHandler}. */
     public static boolean executeAbility(Player p, MaggoteersGame game, ItemAbility ability) {
         if (p == null || game == null || ability == null) return false;
+        applySelfPotions(p, ability.selfPotions());
         if (ability.effect() == Effect.ADD_ATTRIBUTE) {
             return applyWeaponTempEffect(p, game, ability);
         }
@@ -249,6 +250,13 @@ public final class EffectService {
         }
         return executeMagicEffect(p, game, ability.effect(), ability.params(), ability.fx(),
                 TriggerContext.empty(), true);
+    }
+
+    private static void applySelfPotions(Player p, java.util.List<BuffPotionSpec> potions) {
+        if (p == null || potions == null || potions.isEmpty()) return;
+        for (BuffPotionSpec spec : potions) {
+            PotionMerge.applyIfNeeded(p, spec.type(), spec.amp(), spec.durationTicks());
+        }
     }
 
     private static boolean applyInstantPotion(Player p, EffectContext params) {
@@ -346,9 +354,15 @@ public final class EffectService {
                 if (origin == null || origin.getWorld() == null) return false;
                 io.mczju.maggoteers.util.ParticleEffects.playAreaRing(origin.getWorld(), origin, radius);
                 List<LivingEntity> targets = TargetResolver.collect(game, p, origin, radius, effect, params);
+                List<BuffPotionSpec> potions = params.get(EffectKeys.POTIONS);
                 Runnable action = () -> {
                     for (LivingEntity le : targets) {
                         le.damage(dmg, p);
+                        if (potions != null && !potions.isEmpty() && le.isValid() && !le.isDead()) {
+                            for (BuffPotionSpec spec : potions) {
+                                PotionMerge.applyIfNeeded(le, spec.type(), spec.amp(), spec.durationTicks());
+                            }
+                        }
                     }
                 };
                 if (shouldWrapMagicDamage(useCtx)) {

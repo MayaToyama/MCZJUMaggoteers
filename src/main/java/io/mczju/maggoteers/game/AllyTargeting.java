@@ -44,6 +44,38 @@ public final class AllyTargeting {
         return out;
     }
 
+    /** Allies within {@code radius} of {@code center} (for death-site area effects). */
+    public static List<Player> alliesNear(MaggoteersGame mg, org.bukkit.Location center,
+                                          double radius, Player caster, boolean includeSelf) {
+        List<Player> out = new ArrayList<>();
+        if (center == null || center.getWorld() == null) return out;
+        if (mg == null && caster != null) {
+            mg = PlayerStateManager.gameForPlayer(caster.getUniqueId());
+        }
+        if (mg == null) return out;
+
+        Set<UUID> seen = new HashSet<>();
+        for (UUID uuid : PlayerStateManager.uuidsInGame(mg)) {
+            Player candidate = org.bukkit.Bukkit.getPlayer(uuid);
+            if (candidate == null || seen.contains(uuid)) continue;
+            if (!includeSelf && caster != null && candidate.getUniqueId().equals(caster.getUniqueId())) {
+                continue;
+            }
+            if (candidate.getWorld() != center.getWorld()) continue;
+            if (candidate.getLocation().distance(center) > radius) continue;
+            if (!PlayerStateManager.isRunParticipant(mg, candidate)) continue;
+            seen.add(uuid);
+            out.add(candidate);
+        }
+        if (includeSelf && caster != null && !seen.contains(caster.getUniqueId())
+                && PlayerStateManager.isRunParticipant(mg, caster)
+                && caster.getWorld() == center.getWorld()
+                && caster.getLocation().distance(center) <= radius) {
+            out.add(caster);
+        }
+        return out;
+    }
+
     private static void tryAdd(List<Player> out, Set<UUID> seen, MaggoteersGame mg, Player origin,
                                Player candidate, double radius, boolean includeSelf) {
         if (candidate == null || seen.contains(candidate.getUniqueId())) return;

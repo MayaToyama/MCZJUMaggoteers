@@ -73,7 +73,7 @@ public class RestMenu extends Menu {
             return;
         }
         p.closeInventory();
-        MenuFacade.open("maggoteers-pick", p, game, offers);
+        MenuFacade.open("maggoteers-pick", p, game, offers, poolId);
     }
 
     private static ItemStack btn(Material mat, String name, String loreLine, int countHint) {

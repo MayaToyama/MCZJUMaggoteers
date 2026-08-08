@@ -224,8 +224,11 @@ public final class ItemAbilityRegistry {
             fxSec = legacyUseFx;
         }
         MagicUseFx fx = MagicFxConfig.mergedFxForAbility(itemId, fxSec);
+        java.util.List<BuffPotionSpec> selfPotions = abilitySec.contains("self_potions")
+                ? BuffPotionParser.parseList(abilitySec.getList("self_potions"))
+                : java.util.List.of();
         BY_ITEM_ID.put(itemId, new ItemAbility(
-                itemId, cooldownSec, effect, params, fx, consume, expiryTrigger, expiryCharges, stack));
+                itemId, cooldownSec, effect, params, fx, consume, expiryTrigger, expiryCharges, stack, selfPotions));
     }
 
     private static String normalizeItemId(String key) {

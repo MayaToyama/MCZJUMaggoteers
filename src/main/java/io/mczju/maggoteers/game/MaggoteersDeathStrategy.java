@@ -3,9 +3,13 @@ package io.mczju.maggoteers.game;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import com.github.mczjuops.mczjugamecore.player.strategy.AbstractPlayerDeathStrategy;
+import io.mczju.maggoteers.effect.EffectService;
+import io.mczju.maggoteers.effect.Trigger;
+import io.mczju.maggoteers.effect.TriggerContext;
 import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -30,15 +34,24 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
             return;
         }
 
+        if (!(game instanceof MaggoteersGame mg)) {
+            return;
+        }
+
+        Location deathLoc = p.getLocation().clone();
+        EffectService.fireTriggerPlayer(mg, p, Trigger.ON_DEATH,
+                TriggerContext.atEvent(Trigger.ON_DEATH, deathLoc));
+
         if (st.tryAutoRevive()) {
             healAndInvuln(p);
-            org.bukkit.Location spawn = io.mczju.maggoteers.wave.WaveScheduler.currentSpawnLocation(game);
-            if (spawn != null) p.teleport(spawn);
-            io.mczju.maggoteers.effect.EffectService.fireTrigger((io.mczju.maggoteers.game.MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_REVIVE);
-            io.mczju.maggoteers.effect.EffectService.resync(p);
-            if (game instanceof MaggoteersGame mg) {
-                io.mczju.maggoteers.reward.CollectibleService.resync(p, mg);
+            Location spawn = io.mczju.maggoteers.wave.WaveScheduler.currentSpawnLocation(game);
+            if (spawn != null) {
+                p.teleport(spawn);
             }
+            EffectService.fireTriggerPlayer(mg, p, Trigger.ON_REVIVE,
+                    TriggerContext.atEvent(Trigger.ON_REVIVE, deathLoc));
+            EffectService.resync(p);
+            io.mczju.maggoteers.reward.CollectibleService.resync(p, mg);
             game.sender().info("<yellow>" + p.getName()
                     + " 倒下，自动复活！（剩余 " + st.getReviveCount() + " 次）");
             return;
@@ -48,11 +61,10 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
         io.mczju.maggoteers.effect.AuraService.stripAllFromSource(game, p.getUniqueId());
         healAndInvuln(p);
         p.setGameMode(GameMode.SPECTATOR);
-        io.mczju.maggoteers.effect.EffectService.fireTrigger((io.mczju.maggoteers.game.MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_DEATH);
         game.sender().warn("<red>" + p.getName() + " 倒下！转为观察者（可用复活币救援）。");
 
         if (!PlayerStateManager.isAnyAlive(game)) {
-            ((MaggoteersGame) game).fail();
+            mg.fail();
         }
     }
 

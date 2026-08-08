@@ -1,5 +1,5 @@
-# 非券种物品（货币/职业券改由 config.yml items 段配置）
-# ItemCreator 格式见 docs/ICReadme.md；PDC maggoteers:id 供 ItemInteractRouter 识别
+# 非券种物品（rewardplan 生成）
+# ItemCreator 格式；PDC maggoteers:id 供 ItemInteractRouter 识别
 
 maggoteers:revive_coin:
   material: TOTEM_OF_UNDYING
@@ -23,136 +23,1414 @@ maggoteers:supply_healing:
       type: STRING
       value: supply_healing
 
-maggoteers:wooden_sword:
-  material: WOODEN_SWORD
-  customName: "<gray>训练木剑"
+maggoteers:wolf_whistle:
+  material: BONE
+  customName: "<gray>美味的骨头"
   lore:
-    - "<dark_gray>开局配发"
-  unbreakable: true
-
-maggoteers:leather_helmet:
-  material: LEATHER_HELMET
-  customName: "<gray>训练皮帽"
-  lore:
-    - "<dark_gray>开局配发"
-  unbreakable: true
-
-maggoteers:shop_emerald:
-  material: EMERALD
-  customName: "<green>卫戍商店"
-  lore:
-    - "<gray>右键打开商店"
-    - "<dark_gray>用卫戍币购买物资（不消耗）"
-  glint: true
-  pdc:
-    - key: maggoteers:kind
-      type: STRING
-      value: shop_emerald
-
-maggoteers:test_blade:
-  material: IRON_SWORD
-  customName: "<red>旋风斩"
-  lore:
-    - "<gray>右键：旋转剑气范围斩"
-    - "<dark_gray>冷却 3 秒"
-  enchantments:
-    - minecraft:sharpness: 3
-  unbreakable: true
-  maxStackSize: 1
-  useCooldown:
-    cooldownGroup: "maggoteers:test_blade"
-    seconds: 3
+    - "<gray>右键：召唤驯服狼"
+    - "<dark_gray>消耗 1 个"
+  maxStackSize: 8
   pdc:
     - key: maggoteers:id
       type: STRING
-      value: maggoteers:test_blade
+      value: maggoteers:wolf_whistle
   use_ability:
-    cooldown_sec: 3
-    effect: DAMAGE_AREA
+    cooldown_sec: 1
+    consume: true
+    effect: SUMMON
     params:
-      damage: 6.0
-      radius: 6.0
+      entity: WOLF
+      cleanup: wave_clear
+      tamed: true
+      friendly_fire: false
+
+maggoteers:anacreon:
+  material: COPPER_SWORD
+  customName: "<gold>阿纳克吕翁"
+  unbreakable: true
+  maxStackSize: 1
+  enchantments:
+    - minecraft:smite: 6
+    - minecraft:bane_of_arthropods: 6
+    - minecraft:impaling: 6
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 9
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:anacreon"
+
+maggoteers:art_tyrant:
+  material: CROSSBOW
+  customName: "<light_purple>艺术暴君"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:art_tyrant"
+  held_effects:
+    -
+      effect: ADD_ATTRIBUTE
+      params:
+        attr: MOVEMENT_SPEED
+        op: PERCENT
+        value: 0.1
+  use_ability:
+    cooldown_sec: 1.5
+    effect: DAMAGE_BEAM
+    params:
+      damage: 10.0
+      ray_length: 32.0
       targets: enemies
       enemy_scope: tracked
-    fx:
-      preset: SPIRAL_RADIUS
-      radius: 6.0
-      particle: CRIT
-      sound: ENTITY_PLAYER_ATTACK_SWEEP
-      sound_volume: 0.9
-      sound_pitch: 1.1
-      density: 48
-      spiral_ticks: 44
 
-maggoteers:healing_staff:
-  material: STICK
-  itemModel: minecraft:diamond_spear
-  customName: "<green>治疗法杖"
-  lore:
-    - "<gray>右键：5 格内队友 +3 心"
-    - "<dark_gray>冷却 25 秒"
-  glint: true
+maggoteers:bible:
+  material: BOOK
+  customName: "<white>圣经"
   unbreakable: true
   maxStackSize: 1
-  useCooldown:
-    cooldownGroup: "maggoteers:healing_staff"
-    seconds: 25
+  enchantments:
+    - minecraft:smite: 20
   pdc:
-    - key: maggoteers:id
+    -
+      key: "maggoteers:id"
       type: STRING
-      value: maggoteers:healing_staff
+      value: "maggoteers:bible"
+
+maggoteers:blast_unit:
+  material: IRON_SWORD
+  customName: "<green>爆破单元"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:blast_unit"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 10
+      operation: ADD_NUMBER
+      slot: mainhand
   use_ability:
-    cooldown_sec: 25
+    cooldown_sec: 20
     effect: HEAL_AREA
     params:
-      amount: 6.0
+      amount: 14.0
       radius: 5.0
       targets: allies
       include_self: true
-    fx:
-      preset: RIPPLE_RINGS
-      radius: 5.0
-      particle: HAPPY_VILLAGER
-      ripple_rings: 4
-      sound: BLOCK_BEACON_POWER_SELECT
-      sound_volume: 1.0
-      density: 56
 
-maggoteers:excalibur:
-  material: NETHERITE_SWORD
-  customName: "<light_purple>Ex咖喱棒"
-  lore:
-    - "<gold>右键：准星方向圣剑光束"
-    - "<dark_gray>冷却 10 秒"
-  enchantments:
-    - minecraft:sharpness: 5
-  glint: true
+maggoteers:bleed_knife:
+  material: IRON_INGOT
+  customName: "<red>放血小刀"
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:bleed_knife"
+  use_ability:
+    cooldown_sec: 1
+    effect: BUFF_AREA
+    params:
+      targets: self
+      potions:
+        -
+          potion: POISON
+          amp: 0
+          duration_ticks: 1
+
+maggoteers:boss_golden_apple:
+  material: GOLDEN_APPLE
+  customName: "<gold>金苹果"
+  maxStackSize: 4
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:boss_golden_apple"
+  use_ability:
+    cooldown_sec: 1
+    consume: true
+    effect: HEAL_AREA
+    params:
+      amount: 1000.0
+      radius: 1.0
+      targets: allies
+      include_self: true
+
+maggoteers:burn_blade:
+  material: IRON_SWORD
+  customName: "<red>一刀一刀燃烧刀"
   unbreakable: true
   maxStackSize: 1
-  useCooldown:
-    cooldownGroup: "maggoteers:excalibur"
-    seconds: 10
+  enchantments:
+    - minecraft:fire_aspect: 5
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 8
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 2.0
+      operation: ADD_NUMBER
+      slot: mainhand
   pdc:
-    - key: maggoteers:id
+    -
+      key: "maggoteers:id"
       type: STRING
-      value: maggoteers:excalibur
+      value: "maggoteers:burn_blade"
+
+maggoteers:cat_hammer:
+  material: MACE
+  customName: "<light_purple>充气猫猫锤"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:cat_hammer"
   use_ability:
-    cooldown_sec: 10
-    effect: DAMAGE_BEAM
+    cooldown_sec: 5
+    effect: ADD_POTION
     params:
-      damage: 14.0
-      ray_length: 32.0
-      beam_radius: 1.25
+      potion: LEVITATION
+      amp: 4
+      duration_ticks: 4
+
+maggoteers:cataclysm:
+  material: OBSIDIAN
+  customName: "<dark_red>灾变核心"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:cataclysm"
+  use_ability:
+    cooldown_sec: 40
+    effect: DAMAGE_AREA
+    params:
+      damage: 20.0
+      radius: 8.0
       targets: enemies
       enemy_scope: tracked
-    fx:
-      preset: AIM_RAY
-      particle: END_ROD
+      potions:
+        -
+          potion: STRENGTH
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: SPEED
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: INVISIBILITY
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: FIRE_RESISTANCE
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: RESISTANCE
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: REGENERATION
+          amp: 255
+          duration_ticks: 1
+  held_effects:
+    -
+      effect: BUFF_AREA
+      trigger: ON_DAMAGE_DEALT
+      params:
+        targets: self
+        potions:
+          -
+            potion: INSTANT_DAMAGE
+            amp: 0
+            duration_ticks: 1
+
+maggoteers:class_guard_spear:
+  material: IRON_SWORD
+  itemModel: "minecraft:iron_spear"
+  customName: "<yellow>初心者长矛"
+  lore:
+    - <gray>10 伤害 · 快攻速 · +0.5 触及
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:class_guard_spear"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 10
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 1.0
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:entity_interaction_range"
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: mainhand
+
+maggoteers:class_heavy_sword:
+  material: IRON_SWORD
+  customName: "<blue>初心者圣剑"
+  lore:
+    - <gray>右键：范围治疗 10 心
+    - <dark_gray>冷却 20 秒
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:class_heavy_sword"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 6
+      operation: ADD_NUMBER
+      slot: mainhand
+  use_ability:
+    cooldown_sec: 20
+    effect: HEAL_AREA
+    params:
+      amount: 10.0
+      radius: 5.0
+      targets: allies
+      include_self: true
+
+maggoteers:class_mage_sword:
+  material: GOLDEN_SWORD
+  customName: "<green>初心者魔剑"
+  lore:
+    - <gray>右键：4格范围 4 伤害
+    - <dark_gray>冷却 12 秒
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:class_mage_sword"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 5
+      operation: ADD_NUMBER
+      slot: mainhand
+  use_ability:
+    cooldown_sec: 12
+    effect: DAMAGE_AREA
+    params:
+      damage: 4.0
+      radius: 4.0
+      targets: enemies
+      enemy_scope: tracked
+
+maggoteers:class_sniper_bow:
+  material: CROSSBOW
+  customName: "<aqua>初心者之弓"
+  lore:
+    - <gray>右键：伤害光束 6
+    - <dark_gray>冷却 3 秒
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:class_sniper_bow"
+  use_ability:
+    cooldown_sec: 3
+    effect: DAMAGE_BEAM
+    params:
+      damage: 6.0
       ray_length: 32.0
-      density: 64
-      sound: ENTITY_LIGHTNING_BOLT_THUNDER
-      sound_volume: 0.7
-      sound_pitch: 1.15
+      beam_radius: 1.0
+      targets: enemies
+      enemy_scope: tracked
+
+maggoteers:class_vanguard_axe:
+  material: IRON_AXE
+  customName: "<gold>初心者战斧"
+  lore:
+    - <gray>右键：下次攻击 +100% 伤害
+    - <dark_gray>冷却 20 秒
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:class_vanguard_axe"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 10
+      operation: ADD_NUMBER
+      slot: mainhand
+  use_ability:
+    cooldown_sec: 20
+    effect: ADD_ATTRIBUTE
+    params:
+      attr: ATTACK_DAMAGE
+      op: PERCENT
+      value: 1.0
+    expiry:
+      trigger: ON_DAMAGE_DEALT
+      charges: 1
+    stack: REPLACE
+
+maggoteers:eighty_hammer:
+  material: MACE
+  customName: "<red>八十！"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:eighty_hammer"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 28
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: -3.5
+      operation: ADD_NUMBER
+      slot: mainhand
+  use_ability:
+    cooldown_sec: 10
+    effect: DISABLE_AI
+    params:
+      targets: hit_target
+      duration_ticks: 100
+    expiry:
+      trigger: ON_DAMAGE_DEALT
+      charges: 1
+    stack: REPLACE
+
+maggoteers:emp:
+  material: COPPER_BLOCK
+  customName: "<blue>E.M.P"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:emp"
+  use_ability:
+    cooldown_sec: 40
+    effect: BUFF_AREA
+    params:
+      radius: 8.0
+      targets: enemies
+      enemy_scope: tracked
+      potions:
+        -
+          potion: STRENGTH
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: SPEED
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: INVISIBILITY
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: FIRE_RESISTANCE
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: RESISTANCE
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: REGENERATION
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: SLOWNESS
+          amp: 9
+          duration_ticks: 200
+
+maggoteers:excalibur_a3:
+  material: GOLDEN_SWORD
+  customName: "<gold>Excalibur"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 12
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:excalibur_a3"
+  use_ability:
+    cooldown_sec: 25
+    effect: DAMAGE_BEAM
+    params:
+      damage: 30.0
+      ray_length: 40.0
+      targets: enemies
+      enemy_scope: tracked
+
+maggoteers:famed_name:
+  material: DIAMOND_SWORD
+  customName: "<aqua>显赫声名"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 5
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:famed_name"
+  use_ability:
+    cooldown_sec: 9
+    effect: DAMAGE_AREA
+    params:
+      damage: 6.0
+      radius: 4.0
+      targets: enemies
+      enemy_scope: tracked
+
+maggoteers:frostmourne:
+  material: DIAMOND_SWORD
+  customName: "<blue>霜之哀伤"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 18
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:frostmourne"
+  held_effects:
+    -
+      effect: ADD_POTION
+      params:
+        potion: WITHER
+        amp: 0
+        duration_ticks: 0
+  use_ability:
+    cooldown_sec: 8
+    effect: DAMAGE_AREA
+    params:
+      damage: 2.0
+      radius: 4.0
+      targets: enemies
+      enemy_scope: tracked
+
+maggoteers:full_heal_steak:
+  material: COOKED_BEEF
+  customName: "<red>免费牛排！"
+  maxStackSize: 4
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:full_heal_steak"
+  use_ability:
+    cooldown_sec: 1
+    consume: true
+    effect: HEAL_AREA
+    params:
+      amount: 9999.0
+      radius: 1.0
+      targets: allies
+      include_self: true
+
+maggoteers:glass_blade:
+  material: DIAMOND_HOE
+  customName: "<aqua>玻璃刀"
+  lore:
+    - <gray>耐久 1 · 锋利 100
+  maxStackSize: 1
+  enchantments:
+    - minecraft:sharpness: 100
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:glass_blade"
+
+maggoteers:griffon_claw:
+  material: NETHERITE_HOE
+  customName: "<white>骏鹰之爪"
+  unbreakable: true
+  maxStackSize: 1
+  enchantments:
+    - minecraft:sweeping_edge: 10
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 10
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:entity_interaction_range"
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:griffon_claw"
+
+maggoteers:heal_potion_item:
+  material: POTION
+  customName: "<red>瞬间治疗药水"
+  maxStackSize: 8
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:heal_potion_item"
+  use_ability:
+    cooldown_sec: 1
+    consume: true
+    effect: HEAL_AREA
+    params:
+      amount: 10.0
+      radius: 1.0
+      targets: allies
+      include_self: true
+
+maggoteers:heat_cutter_a1:
+  material: GOLDEN_SWORD
+  customName: "<red>热熔切割器"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:heat_cutter_a1"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 5
+      operation: ADD_NUMBER
+      slot: mainhand
+  use_ability:
+    cooldown_sec: 10
+    effect: DAMAGE_AREA
+    params:
+      damage: 5.0
+      radius: 4.0
+      targets: enemies
+      enemy_scope: tracked
+
+maggoteers:herafinger:
+  material: DIAMOND_SWORD
+  customName: "<gold>赫拉芬格"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 18
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 0.0
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:herafinger"
+  use_ability:
+    cooldown_sec: 10
+    effect: ADD_ATTRIBUTE
+    params:
+      attr: ATTACK_DAMAGE
+      op: PERCENT
+      value: 2.0
+    expiry:
+      trigger: ON_DAMAGE_DEALT
+      charges: 1
+    stack: REPLACE
+
+maggoteers:holy_water:
+  material: POTION
+  customName: "<aqua>圣水"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:holy_water"
+  use_ability:
+    cooldown_sec: 15
+    effect: BUFF_AREA
+    params:
+      targets: self
+      potions:
+        -
+          potion: WITHER
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: SLOWNESS
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: WEAKNESS
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: BLINDNESS
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: POISON
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: DARKNESS
+          amp: 255
+          duration_ticks: 1
+        -
+          potion: INSTANT_HEALTH
+          amp: 1
+          duration_ticks: 1
+
+maggoteers:jet_a1:
+  material: GOLDEN_SWORD
+  itemModel: "minecraft:golden_spear"
+  customName: "<aqua>J.E.T"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:jet_a1"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 11
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 0.1
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:entity_interaction_range"
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: mainhand
+  use_ability:
+    cooldown_sec: 20
+    effect: ADD_POTION
+    params:
+      potion: SPEED
+      amp: 2
+      duration_ticks: 40
+
+maggoteers:knight_greatsword:
+  material: SHIELD
+  itemModel: "minecraft:iron_sword"
+  customName: "<blue>骑士巨剑"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 8
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 0.2
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:entity_interaction_range"
+      amount: 1.0
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:knight_greatsword"
+  held_effects:
+    -
+      effect: ADD_POTION
+      params:
+        potion: RESISTANCE
+        amp: 0
+        duration_ticks: 0
+    -
+      effect: ADD_POTION
+      params:
+        potion: SLOWNESS
+        amp: 0
+        duration_ticks: 0
+
+maggoteers:knight_spirit:
+  material: IRON_SWORD
+  customName: "<blue>骑士精神"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 10
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:knight_spirit"
+  use_ability:
+    cooldown_sec: 20
+    effect: HEAL_AREA
+    params:
+      amount: 14.0
+      radius: 5.0
+      targets: allies
+      include_self: true
+
+maggoteers:macro_wish:
+  material: GOLDEN_SWORD
+  customName: "<light_purple>宏愿"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:macro_wish"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 10
+      operation: ADD_NUMBER
+      slot: mainhand
+  use_ability:
+    cooldown_sec: 10
+    effect: DAMAGE_AREA
+    params:
+      damage: 8.0
+      radius: 3.0
+      targets: enemies
+      enemy_scope: tracked
+
+maggoteers:mission_sure:
+  material: HEART_OF_THE_SEA
+  customName: "<aqua>使命必达"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 6
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 2.0
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:mission_sure"
+  use_ability:
+    cooldown_sec: 12
+    effect: HEAL_AREA
+    params:
+      amount: 20.0
+      radius: 5.0
+      targets: allies
+      include_self: true
+
+maggoteers:molten_flame:
+  material: COPPER_SWORD
+  customName: "<red>熔铸火焰"
+  unbreakable: true
+  maxStackSize: 1
+  enchantments:
+    - minecraft:fire_aspect: 2
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 8
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:molten_flame"
+  use_ability:
+    cooldown_sec: 8
+    effect: DAMAGE_AREA
+    params:
+      damage: 8.0
+      radius: 5.0
+      targets: enemies
+      enemy_scope: tracked
+
+maggoteers:mystery_blade:
+  material: DIAMOND_SWORD
+  customName: "<dark_gray>？？？？"
+  unbreakable: true
+  maxStackSize: 1
+  enchantments:
+    - minecraft:sharpness: 6
+    - minecraft:smite: 5
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 12
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:mystery_blade"
+
+maggoteers:navigator:
+  material: BOW
+  customName: "<green>领航者"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 7
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:navigator"
+  use_ability:
+    cooldown_sec: 2
+    effect: DAMAGE_BEAM
+    params:
+      damage: 8.0
+      ray_length: 32.0
+      targets: enemies
+      enemy_scope: tracked
+
+maggoteers:old_wand:
+  material: STICK
+  customName: "<dark_purple>老魔杖"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:old_wand"
+  use_ability:
+    cooldown_sec: 60
+    effect: DAMAGE_BEAM
+    self_potions:
+      -
+        potion: INSTANT_DAMAGE
+        amp: 0
+        duration_ticks: 1
+    params:
+      damage: 1000.0
+      ray_length: 48.0
+      targets: enemies
+      enemy_scope: tracked
+  held_effects:
+    -
+      effect: ADD_ATTRIBUTE
+      trigger: ON_KILL
+      stack: ADD
+      params:
+        attr: MAX_HEALTH
+        op: FLAT
+        value: -6.0
+
+maggoteers:past_fine:
+  material: IRON_AXE
+  customName: "<gold>昔日精品"
+  lore:
+    - <gray>右键：下次攻击 +120% 伤害
+    - <dark_gray>冷却 15 秒
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:past_fine"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 12
+      operation: ADD_NUMBER
+      slot: mainhand
+  use_ability:
+    cooldown_sec: 15
+    effect: ADD_ATTRIBUTE
+    params:
+      attr: ATTACK_DAMAGE
+      op: PERCENT
+      value: 1.2
+    expiry:
+      trigger: ON_DAMAGE_DEALT
+      charges: 1
+    stack: REPLACE
+
+maggoteers:phantasm:
+  material: GOLDEN_SWORD
+  customName: "<blue>幻景"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 8
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:phantasm"
+  use_ability:
+    cooldown_sec: 20
+    effect: ADD_POTION
+    self_potions:
+      -
+        potion: WITHER
+        amp: 255
+        duration_ticks: 1
+      -
+        potion: SLOWNESS
+        amp: 255
+        duration_ticks: 1
+      -
+        potion: WEAKNESS
+        amp: 255
+        duration_ticks: 1
+      -
+        potion: BLINDNESS
+        amp: 255
+        duration_ticks: 1
+      -
+        potion: POISON
+        amp: 255
+        duration_ticks: 1
+      -
+        potion: DARKNESS
+        amp: 255
+        duration_ticks: 1
+      -
+        potion: INSTANT_DAMAGE
+        amp: 0
+        duration_ticks: 1
+    params:
+      potion: RESISTANCE
+      amp: 4
+      duration_ticks: 0
+    expiry:
+      trigger: ON_DAMAGE_DEALT
+      charges: 1
+    stack: REPLACE
+
+maggoteers:portable_fort:
+  material: CROSSBOW
+  customName: "<gray>便携要塞"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:portable_fort"
+  use_ability:
+    cooldown_sec: 1
+    effect: DAMAGE_BEAM
+    params:
+      damage: 3.0
+      ray_length: 32.0
+      targets: enemies
+      enemy_scope: tracked
+  held_effects:
+    -
+      effect: ADD_ATTRIBUTE
+      params:
+        attr: MOVEMENT_SPEED
+        op: PERCENT
+        value: -1.0
+
+maggoteers:ritual_dagger:
+  material: FLINT
+  customName: "<dark_purple>仪式匕首"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:ritual_dagger"
+  use_ability:
+    cooldown_sec: 20
+    effect: ADD_POTION
+    params:
+      potion: SPEED
+      amp: 0
+      duration_ticks: 100
+  held_effects:
+    -
+      effect: ADD_ATTRIBUTE
+      params:
+        attr: MAGIC_DAMAGE
+        op: PERCENT
+        value: 1.0
+
+maggoteers:shattered_king:
+  material: COPPER_AXE
+  customName: "<gold>破碎君王"
+  lore:
+    - <gray>右键：下次攻击 +150% 伤害
+    - <dark_gray>冷却 12 秒
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:shattered_king"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 15
+      operation: ADD_NUMBER
+      slot: mainhand
+  use_ability:
+    cooldown_sec: 12
+    effect: ADD_ATTRIBUTE
+    params:
+      attr: ATTACK_DAMAGE
+      op: PERCENT
+      value: 1.5
+    expiry:
+      trigger: ON_DAMAGE_DEALT
+      charges: 1
+    stack: REPLACE
+
+maggoteers:silver_sword:
+  material: IRON_SWORD
+  customName: "<white>猎魔人的银剑"
+  unbreakable: true
+  maxStackSize: 1
+  enchantments:
+    - minecraft:smite: 6
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 8
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:silver_sword"
+
+maggoteers:spike_wall:
+  material: SHIELD
+  itemModel: "minecraft:iron_sword"
+  customName: "<gray>尖刺壁垒"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 10
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: -0.2
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:spike_wall"
+  use_ability:
+    cooldown_sec: 1
+    effect: DAMAGE_AREA
+    params:
+      damage: 2.0
+      radius: 2.0
+      targets: enemies
+      enemy_scope: tracked
+  held_effects:
+    -
+      effect: DAMAGE_AREA
+      trigger: ON_DAMAGE_TAKEN
+      params:
+        damage: 2.0
+        radius: 2.0
+        targets: enemies
+        enemy_scope: tracked
+
+maggoteers:splash_heal2:
+  material: SPLASH_POTION
+  customName: "<red>喷溅治疗II"
+  maxStackSize: 8
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:splash_heal2"
+  use_ability:
+    cooldown_sec: 1
+    consume: true
+    effect: HEAL_AREA
+    params:
+      amount: 16.0
+      radius: 4.0
+      targets: allies
+      include_self: true
+
+maggoteers:supreme_art:
+  material: IRON_SWORD
+  customName: "<light_purple>至高之术"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 4
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 2.0
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:entity_interaction_range"
+      amount: 0.5
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:supreme_art"
+  held_effects:
+    -
+      effect: BUFF_AREA
+      trigger: ON_KILL
+      params:
+        targets: self
+        potions:
+          -
+            potion: HASTE
+            amp: 1
+            duration_ticks: 100
+          -
+            potion: STRENGTH
+            amp: 1
+            duration_ticks: 100
+
+maggoteers:thunder_rod:
+  material: LIGHTNING_ROD
+  customName: "<yellow>雷霆之杖"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:thunder_rod"
+  use_ability:
+    cooldown_sec: 8
+    effect: DISABLE_AI
+    params:
+      targets: hit_target
+      duration_ticks: 80
+
+maggoteers:tnt_orb:
+  material: TNT
+  customName: "<dark_red>TNT 宝珠"
+  maxStackSize: 4
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:tnt_orb"
+  use_ability:
+    cooldown_sec: 1
+    consume: true
+    effect: SUMMON
+    params:
+      entity: TNT
+      cleanup: duration
+      duration_sec: 10
+      friendly_fire: false
+
+maggoteers:unlit_glory:
+  material: GOLDEN_SWORD
+  customName: "<white>未照耀的荣光"
+  unbreakable: true
+  maxStackSize: 1
+  enchantments:
+    - minecraft:sharpness: 100
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 0
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: -3.9
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:unlit_glory"
+  held_effects:
+    -
+      effect: ADD_POTION
+      params:
+        potion: RESISTANCE
+        amp: 0
+        duration_ticks: 0
+    -
+      effect: DAMAGE_AREA
+      trigger: ON_DAMAGE_TAKEN
+      params:
+        damage: 2.0
+        radius: 1.0
+        targets: enemies
+        enemy_scope: tracked
+
+maggoteers:valor:
+  material: IRON_SWORD
+  itemModel: "minecraft:iron_spear"
+  customName: "<yellow>骁勇"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 12
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 0.1
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:entity_interaction_range"
+      amount: 1.0
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:valor"
+  use_ability:
+    cooldown_sec: 15
+    effect: ADD_POTION
+    params:
+      potion: SPEED
+      amp: 2
+      duration_ticks: 40
+
+maggoteers:wedge:
+  material: IRON_SWORD
+  itemModel: "minecraft:trident"
+  customName: "<blue>楔子"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:wedge"
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 6
+      operation: ADD_NUMBER
+      slot: mainhand
+  use_ability:
+    cooldown_sec: 3
+    effect: DAMAGE_BEAM
+    params:
+      damage: 7.0
+      ray_length: 32.0
+      targets: enemies
+      enemy_scope: tracked
 
 # ── 怪物专用装备（waves.yml equipment 引用，不给玩家）────────────────
 maggoteers:mob_iron_spear:
@@ -355,3 +1633,76 @@ maggoteers:mob_diamond_legs:
 maggoteers:mob_diamond_boots:
   material: DIAMOND_BOOTS
   unbreakable: true
+
+maggoteers:field_ration:
+  material: COOKED_BEEF
+  customName: "<gold>战地口粮"
+  lore:
+    - "<gray>右键：获得应急治疗包"
+    - "<dark_gray>冷却 15 秒"
+  maxStackSize: 16
+  pdc:
+    - key: maggoteers:id
+      type: STRING
+      value: maggoteers:field_ration
+  use_ability:
+    cooldown_sec: 15
+    effect: GRANT_ITEM
+    params:
+      item: maggoteers:supply_healing
+      count: 1
+    fx:
+      preset: DOT_ABOVE
+      particle: HAPPY_VILLAGER
+
+maggoteers:wolf_whistle:
+  material: BONE
+  customName: "<gray>驯狼哨"
+  lore:
+    - "<gray>右键：召唤驯服狼助战"
+    - "<dark_gray>消耗 1 个 · 冷却 30 秒"
+  maxStackSize: 8
+  pdc:
+    - key: maggoteers:id
+      type: STRING
+      value: maggoteers:wolf_whistle
+  use_ability:
+    cooldown_sec: 30
+    consume: true
+    effect: SUMMON
+    params:
+      entity: WOLF
+      cleanup: wave_clear
+      tamed: true
+      friendly_fire: false
+    fx:
+      preset: RIPPLE_RINGS
+      particle: CLOUD
+      radius: 2.0
+
+maggoteers:fire_orb:
+  material: FIRE_CHARGE
+  customName: "<red>火球宝珠"
+  lore:
+    - "<gray>右键：朝准星射出火球"
+    - "<dark_gray>冷却 5 秒"
+  glint: true
+  maxStackSize: 1
+  pdc:
+    - key: maggoteers:id
+      type: STRING
+      value: maggoteers:fire_orb
+  use_ability:
+    cooldown_sec: 5
+    effect: SUMMON
+    params:
+      entity: SMALL_FIREBALL
+      cleanup: duration
+      duration_sec: 8
+      friendly_fire: false
+      projectile:
+        speed: 1.2
+        toward: look
+    fx:
+      preset: DOT_ABOVE
+      particle: FLAME

@@ -28,16 +28,14 @@ import java.util.Map;
  *   <li><b>ItemKind 分发</b> — 读 PDC {@code maggoteers:kind}，查 {@link #HANDLERS}
  *       （货币/职业券/复活币等已知类别）。</li>
  *   <li><b>Weapon ID 分发</b> — kind 无命中时，读 PDC {@code maggoteers:id}，
- *       查 {@link #WEAPON_HANDLERS}（未来魔法武器通过 {@link #registerHandler} 注册）。</li>
- *   <li><b>ON_INTERACT 兜底</b> — 仍有 id 但无 handler 的本插件物品，
- *       fire {@link Trigger#ON_INTERACT}（供玩家全局触发型被动）。</li>
+ *       查 {@link #WEAPON_HANDLERS}（可选 Java handler 覆盖）。</li>
+ *   <li><b>use_ability 配置</b> — 无 registerHandler 时，读 items/*.yml {@code use_ability}
+ *       经 {@link io.mczju.maggoteers.item.interact.ConfigMagicHandler} 执行。</li>
  * </ol>
  *
  * <h2>CD 门禁（§10.3 D2）</h2>
- * <p>第三层兜底（ON_INTERACT）由路由自身按 {@code weaponId} 计 CD（默认 1s）。
- * 第二层（已注册 handler）的 CD 由 handler 在其 {@code onUse} 内自行调用
- * {@link CooldownService#tryUse(java.util.UUID, String, int)} 管控——路由不代劳，
- * 因为不同武器的 CD 时长各异。</p>
+ * <p>第二层/第三层 handler 的 CD 在 {@code onUse} 内调用
+ * {@link CooldownService#tryUse(java.util.UUID, String, int)} 管控（按 PDC id，非材质）。</p>
  *
  * <h2>扩展指南（给未来 agent）</h2>
  * <p>添加一把魔法武器（如 {@code maggoteers:fire_sword}）的右键效果：</p>

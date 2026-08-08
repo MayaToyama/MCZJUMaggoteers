@@ -1,12 +1,336 @@
-# Maps reward option id -> ItemCreator charm item(s). Appearance only; stats live in rewards.yml.
+# rewardplan 护符映射
 collectibles:
-  a1s_magic_dmg:
-    item: maggoteers:charm_magic_10
-  a1s_damage_area:
-    item: maggoteers:charm_kill_shock
-  a1s_resist:
-    items_by_level:
-      1: maggoteers:charm_resist_1
-      2: maggoteers:charm_resist_2
-      3: maggoteers:charm_resist_3
-      4: maggoteers:charm_resist_4
+  a1b_atk150:
+    item: maggoteers:charm_a1b_atk150
+  a1b_frost_tree:
+    item: maggoteers:charm_a1b_frost_tree
+  a1b_hit_penalty:
+    item: maggoteers:charm_a1b_hit_penalty
+  a1b_hp20:
+    item: maggoteers:charm_a1b_hp20
+  a1b_kb1:
+    item: maggoteers:charm_a1b_kb1
+  a1b_mag150:
+    item: maggoteers:charm_a1b_mag150
+  a1b_res1:
+    item: maggoteers:charm_a1b_res1
+  a1b_spd15:
+    item: maggoteers:charm_a1b_spd15
+  a1b_wave_coin:
+    item: maggoteers:charm_a1b_wave_coin
+  a1b_wave_coin2:
+    item: maggoteers:charm_a1b_wave_coin2
+  a1b_wave_gapple:
+    item: maggoteers:charm_a1b_wave_gapple
+  a1b_wave_steak:
+    item: maggoteers:charm_a1b_wave_steak
+  a1b_wave_tnt:
+    item: maggoteers:charm_a1b_wave_tnt
+  a1s_act_atk20:
+    item: maggoteers:charm_a1s_act_atk20
+  a1s_act_mag20:
+    item: maggoteers:charm_a1s_act_mag20
+  a1s_ally_invis:
+    item: maggoteers:charm_a1s_ally_invis
+  a1s_atk25:
+    item: maggoteers:charm_a1s_atk25
+  a1s_atk35:
+    item: maggoteers:charm_a1s_atk35
+  a1s_fire_res:
+    item: maggoteers:charm_a1s_fire_res
+  a1s_hit_slow:
+    item: maggoteers:charm_a1s_hit_slow
+  a1s_hp4:
+    item: maggoteers:charm_a1s_hp4
+  a1s_hp6:
+    item: maggoteers:charm_a1s_hp6
+  a1s_lost_key:
+    item: maggoteers:charm_a1s_lost_key
+  a1s_mag25:
+    item: maggoteers:charm_a1s_mag25
+  a1s_mag35:
+    item: maggoteers:charm_a1s_mag35
+  a1s_regen1:
+    item: maggoteers:charm_a1s_regen1
+  a1s_spd5:
+    item: maggoteers:charm_a1s_spd5
+  a1s_str1:
+    item: maggoteers:charm_a1s_str1
+  a1s_taken_str:
+    item: maggoteers:charm_a1s_taken_str
+  a1s_wave_atk5:
+    item: maggoteers:charm_a1s_wave_atk5
+  a1s_wave_atk_mag:
+    item: maggoteers:charm_a1s_wave_atk_mag
+  a1s_wave_atk_mag2:
+    item: maggoteers:charm_a1s_wave_atk_mag2
+  a1s_wave_full_heal:
+    item: maggoteers:charm_a1s_wave_full_heal
+  a1s_wave_mag5:
+    item: maggoteers:charm_a1s_wave_mag5
+  a1w_act_revive:
+    item: maggoteers:charm_a1w_act_revive
+  a1w_atk15:
+    item: maggoteers:charm_a1w_atk15
+  a1w_atk20:
+    item: maggoteers:charm_a1w_atk20
+  a1w_atk25:
+    item: maggoteers:charm_a1w_atk25
+  a1w_fangs:
+    item: maggoteers:charm_a1w_fangs
+  a1w_fire_res:
+    item: maggoteers:charm_a1w_fire_res
+  a1w_hit_splash:
+    item: maggoteers:charm_a1w_hit_splash
+  a1w_hp4a:
+    item: maggoteers:charm_a1w_hp4a
+  a1w_hp4b:
+    item: maggoteers:charm_a1w_hp4b
+  a1w_hp4c:
+    item: maggoteers:charm_a1w_hp4c
+  a1w_kill_invis:
+    item: maggoteers:charm_a1w_kill_invis
+  a1w_mag15:
+    item: maggoteers:charm_a1w_mag15
+  a1w_mag20:
+    item: maggoteers:charm_a1w_mag20
+  a1w_mag25:
+    item: maggoteers:charm_a1w_mag25
+  a1w_mark_glow:
+    item: maggoteers:charm_a1w_mark_glow
+  a1w_parting_gift:
+    item: maggoteers:charm_a1w_parting_gift
+  a1w_parting_slow:
+    item: maggoteers:charm_a1w_parting_slow
+  a1w_parting_tnt:
+    item: maggoteers:charm_a1w_parting_tnt
+  a1w_spd4a:
+    item: maggoteers:charm_a1w_spd4a
+  a1w_spd4b:
+    item: maggoteers:charm_a1w_spd4b
+  a1w_str1:
+    item: maggoteers:charm_a1w_str1
+  a1w_thorn_arrow:
+    item: maggoteers:charm_a1w_thorn_arrow
+  a1w_wave_bone:
+    item: maggoteers:charm_a1w_wave_bone
+  a2b_atk225:
+    item: maggoteers:charm_a2b_atk225
+  a2b_frost_aura:
+    item: maggoteers:charm_a2b_frost_aura
+  a2b_hit_heal:
+    item: maggoteers:charm_a2b_hit_heal
+  a2b_hit_slow10:
+    item: maggoteers:charm_a2b_hit_slow10
+  a2b_hp30:
+    item: maggoteers:charm_a2b_hp30
+  a2b_invis:
+    item: maggoteers:charm_a2b_invis
+  a2b_mag225:
+    item: maggoteers:charm_a2b_mag225
+  a2b_reach1:
+    item: maggoteers:charm_a2b_reach1
+  a2b_spd20:
+    item: maggoteers:charm_a2b_spd20
+  a2b_taken_heal:
+    item: maggoteers:charm_a2b_taken_heal
+  a2b_taken_lev:
+    item: maggoteers:charm_a2b_taken_lev
+  a2s_ally_str:
+    item: maggoteers:charm_a2s_ally_str
+  a2s_arrogance:
+    item: maggoteers:charm_a2s_arrogance
+  a2s_arrogance_atk:
+    item: maggoteers:charm_a2s_arrogance_atk
+  a2s_arrogance_clear:
+    item: maggoteers:charm_a2s_arrogance_clear
+  a2s_arrogance_clear2:
+    item: maggoteers:charm_a2s_arrogance_clear2
+  a2s_arrogance_mag:
+    item: maggoteers:charm_a2s_arrogance_mag
+  a2s_atk40:
+    item: maggoteers:charm_a2s_atk40
+  a2s_atk45:
+    item: maggoteers:charm_a2s_atk45
+  a2s_enemy_regen:
+    item: maggoteers:charm_a2s_enemy_regen
+  a2s_hp8a:
+    item: maggoteers:charm_a2s_hp8a
+  a2s_hp8b:
+    item: maggoteers:charm_a2s_hp8b
+  a2s_mag40:
+    item: maggoteers:charm_a2s_mag40
+  a2s_mag45:
+    item: maggoteers:charm_a2s_mag45
+  a2s_martyr:
+    item: maggoteers:charm_a2s_martyr
+  a2s_martyr_buff:
+    item: maggoteers:charm_a2s_martyr_buff
+  a2s_martyr_heal:
+    item: maggoteers:charm_a2s_martyr_heal
+  a2s_reach_a:
+    item: maggoteers:charm_a2s_reach_a
+  a2s_reach_b:
+    item: maggoteers:charm_a2s_reach_b
+  a2s_regen2:
+    item: maggoteers:charm_a2s_regen2
+  a2s_spd10:
+    item: maggoteers:charm_a2s_spd10
+  a2s_spd8:
+    item: maggoteers:charm_a2s_spd8
+  a2s_str2:
+    item: maggoteers:charm_a2s_str2
+  a2s_taken_splash:
+    item: maggoteers:charm_a2s_taken_splash
+  a2s_wave_potion:
+    item: maggoteers:charm_a2s_wave_potion
+  a2s_wave_splash:
+    item: maggoteers:charm_a2s_wave_splash
+  a2w_atk35:
+    item: maggoteers:charm_a2w_atk35
+  a2w_atk40:
+    item: maggoteers:charm_a2w_atk40
+  a2w_atk45:
+    item: maggoteers:charm_a2w_atk45
+  a2w_cursed_blade:
+    item: maggoteers:charm_a2w_cursed_blade
+  a2w_cursed_blade_mag:
+    item: maggoteers:charm_a2w_cursed_blade_mag
+  a2w_death_golem:
+    item: maggoteers:charm_a2w_death_golem
+  a2w_hit_wither:
+    item: maggoteers:charm_a2w_hit_wither
+  a2w_hp6:
+    item: maggoteers:charm_a2w_hp6
+  a2w_hp8a:
+    item: maggoteers:charm_a2w_hp8a
+  a2w_hp8b:
+    item: maggoteers:charm_a2w_hp8b
+  a2w_kill_boom:
+    item: maggoteers:charm_a2w_kill_boom
+  a2w_kill_heal:
+    item: maggoteers:charm_a2w_kill_heal
+  a2w_kill_spd:
+    item: maggoteers:charm_a2w_kill_spd
+  a2w_kill_str:
+    item: maggoteers:charm_a2w_kill_str
+  a2w_kill_wither:
+    item: maggoteers:charm_a2w_kill_wither
+  a2w_mag35:
+    item: maggoteers:charm_a2w_mag35
+  a2w_mag40:
+    item: maggoteers:charm_a2w_mag40
+  a2w_mag45:
+    item: maggoteers:charm_a2w_mag45
+  a2w_reach_a:
+    item: maggoteers:charm_a2w_reach_a
+  a2w_reach_b:
+    item: maggoteers:charm_a2w_reach_b
+  a2w_regen2:
+    item: maggoteers:charm_a2w_regen2
+  a2w_spd10:
+    item: maggoteers:charm_a2w_spd10
+  a2w_spd8a:
+    item: maggoteers:charm_a2w_spd8a
+  a2w_spd8b:
+    item: maggoteers:charm_a2w_spd8b
+  a2w_str2:
+    item: maggoteers:charm_a2w_str2
+  a3s_ally_regen:
+    item: maggoteers:charm_a3s_ally_regen
+  a3s_atk60:
+    item: maggoteers:charm_a3s_atk60
+  a3s_atk70:
+    item: maggoteers:charm_a3s_atk70
+  a3s_atk80:
+    item: maggoteers:charm_a3s_atk80
+  a3s_hp12:
+    item: maggoteers:charm_a3s_hp12
+  a3s_hp18:
+    item: maggoteers:charm_a3s_hp18
+  a3s_hp30:
+    item: maggoteers:charm_a3s_hp30
+  a3s_kb1a:
+    item: maggoteers:charm_a3s_kb1a
+  a3s_kb1b:
+    item: maggoteers:charm_a3s_kb1b
+  a3s_kill_atk10:
+    item: maggoteers:charm_a3s_kill_atk10
+  a3s_kill_mag10:
+    item: maggoteers:charm_a3s_kill_mag10
+  a3s_lust:
+    item: maggoteers:charm_a3s_lust
+  a3s_lust_abs:
+    item: maggoteers:charm_a3s_lust_abs
+  a3s_lust_atk:
+    item: maggoteers:charm_a3s_lust_atk
+  a3s_lust_mag:
+    item: maggoteers:charm_a3s_lust_mag
+  a3s_mag60:
+    item: maggoteers:charm_a3s_mag60
+  a3s_mag70:
+    item: maggoteers:charm_a3s_mag70
+  a3s_mag80:
+    item: maggoteers:charm_a3s_mag80
+  a3s_reach1a:
+    item: maggoteers:charm_a3s_reach1a
+  a3s_reach1b:
+    item: maggoteers:charm_a3s_reach1b
+  a3s_regen4:
+    item: maggoteers:charm_a3s_regen4
+  a3s_res3:
+    item: maggoteers:charm_a3s_res3
+  a3s_spd10:
+    item: maggoteers:charm_a3s_spd10
+  a3s_spd15:
+    item: maggoteers:charm_a3s_spd15
+  a3s_spd20:
+    item: maggoteers:charm_a3s_spd20
+  a3s_str3:
+    item: maggoteers:charm_a3s_str3
+  a3s_taken_abs:
+    item: maggoteers:charm_a3s_taken_abs
+  a3s_taken_res:
+    item: maggoteers:charm_a3s_taken_res
+  a3w_glass_regen:
+    item: maggoteers:charm_a3w_glass_regen
+  a3w_imm_poison:
+    item: maggoteers:charm_a3w_imm_poison
+  a3w_imm_slow:
+    item: maggoteers:charm_a3w_imm_slow
+  a3w_imm_wither:
+    item: maggoteers:charm_a3w_imm_wither
+  class_guard:
+    item: maggoteers:charm_class_guard
+  class_guard_token_atk:
+    item: maggoteers:charm_class_guard_token_atk
+  class_guard_token_reach:
+    item: maggoteers:charm_class_guard_token_reach
+  class_heavy:
+    item: maggoteers:charm_class_heavy
+  class_heavy_token_atk:
+    item: maggoteers:charm_class_heavy_token_atk
+  class_heavy_token_hp:
+    item: maggoteers:charm_class_heavy_token_hp
+  class_mage:
+    item: maggoteers:charm_class_mage
+  class_mage_token_atk:
+    item: maggoteers:charm_class_mage_token_atk
+  class_mage_token_hp:
+    item: maggoteers:charm_class_mage_token_hp
+  class_mage_token_mag:
+    item: maggoteers:charm_class_mage_token_mag
+  class_sniper:
+    item: maggoteers:charm_class_sniper
+  class_sniper_token_hp:
+    item: maggoteers:charm_class_sniper_token_hp
+  class_sniper_token_mag:
+    item: maggoteers:charm_class_sniper_token_mag
+  class_sniper_token_spd:
+    item: maggoteers:charm_class_sniper_token_spd
+  class_vanguard:
+    item: maggoteers:charm_class_vanguard
+  class_vanguard_token:
+    item: maggoteers:charm_class_vanguard_token
+  class_vanguard_token_hp:
+    item: maggoteers:charm_class_vanguard_token_hp

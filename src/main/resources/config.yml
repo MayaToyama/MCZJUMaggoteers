@@ -10,6 +10,10 @@ initial_equipment: []   # 职业选择后由 reward 发放；如需全员基础�
 class_select:
   timeout_sec: 45
 
+# 可升级 STAT（stack: UPGRADE_LEVEL）的等级上限：option upgrade_max → 池级 upgrade_level_cap → 本默认值
+rewards:
+  upgrade_level_cap_default: 4
+
 # 管理员可自定义：名称(MiniMessage)、材质、描述、光效
 # item_id 须与 waves.yml clearReward / rewards.yml 中引用一致
 items:

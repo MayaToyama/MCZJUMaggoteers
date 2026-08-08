@@ -32,7 +32,20 @@ public final class ConfigMagicHandler implements ItemUseHandler {
         }
         MagicFxService.play(player, ability.fx());
         if (game instanceof MaggoteersGame mg) {
-            EffectService.executeAbility(player, mg, ability);
+            boolean success = EffectService.executeAbility(player, mg, ability);
+            if (ability.consume() && success) {
+                spendOneFromMainHand(player);
+            }
+        }
+    }
+
+    private static void spendOneFromMainHand(Player player) {
+        var hand = player.getInventory().getItemInMainHand();
+        if (hand == null || hand.getType().isAir()) return;
+        if (hand.getAmount() <= 1) {
+            player.getInventory().setItemInMainHand(null);
+        } else {
+            hand.setAmount(hand.getAmount() - 1);
         }
     }
 }

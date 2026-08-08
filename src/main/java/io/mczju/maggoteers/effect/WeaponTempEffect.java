@@ -1,0 +1,69 @@
+package io.mczju.maggoteers.effect;
+
+import java.util.Locale;
+import java.util.Optional;
+
+/** Validation for weapon use_ability temporary ADD_ATTRIBUTE / ADD_POTION (PlayerState + expiry). */
+public final class WeaponTempEffect {
+
+    public static final String EFFECT_ID_PREFIX = "ability:";
+
+    private WeaponTempEffect() {}
+
+    public static String effectId(String itemId) {
+        return EFFECT_ID_PREFIX + itemId;
+    }
+
+    /**
+     * @return empty if valid; otherwise a short reason for load-time skip
+     */
+    public static Optional<String> validate(Effect effect, EffectContext params,
+                                            Trigger expiryTrigger, int expiryCharges) {
+        if (expiryTrigger == null) {
+            return Optional.of("requires expiry");
+        }
+        if (expiryCharges != -1 && expiryCharges < 1) {
+            return Optional.of("invalid expiry.charges");
+        }
+        if (params == null) {
+            return Optional.of("missing params");
+        }
+        if (effect == Effect.ADD_ATTRIBUTE) {
+            return validateAddAttribute(params);
+        }
+        if (effect == Effect.ADD_POTION) {
+            return validateExpiryPotion(params);
+        }
+        return Optional.of("unsupported effect for expiry path");
+    }
+
+    private static Optional<String> validateAddAttribute(EffectContext params) {
+        String attrName = params.get(EffectKeys.ATTR_NAME);
+        if ((attrName == null || attrName.isBlank()) && params.get(EffectKeys.ATTR) == null) {
+            return Optional.of("missing attr");
+        }
+        if (!params.has(EffectKeys.VALUE)) {
+            return Optional.of("missing value");
+        }
+        String op = params.getOrDefault(EffectKeys.OP, "FLAT");
+        if (op == null) {
+            return Optional.of("invalid op");
+        }
+        String opU = op.toUpperCase(Locale.ROOT);
+        if (!"FLAT".equals(opU) && !"PERCENT".equals(opU)) {
+            return Optional.of("invalid op");
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<String> validateExpiryPotion(EffectContext params) {
+        int dur = params.getOrDefault(EffectKeys.DURATION_TICKS, 0);
+        if (dur > 0) {
+            return Optional.of("expiry ADD_POTION must use duration_ticks 0 or omit");
+        }
+        if (params.get(EffectKeys.POTION) == null) {
+            return Optional.of("missing potion");
+        }
+        return Optional.empty();
+    }
+}

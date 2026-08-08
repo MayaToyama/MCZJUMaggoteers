@@ -1,5 +1,5 @@
 # 恶地特色波 — strategy 定义见 waves.yml
 strong:
-  - { strategy: s2_badlands_fake_death, weight: 5 }
-  - { strategy: s2_badlands_contamination, weight: 5 }
-  - { strategy: s2_badlands_bully, weight: 5 }
+  - { strategy: s2_badlands_fake_death, weight: 2 }
+  - { strategy: s2_badlands_contamination, weight: 2 }
+  - { strategy: s2_badlands_bully, weight: 2 }

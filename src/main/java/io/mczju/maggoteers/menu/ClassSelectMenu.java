@@ -6,16 +6,13 @@ import io.mczju.maggoteers.game.ClassSelectGate;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
-import io.mczju.maggoteers.reward.CollectibleService;
 import io.mczju.maggoteers.reward.RewardOption;
+import io.mczju.maggoteers.reward.RewardOptionIcons;
 import io.mczju.maggoteers.reward.RewardService;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,65 +38,25 @@ public class ClassSelectMenu extends Menu {
     @Override
     protected void setup() {
         Player viewer = player.player();
+        MaggoteersGame mg = game instanceof MaggoteersGame g ? g : null;
         int n = Math.min(SLOTS.length, offers.size());
         for (int i = 0; i < n; i++) {
             RewardOption opt = offers.get(i);
-            setSlot(SLOTS[i], icon(opt, viewer), (clicker, ev) -> {
+            setSlot(SLOTS[i], RewardOptionIcons.preview(opt, viewer, mg), (clicker, ev) -> {
                 Player p = clicker.player();
                 if (ClassSelectGate.hasChosen(game, p.getUniqueId())) return;
                 if (!ItemService.spendOneKind(p, ItemKind.CLASS_TICKET)) {
                     p.sendMessage(Component.text("需要手持职业选择券才能确认！", NamedTextColor.RED));
                     return;
                 }
-                RewardService.apply(p, opt, game);
+                RewardService.apply(p, opt, game, "class");
                 ClassSelectGate.markChosen(game, p.getUniqueId());
                 p.closeInventory();
                 p.sendMessage(Component.text("职业已选定！", NamedTextColor.GREEN));
-                if (ClassSelectGate.allChosen(game) && game instanceof MaggoteersGame mg) {
-                    mg.onAllClassesChosen();
+                if (ClassSelectGate.allChosen(game) && game instanceof MaggoteersGame chosenGame) {
+                    chosenGame.onAllClassesChosen();
                 }
             });
         }
-    }
-
-    private ItemStack icon(RewardOption opt, Player viewer) {
-        ItemStack stack = switch (opt.category()) {
-            case WEAPON, SUPPLY -> ItemService.createItem(opt.item(), 1)
-                    .orElse(new ItemStack(Material.PAPER));
-            case STAT -> {
-                if (game instanceof MaggoteersGame mg) {
-                    yield CollectibleService.preview(opt.id(), viewer, mg)
-                            .orElse(fallbackPaper(opt));
-                }
-                yield CollectibleService.preview(opt.id(), 1).orElse(fallbackPaper(opt));
-            }
-        };
-        return appendGuiLore(stack, opt);
-    }
-
-    private static ItemStack fallbackPaper(RewardOption opt) {
-        ItemStack stack = new ItemStack(Material.PAPER);
-        ItemMeta meta = stack.getItemMeta();
-        if (meta != null) {
-            meta.displayName(Component.text(opt.displayPlain(), NamedTextColor.GOLD)
-                    .decoration(TextDecoration.ITALIC, false));
-            stack.setItemMeta(meta);
-        }
-        return stack;
-    }
-
-    private static ItemStack appendGuiLore(ItemStack stack, RewardOption opt) {
-        ItemMeta meta = stack.getItemMeta();
-        if (meta == null) return stack;
-        var lore = meta.lore() != null ? new ArrayList<>(meta.lore()) : new ArrayList<Component>();
-        if (opt.description() != null && !opt.description().isBlank()) {
-            lore.add(Component.text(opt.description(), NamedTextColor.GRAY)
-                    .decoration(TextDecoration.ITALIC, false));
-        }
-        lore.add(Component.text("▶ 点击选择", NamedTextColor.YELLOW)
-                .decoration(TextDecoration.ITALIC, false));
-        meta.lore(lore);
-        stack.setItemMeta(meta);
-        return stack;
     }
 }

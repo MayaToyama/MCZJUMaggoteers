@@ -28,7 +28,8 @@ public final class RewardLoadValidator {
             Trigger.ON_DAMAGE_DEALT,
             Trigger.ON_DAMAGE_TAKEN,
             Trigger.ON_DEATH,
-            Trigger.ON_WAVE_CLEAR
+            Trigger.ON_WAVE_CLEAR,
+            Trigger.ON_ACT_ENTER
     );
 
     private static final Set<Trigger> GRANT_SUMMON_TRIGGERS = Set.of(

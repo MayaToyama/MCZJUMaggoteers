@@ -5,12 +5,13 @@ import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -41,25 +42,36 @@ public final class EffectListener implements Listener {
         Player killer = e.getEntity().getKiller();
         if (killer == null) return;
         MaggoteersGame g = gameOf(killer);
-        if (g != null) EffectService.fireTrigger(g, Trigger.ON_KILL);
+        if (g == null) return;
+        LivingEntity victim = e.getEntity();
+        TriggerContext ctx = new TriggerContext(Trigger.ON_KILL, victim, null);
+        EffectService.fireTriggerPlayer(g, killer, Trigger.ON_KILL, ctx);
     }
 
-    /** 玩家造成伤害 → ON_DAMAGE_DEALT。 */
+    /** 玩家造成伤害 → ON_DAMAGE_DEALT（v1 近战 Player 仅）。 */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDamageDealt(EntityDamageByEntityEvent e) {
         if (!(e.getDamager() instanceof Player p)) return;
         MaggoteersGame g = gameOf(p);
         if (g == null) return;
         if (MagicDamageContext.shouldSuppressOnDamageDealt(g, p.getUniqueId())) return;
-        EffectService.fireTrigger(g, Trigger.ON_DAMAGE_DEALT);
+        Entity damager = e.getDamager();
+        if (SummonRegistry.isTrackedSummon(damager) || SummonRegistry.isTrackedProjectile(damager)) return;
+        LivingEntity victim = e.getEntity() instanceof LivingEntity le ? le : null;
+        TriggerContext ctx = new TriggerContext(Trigger.ON_DAMAGE_DEALT, victim, null);
+        EffectService.fireTriggerPlayer(g, p, Trigger.ON_DAMAGE_DEALT, ctx);
     }
 
-    /** 玩家受击 → ON_DAMAGE_TAKEN。 */
+    /** 玩家受敌人攻击 → ON_DAMAGE_TAKEN（环境/友军伤害不触发）。 */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onDamageTaken(EntityDamageEvent e) {
+    public void onDamageTaken(EntityDamageByEntityEvent e) {
         if (!(e.getEntity() instanceof Player p)) return;
         MaggoteersGame g = gameOf(p);
-        if (g != null) EffectService.fireTrigger(g, Trigger.ON_DAMAGE_TAKEN);
+        if (g == null) return;
+        var attacker = EnemyAttackResolver.resolveAttacker(e, g);
+        if (attacker.isEmpty()) return;
+        TriggerContext ctx = new TriggerContext(Trigger.ON_DAMAGE_TAKEN, null, attacker.get());
+        EffectService.fireTriggerPlayer(g, p, Trigger.ON_DAMAGE_TAKEN, ctx);
     }
 
     private static MaggoteersGame gameOf(Player p) {
