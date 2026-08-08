@@ -102,7 +102,7 @@ public final class ItemAbilityRegistry {
             LOG.warning("items: " + itemId + " unknown effect " + effectRaw + " — skipped");
             return;
         }
-        EffectContext params = parseParams(abilitySec.getConfigurationSection("params"));
+        EffectContext params = EffectParamsParser.parse(abilitySec.getConfigurationSection("params"));
         params = MagicEffectParams.withDefaults(effect, params);
 
         if (effect == Effect.HEAL_AREA) {
@@ -112,7 +112,111 @@ public final class ItemAbilityRegistry {
                 return;
             }
         }
+        if (effect == Effect.BUFF_AREA) {
+            if (params.has(EffectKeys.MARK_ON)) {
+                LOG.warning("items: " + itemId + " mark_on ignored on weapons");
+            }
+            String targets = params.get(EffectKeys.TARGETS);
+            if (targets != null && BuffAreaTargets.TARGET_HIT_TARGET.equalsIgnoreCase(targets)) {
+                LOG.warning("items: " + itemId + " targets=hit_target ineffective on weapon right-click");
+            }
+            Optional<String> buffErr = MagicEffectParams.validateBuffArea(params, null, true);
+            if (buffErr.isPresent()) {
+                LOG.warning("items: " + itemId + " BUFF_AREA " + buffErr.get() + " — skipped");
+                return;
+            }
+        }
+        if (effect == Effect.DISABLE_AI) {
+            if (params.has(EffectKeys.MARK_ON)) {
+                LOG.warning("items: " + itemId + " mark_on ignored on weapons");
+            }
+            String targets = params.get(EffectKeys.TARGETS);
+            if (targets != null) {
+                String t = targets.trim().toLowerCase(Locale.ROOT);
+                if (BuffAreaTargets.TARGET_HIT_TARGET.equals(t)
+                        || BuffAreaTargets.TARGET_ATTACKER.equals(t)) {
+                    LOG.warning("items: " + itemId + " targets=" + t
+                            + " ineffective on weapon right-click");
+                }
+            }
+            Optional<String> err = MagicEffectParams.validateDisableAi(params, null, true);
+            if (err.isPresent()) {
+                LOG.warning("items: " + itemId + " DISABLE_AI " + err.get() + " — skipped");
+                return;
+            }
+        }
+        if (effect == Effect.GRANT_ITEM) {
+            if (GrantItemParams.parse(params).isEmpty()) {
+                LOG.warning("items: " + itemId + " GRANT_ITEM missing item — skipped");
+                return;
+            }
+        }
+        if (effect == Effect.SUMMON) {
+            Optional<String> summonErr = SummonParamsParser.validate(params, null, true);
+            if (summonErr.isPresent()) {
+                LOG.warning("items: " + itemId + " SUMMON " + summonErr.get() + " — skipped");
+                return;
+            }
+            String anchor = params.get(EffectKeys.ANCHOR);
+            if (anchor != null && !BuffAreaTargets.TARGET_SELF.equalsIgnoreCase(anchor)) {
+                LOG.warning("items: " + itemId + " weapon SUMMON coerces anchor to self");
+            }
+        }
 
+        Trigger expiryTrigger = null;
+        int expiryCharges = 0;
+        Stack stack = null;
+        if (effect == Effect.ADD_ATTRIBUTE || effect == Effect.ADD_POTION) {
+            ConfigurationSection expirySec = abilitySec.getConfigurationSection("expiry");
+            int durationTicks = params.getOrDefault(EffectKeys.DURATION_TICKS, 0);
+            if (effect == Effect.ADD_POTION) {
+                Optional<String> potionPathErr = WeaponEffectValidator.validateUseAbilityPotion(
+                        expirySec != null, durationTicks);
+                if (potionPathErr.isPresent()) {
+                    LOG.warning("items: " + itemId + " ADD_POTION " + potionPathErr.get() + " — skipped");
+                    return;
+                }
+                if (expirySec == null) {
+                    if (params.get(EffectKeys.POTION) == null) {
+                        LOG.warning("items: " + itemId + " ADD_POTION missing potion — skipped");
+                        return;
+                    }
+                }
+            }
+            if (effect == Effect.ADD_ATTRIBUTE && expirySec == null) {
+                LOG.warning("items: " + itemId + " ADD_ATTRIBUTE requires expiry — skipped");
+                return;
+            }
+            if (expirySec != null) {
+                String trigRaw = expirySec.getString("trigger");
+                if (trigRaw == null || trigRaw.isBlank()) {
+                    LOG.warning("items: " + itemId + " expiry missing trigger — skipped");
+                    return;
+                }
+                try {
+                    expiryTrigger = Trigger.valueOf(trigRaw.trim().toUpperCase(Locale.ROOT));
+                } catch (IllegalArgumentException ex) {
+                    LOG.warning("items: " + itemId + " unknown expiry.trigger " + trigRaw + " — skipped");
+                    return;
+                }
+                expiryCharges = expirySec.getInt("charges", 1);
+                String stackRaw = abilitySec.getString("stack", "REPLACE");
+                try {
+                    stack = Stack.valueOf(stackRaw.trim().toUpperCase(Locale.ROOT));
+                } catch (IllegalArgumentException ex) {
+                    LOG.warning("items: " + itemId + " unknown stack " + stackRaw + " — skipped");
+                    return;
+                }
+                Optional<String> tempErr = WeaponTempEffect.validate(
+                        effect, params, expiryTrigger, expiryCharges);
+                if (tempErr.isPresent()) {
+                    LOG.warning("items: " + itemId + " " + effect + " " + tempErr.get() + " — skipped");
+                    return;
+                }
+            }
+        }
+
+        boolean consume = abilitySec.getBoolean("consume", false);
         ConfigurationSection fxSec = abilitySec.getConfigurationSection("fx");
         if (fxSec == null && legacyUseFx != null) {
             plugin.getLogger().warning("items: " + itemId
@@ -120,29 +224,8 @@ public final class ItemAbilityRegistry {
             fxSec = legacyUseFx;
         }
         MagicUseFx fx = MagicFxConfig.mergedFxForAbility(itemId, fxSec);
-        BY_ITEM_ID.put(itemId, new ItemAbility(itemId, cooldownSec, effect, params, fx));
-    }
-
-    private static EffectContext parseParams(ConfigurationSection sec) {
-        EffectContext ctx = new EffectContext();
-        if (sec == null) {
-            return ctx;
-        }
-        for (String k : sec.getKeys(false)) {
-            Object v = sec.get(k);
-            switch (k) {
-                case "radius" -> ctx.put(EffectKeys.RADIUS, sec.getDouble(k));
-                case "damage" -> ctx.put(EffectKeys.DAMAGE, sec.getDouble(k));
-                case "amount" -> ctx.put(EffectKeys.AMOUNT, sec.getDouble(k));
-                case "ray_length" -> ctx.put(EffectKeys.RAY_LENGTH, sec.getDouble(k));
-                case "beam_radius" -> ctx.put(EffectKeys.BEAM_RADIUS, sec.getDouble(k));
-                case "targets" -> ctx.put(EffectKeys.TARGETS, String.valueOf(v).toLowerCase(Locale.ROOT));
-                case "enemy_scope" -> ctx.put(EffectKeys.ENEMY_SCOPE, String.valueOf(v).toLowerCase(Locale.ROOT));
-                case "include_self" -> ctx.put(EffectKeys.INCLUDE_SELF, sec.getBoolean(k));
-                default -> { }
-            }
-        }
-        return ctx;
+        BY_ITEM_ID.put(itemId, new ItemAbility(
+                itemId, cooldownSec, effect, params, fx, consume, expiryTrigger, expiryCharges, stack));
     }
 
     private static String normalizeItemId(String key) {
