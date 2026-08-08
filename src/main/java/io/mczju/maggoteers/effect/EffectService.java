@@ -3,7 +3,9 @@ package io.mczju.maggoteers.effect;
 import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.game.AllyTargeting;
 import io.mczju.maggoteers.game.MaggoteersGame;
+import io.mczju.maggoteers.item.fx.MagicFxBuilder;
 import io.mczju.maggoteers.item.fx.MagicFxConfig;
+import io.mczju.maggoteers.item.fx.MagicFxPreset;
 import io.mczju.maggoteers.item.fx.MagicFxPresets;
 import io.mczju.maggoteers.item.fx.MagicUseFx;
 import io.mczju.maggoteers.state.PlayerState;
@@ -26,6 +28,7 @@ import org.bukkit.Bukkit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -58,25 +61,37 @@ public final class EffectService {
         var merged = EffectStacker.merge(st.effects(), incoming);
         st.effects().clear();
         st.effects().addAll(merged);
-        if (incoming.isPermanent() && incoming.effect() != Effect.AURA) {
+        if (incoming.effect() == Effect.AURA && incoming.fireTrigger() == null) {
+            AuraService.refresh(game);
+        } else if (incoming.isPermanent() && incoming.effect() == Effect.ADD_ATTRIBUTE) {
+            // Full resync avoids REPLACE/REFRESH leaving orphan AttributeModifiers (unique KEY_SEQ).
+            resyncDerived(p, st);
+        } else if (incoming.isPermanent() && incoming.effect() != Effect.AURA) {
             applyDerived(p, incoming);
-        } else if (incoming.effect() == Effect.AURA && incoming.fireTrigger() == null
-                && game instanceof MaggoteersGame mg) {
-            AuraService.refresh(mg);
         }
     }
 
-    /** 复活后重施加（幂等）：先剥除该玩家已施加的派生视图，再重施加全部常驻型。 */
+    /** 复活后重施加（幂等）：held 武器被动 + 派生视图 + 护符。 */
     public static void resync(Player p) {
-        PlayerState st = PlayerStateManager.get(currentGame(p), p.getUniqueId());
+        MaggoteersGame game = currentGame(p);
+        PlayerState st = PlayerStateManager.get(game, p.getUniqueId());
         if (st == null) return;
+        if (game != null) {
+            WeaponHeldService.sync(p, game);
+        } else {
+            resyncDerived(p, st);
+        }
+        if (game != null) {
+            io.mczju.maggoteers.reward.CollectibleService.resync(p, game);
+        }
+    }
+
+    /** Strip + reapply permanent attribute/potion derived views (no collectible sync). */
+    static void resyncDerived(Player p, PlayerState st) {
+        if (p == null || st == null) return;
         stripDerived(p, st.effects());
         for (PlayerEffect e : new ArrayList<>(st.effects())) {
             if (e.isPermanent() && e.effect() != Effect.AURA) applyDerived(p, e);
-        }
-        MaggoteersGame game = currentGame(p);
-        if (game != null) {
-            io.mczju.maggoteers.reward.CollectibleService.resync(p, game);
         }
     }
 
@@ -126,12 +141,16 @@ public final class EffectService {
                 var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
                 if (ps == null || !ps.isAlive()) continue;
                 // 1) 到期扫描
-                for (String removedId : EffectStacker.sweepExpiry(ps.effects(), fired)) {
-                    io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
+                List<String> removed = EffectStacker.sweepExpiry(ps.effects(), fired);
+                if (!removed.isEmpty()) {
+                    resyncDerived(p, ps);
+                    for (String removedId : removed) {
+                        io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
+                    }
                 }
-                // 2) 执行触发型（fireTrigger==fired）
+                // 2) 执行触发型（fireTrigger==fired）；REVOKE_GRANTS 先于同 trigger 其它效果
+                dispatchTriggeredEffects(p, ps, game, fired, TriggerContext.empty());
                 for (PlayerEffect e : new ArrayList<>(ps.effects())) {
-                    if (e.fireTrigger() == fired) executeEffect(p, e, game);
                     // 3) recurring（仅 ON_TICK_1S，基于全局 tick 时钟）
                     if (fired == Trigger.ON_TICK_1S && e.recurringIntervalSec() > 0
                             && e.recurringSpawn() != null
@@ -150,27 +169,130 @@ public final class EffectService {
         fireTrigger(game, fired, 0);
     }
 
-    /** 单玩家触发（tier-3 ON_INTERACT 用：只触发该玩家，不波及他人；不做 recurring 计时）。 */
+    /** 单玩家触发（战斗/交互：只触发该玩家；不做 recurring 计时）。 */
     public static void fireTriggerPlayer(MaggoteersGame game, Player p, Trigger fired) {
-        if (game == null) return;
+        fireTriggerPlayer(game, p, fired, TriggerContext.empty());
+    }
+
+    public static void fireTriggerPlayer(MaggoteersGame game, Player p, Trigger fired, TriggerContext ctx) {
+        if (game == null || p == null) return;
         var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
-        if (ps == null || !ps.isAlive()) return;
-        for (String removedId : EffectStacker.sweepExpiry(ps.effects(), fired)) {
-            io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
+        if (ps == null) return;
+        TriggerContext raw = ctx != null ? ctx : TriggerContext.empty();
+        TriggerContext useCtx = raw.fired() != null ? raw
+                : new TriggerContext(fired, raw.hitTarget(), raw.attacker(), raw.eventLocation());
+        if (fired != Trigger.ON_DEATH && fired != Trigger.ON_REVIVE && !ps.isAlive()) {
+            return;
         }
-        for (PlayerEffect e : new java.util.ArrayList<>(ps.effects())) {
-            if (e.fireTrigger() == fired) executeEffect(p, e, game);
+        List<String> removed = EffectStacker.sweepExpiry(ps.effects(), fired);
+        if (!removed.isEmpty()) {
+            resyncDerived(p, ps);
+            for (String removedId : removed) {
+                io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
+            }
+        }
+        dispatchTriggeredEffects(p, ps, game, fired, useCtx);
+    }
+
+    /** Pass 1: REVOKE_GRANTS; pass 2: all other triggered effects on {@code fired}. */
+    private static void dispatchTriggeredEffects(Player p, PlayerState ps, MaggoteersGame game,
+                                                 Trigger fired, TriggerContext ctx) {
+        TriggerContext useCtx = ctx != null ? ctx : TriggerContext.empty();
+        var snapshot = new ArrayList<>(ps.effects());
+        for (PlayerEffect e : snapshot) {
+            if (e.fireTrigger() != fired) continue;
+            if (e.effect() == Effect.ADD_ATTRIBUTE && TriggeredGrantAttribute.isRevoke(e.params())) {
+                executeTriggeredAddAttribute(p, e, game, useCtx);
+            }
+        }
+        for (PlayerEffect e : snapshot) {
+            if (e.fireTrigger() != fired) continue;
+            if (e.effect() == Effect.ADD_ATTRIBUTE && TriggeredGrantAttribute.isRevoke(e.params())) continue;
+            executeEffect(p, e, game, useCtx);
         }
     }
 
+    private static void executeTriggeredAddAttribute(Player p, PlayerEffect e, MaggoteersGame game,
+                                                     TriggerContext ctx) {
+        if (TriggeredGrantAttribute.isRevoke(e.params())) {
+            PlayerState st = PlayerStateManager.get(game, p.getUniqueId());
+            if (st == null) return;
+            String sourceId = e.params().get(EffectKeys.SOURCE_ID);
+            if (sourceId == null || sourceId.isBlank()) return;
+            if (TriggeredGrantAttribute.revokeGrants(st, sourceId)) {
+                resyncDerived(p, st);
+            }
+            return;
+        }
+        if (e.fireTrigger() != null) {
+            TriggeredGrantAttribute.applyGrant(p, game, e);
+            return;
+        }
+        applyAttribute(p, e);
+    }
+
     /** Weapon entry: FX already played by {@link io.mczju.maggoteers.item.interact.ConfigMagicHandler}. */
-    public static void executeAbility(Player p, MaggoteersGame game, ItemAbility ability) {
-        if (p == null || game == null || ability == null) return;
-        executeMagicEffect(p, game, ability.effect(), ability.params(), ability.fx());
+    public static boolean executeAbility(Player p, MaggoteersGame game, ItemAbility ability) {
+        if (p == null || game == null || ability == null) return false;
+        if (ability.effect() == Effect.ADD_ATTRIBUTE) {
+            return applyWeaponTempEffect(p, game, ability);
+        }
+        if (ability.effect() == Effect.ADD_POTION) {
+            if (ability.expiryTrigger() != null) {
+                return applyWeaponTempEffect(p, game, ability);
+            }
+            int dur = ability.params().getOrDefault(EffectKeys.DURATION_TICKS, 0);
+            if (dur > 0) {
+                return applyInstantPotion(p, ability.params());
+            }
+            return false;
+        }
+        return executeMagicEffect(p, game, ability.effect(), ability.params(), ability.fx(),
+                TriggerContext.empty(), true);
+    }
+
+    private static boolean applyInstantPotion(Player p, EffectContext params) {
+        if (p == null || params == null) return false;
+        PotionEffectType type = params.get(EffectKeys.POTION);
+        if (type == null) return false;
+        int amp = params.getOrDefault(EffectKeys.AMP, 0);
+        int dur = params.getOrDefault(EffectKeys.DURATION_TICKS, 0);
+        if (dur <= 0) return false;
+        p.addPotionEffect(new PotionEffect(type, dur, amp, false, true));
+        return true;
+    }
+
+    private static boolean applyWeaponTempEffect(Player p, MaggoteersGame game, ItemAbility ability) {
+        Optional<String> err = WeaponTempEffect.validate(
+                ability.effect(), ability.params(), ability.expiryTrigger(), ability.expiryCharges());
+        if (err.isPresent()) {
+            LOG.warning("use_ability " + ability.effect() + " " + ability.itemId() + ": " + err.get());
+            return false;
+        }
+        Stack stack = ability.stack() != null ? ability.stack() : Stack.REPLACE;
+        EffectContext params = ability.params() != null ? ability.params().copy() : new EffectContext();
+        PlayerEffect pe = new PlayerEffect(
+                WeaponTempEffect.effectId(ability.itemId()),
+                ability.effect(),
+                params,
+                null,
+                ability.expiryTrigger(),
+                ability.expiryCharges(),
+                0,
+                null,
+                stack,
+                0,
+                0);
+        apply(p, pe, game);
+        return true;
     }
 
     /** 执行一条效果（触发型在 fireTrigger 时调；常驻型在 apply 时已施加）。 */
     private static void executeEffect(Player p, PlayerEffect e, MaggoteersGame game) {
+        executeEffect(p, e, game, TriggerContext.empty());
+    }
+
+    private static void executeEffect(Player p, PlayerEffect e, MaggoteersGame game, TriggerContext ctx) {
         switch (e.effect()) {
             case HEAL -> {
                 double amount = e.params().getOrDefault(EffectKeys.AMOUNT, 0.0);
@@ -185,45 +307,216 @@ public final class EffectService {
                 int dur = e.params().getOrDefault(EffectKeys.DURATION_TICKS, 0);
                 if (dur > 0) p.addPotionEffect(new PotionEffect(type, dur, amp, false, true));
             }
-            case DAMAGE_AREA, DAMAGE_BEAM, HEAL_AREA ->
-                    executeMagicEffect(p, game, e.effect(), e.params(), null);
+            case DAMAGE_AREA, DAMAGE_BEAM, HEAL_AREA, BUFF_AREA, DISABLE_AI ->
+                    executeMagicEffect(p, game, e.effect(), e.params(), null, ctx);
             case GRANT_REVIVE -> {
                 int count = e.params().getOrDefault(EffectKeys.COUNT, 1);
                 PlayerStateManager.addReviveCount(game, p.getUniqueId(), count);
             }
-            case ADD_ATTRIBUTE -> applyAttribute(p, e);
+            case GRANT_ITEM -> executeGrantItem(p, e.params());
+            case SUMMON -> executeSummon(p, game, e.params(), ctx, false);
+            case ADD_ATTRIBUTE -> executeTriggeredAddAttribute(p, e, game, ctx);
             case AURA -> activateAura(p, e, game);
         }
     }
 
-    private static void executeMagicEffect(Player p, MaggoteersGame game, Effect effect,
-                                           EffectContext rawParams, MagicUseFx weaponFx) {
+    private static boolean executeMagicEffect(Player p, MaggoteersGame game, Effect effect,
+                                           EffectContext rawParams, MagicUseFx weaponFx,
+                                           TriggerContext ctx) {
+        return executeMagicEffect(p, game, effect, rawParams, weaponFx, ctx, weaponFx != null);
+    }
+
+    private static boolean executeMagicEffect(Player p, MaggoteersGame game, Effect effect,
+                                           EffectContext rawParams, MagicUseFx weaponFx,
+                                           TriggerContext ctx, boolean weaponPath) {
         EffectContext params = MagicEffectParams.withDefaults(effect, rawParams);
+        TriggerContext useCtx = ctx != null ? ctx : TriggerContext.empty();
         switch (effect) {
+            case GRANT_ITEM -> {
+                return executeGrantItem(p, params);
+            }
+            case SUMMON -> {
+                return executeSummon(p, game, params, useCtx, weaponPath);
+            }
             case DAMAGE_AREA -> {
                 double radius = params.getOrDefault(EffectKeys.RADIUS, 3.0);
                 double baseDmg = params.getOrDefault(EffectKeys.DAMAGE, 0.0);
                 double dmg = baseDmg * PlayerCombatStats.magicDamageMultiplier(game, p.getUniqueId());
-                io.mczju.maggoteers.util.ParticleEffects.playAreaRing(p.getWorld(), p.getLocation(), radius);
-                List<LivingEntity> targets = TargetResolver.collect(game, p, p.getLocation(), radius, effect, params);
-                MagicDamageContext.run(game, p.getUniqueId(), () -> {
+                org.bukkit.Location origin = TriggerContext.resolveOrigin(p, useCtx);
+                if (origin == null || origin.getWorld() == null) return false;
+                io.mczju.maggoteers.util.ParticleEffects.playAreaRing(origin.getWorld(), origin, radius);
+                List<LivingEntity> targets = TargetResolver.collect(game, p, origin, radius, effect, params);
+                Runnable action = () -> {
                     for (LivingEntity le : targets) {
                         le.damage(dmg, p);
                     }
-                });
+                };
+                if (shouldWrapMagicDamage(useCtx)) {
+                    MagicDamageContext.run(game, p.getUniqueId(), action);
+                } else {
+                    action.run();
+                }
+                return true;
             }
-            case DAMAGE_BEAM -> executeDamageBeam(p, game, params, weaponFx);
+            case DAMAGE_BEAM -> {
+                executeDamageBeam(p, game, params, weaponFx);
+                return true;
+            }
             case HEAL_AREA -> {
                 double radius = params.getOrDefault(EffectKeys.RADIUS, 5.0);
                 double amount = params.getOrDefault(EffectKeys.AMOUNT, 0.0);
                 boolean includeSelf = AuraParams.includeSelf(params);
-                for (Player ally : AllyTargeting.alliesInRadius(game, p, radius, includeSelf)) {
+                org.bukkit.Location origin = TriggerContext.resolveOrigin(p, useCtx);
+                for (Player ally : AllyTargeting.alliesNear(game, origin, radius, p, includeSelf)) {
                     var hp = ally.getAttribute(Attribute.MAX_HEALTH);
                     double max = hp != null ? hp.getValue() : 20.0;
                     ally.setHealth(Math.min(max, ally.getHealth() + amount));
                 }
+                return true;
             }
-            default -> { }
+            case BUFF_AREA -> {
+                executeBuffArea(p, game, params, weaponFx, useCtx);
+                return true;
+            }
+            case DISABLE_AI -> {
+                executeDisableAi(p, game, params, weaponFx, useCtx);
+                return true;
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+
+    private static boolean executeGrantItem(Player p, EffectContext params) {
+        return GrantItemParams.parse(params)
+                .map(g -> {
+                    if (io.mczju.maggoteers.item.ItemService.createItem(g.itemId(), g.amount()).isEmpty()) {
+                        LOG.warning("GRANT_ITEM: unknown item " + g.itemId());
+                        return false;
+                    }
+                    io.mczju.maggoteers.item.ItemService.give(p, g.itemId(), g.amount());
+                    return true;
+                })
+                .orElse(false);
+    }
+
+    private static boolean executeSummon(Player p, MaggoteersGame game, EffectContext raw,
+                                         TriggerContext ctx, boolean weaponPath) {
+        var parsed = SummonParamsParser.parse(raw, weaponPath);
+        if (parsed.isEmpty()) return false;
+        SummonParams sp = parsed.get();
+        int[] spawned = {0};
+        Runnable action = () -> spawned[0] = SummonExecutor.spawn(p, game, sp, ctx);
+        if (isCombatSummon(ctx)) {
+            MagicDamageContext.run(game, p.getUniqueId(), action);
+        } else {
+            action.run();
+        }
+        return spawned[0] > 0;
+    }
+
+    private static boolean isCombatSummon(TriggerContext ctx) {
+        return shouldWrapMagicDamage(ctx);
+    }
+
+    /** Suppress owner ON_DAMAGE_DEALT from magic/summon damage in the same tick. */
+    private static boolean shouldWrapMagicDamage(TriggerContext ctx) {
+        if (ctx == null || ctx.fired() == null) return false;
+        return switch (ctx.fired()) {
+            case ON_KILL, ON_DAMAGE_DEALT, ON_DAMAGE_TAKEN, ON_DEATH -> true;
+            default -> false;
+        };
+    }
+
+    private static void executeDisableAi(Player p, MaggoteersGame game, EffectContext params,
+                                         MagicUseFx weaponFx, TriggerContext ctx) {
+        boolean weaponPath = weaponFx != null;
+        if (!weaponPath) {
+            EffectContext fxCtx = params.get(EffectKeys.FX);
+            if (fxCtx != null) {
+                MagicUseFx fx = MagicFxBuilder.fromContext(fxCtx, MagicUseFx.defaults());
+                MagicFxPresets.play(p, fx);
+            }
+        }
+
+        int duration = params.getOrDefault(EffectKeys.DURATION_TICKS, 0);
+        if (duration <= 0) return;
+
+        List<LivingEntity> targets = DisableAiTargets.resolve(game, p, params, ctx);
+        EffectContext markFxCtx = params.get(EffectKeys.MARK_FX);
+        MagicUseFx markFx = markFxCtx == null ? null
+                : MagicFxBuilder.fromContext(markFxCtx, MagicUseFx.defaults());
+
+        for (LivingEntity le : targets) {
+            MobAiLockRegistry.lock(le, duration);
+            if (weaponPath && markFx != null) {
+                playMarkFx(le, markFx);
+            }
+        }
+        if (!weaponPath && markFx != null) {
+            LivingEntity markTarget = resolveStatMarkTarget(params, ctx);
+            if (markTarget != null) {
+                playMarkFx(markTarget, markFx);
+            }
+        }
+    }
+
+    private static void executeBuffArea(Player p, MaggoteersGame game, EffectContext params,
+                                        MagicUseFx weaponFx, TriggerContext ctx) {
+        boolean weaponPath = weaponFx != null;
+        if (!weaponPath) {
+            EffectContext fxCtx = params.get(EffectKeys.FX);
+            if (fxCtx != null) {
+                MagicUseFx fx = MagicFxBuilder.fromContext(fxCtx, MagicUseFx.defaults());
+                MagicFxPresets.play(p, fx);
+            }
+        }
+        List<BuffPotionSpec> potions = params.get(EffectKeys.POTIONS);
+        if (potions == null || potions.isEmpty()) return;
+
+        List<LivingEntity> targets = BuffAreaTargets.resolve(game, p, params, ctx);
+        EffectContext markFxCtx = params.get(EffectKeys.MARK_FX);
+        MagicUseFx markFx = markFxCtx == null ? null
+                : MagicFxBuilder.fromContext(markFxCtx, MagicUseFx.defaults());
+
+        for (LivingEntity le : targets) {
+            if (!le.isValid()) continue;
+            if (!le.isDead()) {
+                for (BuffPotionSpec spec : potions) {
+                    PotionMerge.applyIfNeeded(le, spec.type(), spec.amp(), spec.durationTicks());
+                }
+            }
+            if (weaponPath && markFx != null) {
+                playMarkFx(le, markFx);
+            }
+        }
+        if (!weaponPath && markFx != null) {
+            LivingEntity markTarget = resolveStatMarkTarget(params, ctx);
+            if (markTarget != null) {
+                playMarkFx(markTarget, markFx);
+            }
+        }
+    }
+
+    private static LivingEntity resolveStatMarkTarget(EffectContext params, TriggerContext ctx) {
+        String markOn = params.getOrDefault(EffectKeys.MARK_ON, "none");
+        return switch (markOn.toLowerCase(java.util.Locale.ROOT)) {
+            case "hit_target" -> ctx == null ? null : ctx.hitTarget();
+            case "attacker" -> ctx == null ? null : ctx.attacker();
+            default -> null;
+        };
+    }
+
+    private static void playMarkFx(LivingEntity le, MagicUseFx markFx) {
+        if (le == null || markFx == null) return;
+        Location loc = le.getLocation();
+        if (loc.getWorld() == null) return;
+        if (markFx.preset() == MagicFxPreset.THICK_RING) {
+            io.mczju.maggoteers.util.ParticleEffects.playThickRing(
+                    loc.getWorld(), loc, markFx.radius(), markFx.particle(), markFx.density());
+        } else {
+            MagicFxPresets.dotAbove(loc, markFx);
         }
     }
 
