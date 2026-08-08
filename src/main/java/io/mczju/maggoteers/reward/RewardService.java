@@ -33,6 +33,7 @@ public final class RewardService {
 
     public static void load(MaggoteersPlugin plugin) {
         POOLS.clear();
+        UpgradeLevelCaps.load(plugin);
         File f = new File(plugin.getDataFolder(), "rewards.yml");
         if (!f.exists()) plugin.saveResource("rewards.yml", false);
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(f);
@@ -43,9 +44,28 @@ public final class RewardService {
             if (sec == null) continue;
             int cost = sec.getInt("cost", 1);
             String currency = sec.getString("currency", "normal");
+            int upgradeLevelCap = sec.getInt("upgrade_level_cap", 0);
             List<RewardOption> options = new ArrayList<>();
             for (var m : sec.getMapList("options")) {
                 RewardOption opt = RewardOption.fromMap(m);
+                if (opt.category() == RewardOption.Category.STAT && opt.effect() == Effect.BUFF_AREA) {
+                    var norm = RewardLoadValidator.validateAndNormalizeBuffArea(opt);
+                    if (norm.skipReason().isPresent()) {
+                        LOG.warning("rewards.yml 池 " + poolId + " 选项 " + opt.id()
+                                + " 已跳过：" + norm.skipReason().get());
+                        continue;
+                    }
+                    opt = opt.withParams(norm.normalizedParams());
+                }
+                if (opt.category() == RewardOption.Category.STAT && opt.effect() == Effect.DISABLE_AI) {
+                    var norm = RewardLoadValidator.validateAndNormalizeDisableAi(opt);
+                    if (norm.skipReason().isPresent()) {
+                        LOG.warning("rewards.yml 池 " + poolId + " 选项 " + opt.id()
+                                + " 已跳过：" + norm.skipReason().get());
+                        continue;
+                    }
+                    opt = opt.withParams(norm.normalizedParams());
+                }
                 var err = RewardLoadValidator.validateStatOption(opt);
                 if (err.isPresent()) {
                     LOG.warning("rewards.yml 池 " + poolId + " 选项 " + opt.id() + " 已跳过：" + err.get());
@@ -57,7 +77,7 @@ public final class RewardService {
                 }
                 options.add(opt);
             }
-            POOLS.put(poolId, new RewardPool(poolId, cost, currency, options));
+            POOLS.put(poolId, new RewardPool(poolId, cost, currency, upgradeLevelCap, options));
         }
         LOG.info("RewardService 已加载 " + POOLS.size() + " 个奖励池。");
 
@@ -118,7 +138,7 @@ public final class RewardService {
                 : io.mczju.maggoteers.unlock.UnlockRegistry.unlocksOf(viewer);
         List<RewardOption> visible = new ArrayList<>();
         for (RewardOption o : pool.options()) {
-            if (!RewardDrawVisibility.isVisible(o, ps, acquired)) continue;
+            if (!RewardDrawVisibility.isVisible(o, ps, acquired, pool)) continue;
             if (o.requiresUnlock() && !unlocked.contains(o.id())) continue;
             visible.add(o);
         }
@@ -137,6 +157,10 @@ public final class RewardService {
     }
 
     public static boolean apply(Player player, RewardOption opt, AbstractGame game) {
+        return apply(player, opt, game, null);
+    }
+
+    public static boolean apply(Player player, RewardOption opt, AbstractGame game, String poolId) {
         if (opt == null || game == null) return false;
         PlayerState ps = PlayerStateManager.get(game, player.getUniqueId());
         if (ps == null) {
@@ -144,22 +168,16 @@ public final class RewardService {
             player.sendMessage(Component.text("奖励未能应用（本局状态异常）", NamedTextColor.RED));
             return false;
         }
+        RewardPool pool = poolId == null ? null : POOLS.get(poolId);
         try {
-            switch (opt.category()) {
-                case SUPPLY, WEAPON -> ItemService.give(player, opt.item(), opt.amount());
-                case STAT -> {
-                    if (opt.effect() == Effect.GRANT_REVIVE) {
-                        int count = opt.params() == null ? 1
-                                : opt.params().getOrDefault(EffectKeys.COUNT, 1);
-                        PlayerStateManager.addReviveCount(game, player.getUniqueId(), count);
-                        if (CollectibleRegistry.hasMapping(opt.id())) {
-                            CollectibleService.grant(player, opt.id(), 1);
-                        }
-                    } else if (!applyStat(player, opt, game)) {
-                        player.sendMessage(Component.text("奖励未能应用（效果配置无效）", NamedTextColor.RED));
-                        return false;
-                    }
+            if (opt.isBundle()) {
+                if (!applyBundle(player, opt, game, pool)) {
+                    player.sendMessage(Component.text("奖励未能应用（组合配置无效）", NamedTextColor.RED));
+                    return false;
                 }
+            } else if (!applySingle(player, opt, game, pool)) {
+                player.sendMessage(Component.text("奖励未能应用", NamedTextColor.RED));
+                return false;
             }
         } catch (Exception ex) {
             LOG.warning("RewardService.apply 失败 " + opt.id() + ": " + ex.getMessage());
@@ -171,19 +189,59 @@ public final class RewardService {
         return true;
     }
 
-    private static boolean applyStat(Player player, RewardOption opt, AbstractGame game) {
-        if (!opt.isStatEffect()) {
+    private static boolean applyBundle(Player player, RewardOption bundle, AbstractGame game, RewardPool pool) {
+        if (!bundle.isApplicable()) {
+            LOG.warning("RewardService: bundle 配置不完整 id=" + bundle.id());
+            return false;
+        }
+        for (RewardOption grant : bundle.grants()) {
+            if (!applySingle(player, grant, game, pool)) {
+                LOG.warning("RewardService: bundle 子项失败 parent=" + bundle.id() + " grant=" + grant.id());
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean applySingle(Player player, RewardOption opt, AbstractGame game, RewardPool pool) {
+        switch (opt.category()) {
+            case SUPPLY, WEAPON -> {
+                ItemService.give(player, opt.item(), opt.amount());
+                return true;
+            }
+            case STAT -> {
+                if (opt.effect() == Effect.GRANT_REVIVE) {
+                    int count = opt.params() == null ? 1
+                            : opt.params().getOrDefault(EffectKeys.COUNT, 1);
+                    PlayerStateManager.addReviveCount(game, player.getUniqueId(), count);
+                    if (CollectibleRegistry.hasMapping(opt.id())) {
+                        CollectibleService.grant(player, opt.id(), 1);
+                    }
+                    return true;
+                }
+                return applyStat(player, opt, game, pool);
+            }
+            case BUNDLE -> {
+                LOG.warning("RewardService: 嵌套 bundle 不支持 id=" + opt.id());
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private static boolean applyStat(Player player, RewardOption opt, AbstractGame game, RewardPool pool) {
+        if (!opt.isSingleRewardValid()) {
             LOG.warning("RewardService: STAT 配置不完整 id=" + opt.id());
             return false;
         }
         if (!(game instanceof MaggoteersGame mg)) return false;
         PlayerState ps = PlayerStateManager.get(game, player.getUniqueId());
         if (ps == null) return false;
-        final int UPGRADE_MAX = 4;
+        int upgradeMax = UpgradeLevelCaps.resolve(pool, opt);
         if (opt.stack() == Stack.UPGRADE_LEVEL) {
             int cur = ps.effects().stream().filter(e -> e.id().equals(opt.id()))
                     .mapToInt(PlayerEffect::level).max().orElse(0);
-            if (cur >= UPGRADE_MAX) return false;
+            if (cur >= upgradeMax) return false;
         }
         int level = 1;
         io.mczju.maggoteers.effect.EffectContext params = RewardService.paramsForApply(opt);
@@ -191,12 +249,12 @@ public final class RewardService {
         if (opt.stack() == Stack.UPGRADE_LEVEL) {
             int curLevel = ps.effects().stream().filter(e -> e.id().equals(opt.id()))
                     .mapToInt(PlayerEffect::level).max().orElse(0);
-            level = Math.min(curLevel + 1, UPGRADE_MAX);
+            level = Math.min(curLevel + 1, upgradeMax);
             Integer baseAmp = params.get(EffectKeys.AMP);
             if (baseAmp != null) params.put(EffectKeys.AMP, baseAmp + (level - 1));
             pe = new PlayerEffect(
                     opt.id(), opt.effect(), params, opt.trigger(),
-                    opt.expiryTrigger(), opt.expiryCharges(), 0, null, opt.stack(), UPGRADE_MAX, 0);
+                    opt.expiryTrigger(), opt.expiryCharges(), 0, null, opt.stack(), upgradeMax, 0);
         } else {
             pe = new PlayerEffect(
                     opt.id(), opt.effect(), params, opt.trigger(),
