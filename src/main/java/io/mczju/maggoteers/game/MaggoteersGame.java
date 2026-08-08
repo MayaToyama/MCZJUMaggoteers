@@ -235,6 +235,8 @@ public class MaggoteersGame extends AbstractGame {
         }
 
         for (var pe : getPlayers()) io.mczju.maggoteers.effect.EffectService.removeAll(pe.player());
+        io.mczju.maggoteers.effect.SummonRegistry.clearAll(this);
+        io.mczju.maggoteers.effect.MobAiLockRegistry.restoreAll();
         io.mczju.maggoteers.effect.EffectListener.stopTick();
         WaveScheduler.stop(this);
         RunScoreboard.stop(this);

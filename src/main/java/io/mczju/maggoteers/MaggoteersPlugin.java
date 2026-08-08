@@ -45,6 +45,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         ItemService.init(this);
         io.mczju.maggoteers.item.fx.MagicFxConfig.load(this);
         io.mczju.maggoteers.effect.ItemAbilityRegistry.load(this);
+        io.mczju.maggoteers.effect.WeaponHeldRegistry.load(this);
         RewardService.load(this);
         CollectibleRegistry.load(this);
         // onEnable 瞬间 Registry 可能未就绪；下一 tick 再解析一次 rewards（属性/药水引用）
@@ -59,7 +60,11 @@ public final class MaggoteersPlugin extends JavaPlugin {
         MenuFacade.registerMenu("maggoteers-shop", io.mczju.maggoteers.menu.UnlockShopMenu.class);
         getServer().getPluginManager().registerEvents(new MobDeathListener(), this);
         getServer().getPluginManager().registerEvents(new ItemInteractRouter(), this);
+        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.item.WeaponHeldListener(this), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.effect.EffectListener(), this);
+        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.effect.SummonFriendlyFireListener(), this);
+        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.effect.MobAiLockListener(), this);
+        io.mczju.maggoteers.effect.MobAiLockRegistry.start(this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.PurifyListener(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.RunItemGuardListener(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.GameplayTickListener(), this);
@@ -73,6 +78,8 @@ public final class MaggoteersPlugin extends JavaPlugin {
     public void onDisable() {
         io.mczju.maggoteers.listener.GameplayTickListener.stop();
         io.mczju.maggoteers.effect.EffectListener.stopTick();
+        io.mczju.maggoteers.effect.MobAiLockRegistry.restoreAll();
+        io.mczju.maggoteers.effect.MobAiLockRegistry.stop();
         InfernalMobsBridge.shutdown();
         getLogger().info("Maggoteers disabled.");
     }
