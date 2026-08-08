@@ -183,10 +183,14 @@ collectibles:
 
 | effect | params |
 |--------|--------|
-| `ADD_ATTRIBUTE` | `attr`, `op`, `value` |
+| `ADD_ATTRIBUTE` | `attr`, `op`, `value`；触发型还会生成 `{id}:grant` 层 |
+| `ADD_ATTRIBUTE` + `op: REVOKE_GRANTS` | `source_id`（要清的 grant 模板 id）；必须带 `trigger`；bundle 内 `source_id` 须指向同 bundle 某 grant id |
+
+**触发型属性（受击叠层 / 波末 +魔攻）**：带 `trigger` 的 STAT `ADD_ATTRIBUTE` 在触发时写入 `{option_id}:grant`（`fireTrigger=null`），仅 grant 层计入战斗 stat；模板本身不计入。同 bundle 可用另一条 `op: REVOKE_GRANTS` + `source_id` 在 `ON_WAVE_CLEAR` 等时机清空叠层（YAML 顺序无关，运行时 REVOKE 先于同 trigger 其它效果）。例：受击 `stack: ADD` 叠 `MAGIC_DAMAGE` + 波末 REVOKE。
 | `ADD_POTION` | `potion`, `amp`, `duration_ticks` |
 | `HEAL` | `amount` |
 | `DAMAGE_AREA` | `damage`, `radius` |
+| `DISABLE_AI` | `duration_ticks` (>0), `targets` (`enemies`\|`hit_target`\|`attacker`), `radius`/`enemy_scope`（enemies） |
 | `GRANT_REVIVE` | `count` |
 | `AURA` | `radius`, `targets`, `enemy_scope`, `grant`, `carrier_fx`, `mark_fx`, `mark_head`, `grant_pulse_sec` |
 
@@ -213,16 +217,29 @@ ItemCreator 格式；PDC `maggoteers:kind` 或 `maggoteers:id`。
 ```yaml
 use_ability:
   cooldown_sec: 3          # 权威 CD
-  effect: DAMAGE_AREA      # DAMAGE_AREA | DAMAGE_BEAM | HEAL_AREA
+  effect: DAMAGE_AREA      # DAMAGE_* | HEAL_AREA | BUFF_AREA | DISABLE_AI | GRANT_ITEM | SUMMON | ADD_ATTRIBUTE | ADD_POTION
   params: { damage: 6.0, radius: 6.0, targets: enemies, enemy_scope: tracked }
   fx: { preset: SPIRAL_RADIUS, particle: CRIT, radius: 6.0 }
+
+held_effects:              # 主手持有；禁止 expiry；id=held:<itemId>:<n>
+  - effect: ADD_ATTRIBUTE
+    params: { attr: ATTACK_DAMAGE, op: PERCENT, value: 0.10 }
+  - effect: AURA
+    params:
+      radius: 12.0
+      targets: allies
+      grant: { effect: ADD_ATTRIBUTE, attr: ATTACK_DAMAGE, op: PERCENT, value: 0.08 }
 ```
+
+**ADD_POTION（use_ability）**：`potion` + `amp` + `duration_ticks`。无 `expiry` 且 `duration_ticks > 0` = 右键即时药水；有 `expiry` 则 `duration_ticks` 须为 0/省略（PlayerState `ability:<id>`）。**held 触发型 ADD_POTION** 必须 `duration_ticks > 0`。
+
+**下次近战加成**：`effect: ADD_ATTRIBUTE` 必须带 `expiry`（例 `trigger: ON_DAMAGE_DEALT` + `charges: 1`）与 `params: { attr, op, value }`；`stack` 默认 `REPLACE`。仅近战消耗；见 `maggoteers:power_strike`。
 
 `useCooldown` 仅 vanilla 热栏显示，应与 `cooldown_sec` 一致。legacy `use_fx` 为 `use_ability.fx` 别名（迁移中）。
 
 内置 kind：`currency_normal`, `currency_boss`, `class_ticket`, `revive_coin`, `supply_healing`, `shop_emerald`。
 
-配置武器示例：`maggoteers:test_blade`, `healing_staff`, `excalibur`（`use_ability` 已内置）。
+配置武器示例：`maggoteers:test_blade`, `power_strike`, `healing_staff`, `excalibur`（`use_ability` 已内置）。
 
 **怪物 `equipment`** 与奖励 `item` 共用同一套 id（券种通常不给怪穿）。
 

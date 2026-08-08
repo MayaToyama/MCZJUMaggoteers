@@ -5,6 +5,76 @@
 
 ---
 
+## 2026-08-08 — DISABLE_AI Effect（Phase 1）
+
+- **做了什么**：`Effect.DISABLE_AI`；`MobAiLockRegistry`（longer-wins、`EntityRemoveEvent` 卸载 restore、1-tick 扫描）；`DisableAiTargets`（enemies|hit_target|attacker + 跳过 Player/`SummonRegistry`）；`executeEffect`/`executeMagicEffect` 接线；武器 `use_ability` 与 STAT `RewardLoadValidator` 加载矩阵（含 `ON_KILL`+`hit_target` warn+skip）。
+- **原因**：需要可配置的短暂瘫痪敌对生物（停 AI），选择器与 BUFF_AREA 战斗语义对齐。
+- **决策**：仅 `setAI`；再施加取更长剩余；卸载必须先 restore 防永久 NoAI；held_effects 接线延后 Phase 2。
+- **遗留**：Phase 2 held；服内手测右键 AoE / 命中晕 / 反震来源。
+
+---
+
+## 2026-08-08 — 主手武器 held_effects + use_ability ADD_POTION 双路径
+
+- **做了什么**：`WeaponHeldRegistry` / `WeaponHeldService` / `WeaponHeldListener`（主手 PDC 挂载 `held:<itemId>:<n>`，含 drop/pickup 同步、`AuraService.refresh`、`:grant` 前缀清理）；`WeaponEffectValidator` 加载校验；`EffectParamsParser` 共享 params 解析（含 AURA `grant:`）；`WeaponTempAttribute` 重命名为 `WeaponTempEffect` 并支持 expiry ADD_POTION；`ItemAbilityRegistry` 解析 `potion`/`amp`/`duration_ticks`；`EffectService.executeAbility` 即时 ADD_POTION 与 PlayerState expiry 分流。
+- **原因**：spec rev.3——rewardplan 武器需要右键 5s 力量等即时药水，以及主手被动（常驻/触发型）零 Java 配置。
+- **决策**：held 禁止 expiry（生命周期=持有）；use_ability ADD_POTION 禁止 expiry+duration 混用；触发型 held ADD_POTION 必须 `duration_ticks > 0`；AURA held 用嵌套 `grant:`（同 rewards 战旗）。
+- **遗留**：`BuffPotionParserTest` / `MagicEffectParamsBuffAreaTest` 在无 MockBukkit 环境仍依赖 `PotionEffectType` 静态初始化（3 errors，非本特性引入）；服内手动验证 swap/drop/右键药水待测。
+
+---
+
+## 2026-08-06 — 触发型 ADD_ATTRIBUTE grant 层 + REVOKE_GRANTS
+
+- **做了什么**：`TriggeredGrantAttribute`（`{id}:grant` 叠层、`op: REVOKE_GRANTS` + `source_id`）；`EffectService` 双 pass 分发（同 trigger 先 REVOKE）；触发型 ADD_ATTRIBUTE 命中时 spawn grant 而非直接改 stat；`PlayerCombatStats` 仅计 `fireTrigger=null` 的 grant；`RewardLoadValidator` 允许 STAT `ON_WAVE_CLEAR`、校验 REVOKE 与 bundle `source_id`；`EffectKeys.SOURCE_ID` + `RewardOption` 解析 `source_id`；单测覆盖 grant/revoke/校验。
+- **原因**：spec rev.2 通过——需纯 YAML 实现「受击叠魔攻 + 波末可选清空」「波末 +5% 魔攻」等，且修复模板被误计入 `MAGIC_DAMAGE` 的 bug。
+- **决策**：REVOKE 泛用于任意 attr grant（含 ATTACK_DAMAGE）；Bukkit attr grant 撤销后 `resyncDerived`；YAML 不要求 clear 条目排在 stack 前；`ON_ACT_ENTER` 仍不在 STAT 白名单（后续 rewardplan）。
+- **遗留**：本地 shell 无 JDK 25，Maven test 未在本环境跑通；服内验证 bundle 样例（静水流涌 / 灵魂立方）待 rewards.yml 内容作者补条目。
+
+---
+
+## 2026-08-05 — 武器纯配置「下次近战加成」
+
+- **做了什么**：`use_ability.effect: ADD_ATTRIBUTE` + 必填 `expiry`/`stack`；右键 `EffectService.apply` 临时效果 `ability:<itemId>`；`resyncDerived` 在 apply（ADD_ATTRIBUTE）与 `sweepExpiry` 后整表重同步，避免 modifier 残留；样例 `maggoteers:power_strike`。
+- **原因**：内容需要「右键后下一刀伤害加成」且零 Java；引擎已有事件到期模型，缺武器路径接入与 expiry 清属性。
+- **决策**：仅近战 `ON_DAMAGE_DEALT`；默认 `stack: REPLACE`；不做主效果+旁挂 grant。
+- **遗留**：弓箭不消耗/不享受；未做 DAMAGE_AREA 与下次加成组合。
+
+---
+
+## 2026-08-05 — ON_DEATH 每次掉命触发 + 死亡点 origin
+
+- **做了什么**：`MaggoteersDeathStrategy` 在自动复活与最终观战两条路径**之前**统一 `fireTriggerPlayer(ON_DEATH, atEvent(deathLoc))`；自动复活成功后另发 `ON_REVIVE`；`TriggerContext.eventLocation` + `resolveOrigin()` 供 `DAMAGE_AREA`/`SUMMON death_site` 等在倒下点结算；`RewardLoadValidator` 白名单加入 `ON_DEATH`；`rewards.yml` 样例 `death_burst`。
+- **原因**：需求「每次掉命都触发」——含消耗 reviveCount 的自动复活与 reviveCount=0 转观察者，语义与 `ON_REVIVE`（仅自动复活成功）分离。
+- **决策**：死亡点 = `PlayerDeathEvent` 时 `player.getLocation().clone()`，在传送/切模式前触发；区域效果不因 `markDown` 后 `isAlive=false` 被 gate；复活币路径暂不 fire `ON_REVIVE`（Phase D 可选）。
+- **遗留**：复活币 `ON_REVIVE` 未接；服内验证 `death_burst` 与 `SUMMON anchor=death_site` 表现。
+
+---
+
+## 2026-08-05 — GRANT_ITEM / SUMMON Effect（rev.2 spec）
+
+- **做了什么**：新增 `Effect.GRANT_ITEM`（ItemCreator 发物品）与 `Effect.SUMMON`（锚点召唤 + PDC 追踪）；`SummonRegistry` 生命周期（波清/进层/局末）；`SummonExecutor` 生成；`RewardLoadValidator` 扩展 trigger 白名单；武器 `use_ability.consume`；示例 YAML（field_ration / wolf_whistle / fire_orb + rewards 样例）。
+- **原因**：spec rev.2 审查通过，需 STAT 被动与魔法武器共用 Effect 管线，且召唤物需友伤/自激/清理策略。
+- **决策**：validate 与 Registry 解耦（单测不依赖 Bukkit Registry）；战斗 SUMMON 包 `MagicDamageContext`；`friendly_fire` 默认 false；进层全局清召唤物；consume 仅 success 时扣物。
+- **遗留**：EVOKER_FANGS 等实体需服内实测；MockBukkit 集成测未补。
+
+---
+
+## 2026-07-28 — 可升级上限配置化 + 职业 bundle grants
+
+- **做了什么**：`UpgradeLevelCaps` 三级解析（`option.upgrade_max` → 池 `upgrade_level_cap` → `config.yml` `rewards.upgrade_level_cap_default`）；`RewardOption.grants[]` 组合奖励（武器+STAT 等）；`RewardService.applyBundle`；`RewardOptionIcons` GUI 预览；`act1_weak` cap=2、`act1_strong` cap=3；`class_vanguard` 示例 bundle。
+- **原因**：原 `UPGRADE_LEVEL` 硬编码 max=4，无法按层/阶段限制（如 Act1 弱波生命恢复仅 II）；职业需一次选项含多奖励。
+- **决策**：抽池可见性与 `applyStat` 均读**当前池** cap，跨池可继续升级；bundle 仅父 id 进 `acquiredUnique`；grant id 默认 `{parentId}_g{n}`。
+- **遗留**：act2/act3 池 cap 待内容作者补；嵌套 bundle 不支持。
+
+---
+
+## 2026-07-27 — BUFF_AREA 统一魔法 Buff
+
+- **做了什么**：`Effect.BUFF_AREA` 共享核心（武器 `use_ability` + STAT 战斗触发）；`PotionMerge` / `BuffAreaTargets` / `TriggerContext`；`EffectListener` 改为单玩家战斗触发 + `ON_DAMAGE_TAKEN` 仅敌人攻击；样本 `maggoteers:field_shield` + `a1s_hit_poison` / `a1s_absorb_on_hit`。
+- **原因**：Spec `2026-07-27-buff-area-unified-design.md` v1.2——配置挂状态、命中上毒、受击吸收，与现有魔法 FX 体系对齐。
+- **决策**：武器 caster FX 只在 handler 播一次；dead entity 跳过药水但允许 mark；`ON_KILL`/`ON_DAMAGE_DEALT` 全队被动修正为仅行动玩家（如 lifesteal）。
+- **遗留**：弓/三叉戟 `ON_DAMAGE_DEALT` 延后；永久 `ADD_POTION` 与同类型 BUFF 冲突靠作者 convention。
+
 ---
 
 ## 2026-07-27 — 奖励护符（build display collectibles）

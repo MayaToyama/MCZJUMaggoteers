@@ -331,12 +331,15 @@ world: { cleanup_orphans_on_enable: true }
 | 类别 | Trigger |
 |---|---|
 | 生命周期 | `ON_WAVE_CLEAR` / `ON_ACT_ENTER` / `ON_GAME_END` |
-| 战斗 | `ON_KILL` / `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN` |
+| 战斗 | `ON_KILL` / `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN`（**TAKEN = 仅敌人近战/箭矢攻击**，环境/友军伤害不触发） |
+| 休整/进层 | `ON_WAVE_CLEAR` / `ON_ACT_ENTER`（**GRANT_ITEM/SUMMON STAT 专用**） |
 | 玩家状态 | `ON_REVIVE` / `ON_DEATH` / `ON_TICK_1S` |
 | 物品交互 | `ON_INTERACT`（含 UseType：右/左键 × 空气/方块/实体/攻击） |
 
-### 10.2 Effect 目录（5 种，够用）
-`ADD_ATTRIBUTE`（`op: PERCENT | FLAT`）、`ADD_POTION`、`HEAL`、`DAMAGE_AREA`、`GRANT_REVIVE`。
+### 10.2 Effect 目录
+
+`ADD_ATTRIBUTE` / `ADD_POTION` / `HEAL` / `DAMAGE_AREA` / `DAMAGE_BEAM` / `HEAL_AREA` / `GRANT_REVIVE` / **`GRANT_ITEM`** / **`SUMMON`** / `BUFF_AREA`（`potions[]` + `targets` + 可选 FX/mark） / **`DISABLE_AI`**（`duration_ticks` + `targets`: enemies|hit_target|attacker） / `AURA`
+
 > **净化**：首选 `ADD_POTION` 技巧（免疫凋零 = 持续给 0 秒 255 级凋零抵消）；⚠️ **该技巧实现期须实测**（D1），若 MC 不认则 fallback = 监听 `EntityDamageEvent` 按 `DamageCause` cancel（作为 `ADD_POTION` 的免疫子能力实现）。
 
 ### 10.3 生命周期模型（**事件到期，非挂钟计时**）
@@ -486,21 +489,47 @@ MCZJUGameCore.getLeaderboardManager()
 
 ## 15. 自定义交互物品开发指南（PDC 路由模式）
 
-未来做魔法武器，**优先 `items/*.yml` 的 `use_ability`**（零 Java）：
+未来做魔法武器，**优先 `items/*.yml` 的 `use_ability` + `held_effects`**（零 Java）：
 
 ```yaml
 use_ability:
-  cooldown_sec: 3          # 权威 CD（CooldownService）
-  effect: DAMAGE_AREA      # DAMAGE_AREA | DAMAGE_BEAM | HEAL_AREA
-  params: { damage: 6.0, radius: 6.0, targets: enemies, enemy_scope: tracked }
-  fx: { preset: SPIRAL_RADIUS, particle: CRIT, radius: 6.0 }
+  cooldown_sec: 3
+  effect: BUFF_AREA | DAMAGE_AREA | DAMAGE_BEAM | HEAL_AREA | DISABLE_AI | GRANT_ITEM | SUMMON | ADD_ATTRIBUTE | ADD_POTION
+  params: { radius, targets, potions[], damage, amount, potion, amp, duration_ticks, ... }
+  fx: { preset, particle, radius, ... }
+  expiry: { trigger: ON_DAMAGE_DEALT, charges: 1 }   # ADD_ATTRIBUTE / ADD_POTION 临时路径
+  stack: REPLACE
+
+held_effects:   # 主手持有期间生效；禁止 expiry
+  - effect: ADD_ATTRIBUTE
+    params: { attr: ATTACK_DAMAGE, op: PERCENT, value: 0.10 }
+  - effect: ADD_POTION
+    params: { potion: FIRE_RESISTANCE, amp: 0, duration_ticks: 0 }
+  - effect: AURA
+    params:
+      radius: 12.0
+      targets: allies
+      grant: { effect: ADD_ATTRIBUTE, attr: ATTACK_DAMAGE, op: PERCENT, value: 0.08 }
+  - effect: ADD_POTION
+    trigger: ON_DAMAGE_DEALT
+    params: { potion: POISON, amp: 0, duration_ticks: 100 }
 ```
+
+**`held_effects` 规则**：生命周期 = 主手持有；id 前缀 `held:<itemId>:<n>`；卸载时按前缀删除（含 `:grant` 子层）。常驻仅 `ADD_ATTRIBUTE` / `ADD_POTION` / `AURA`；战斗型须 `trigger`（`ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN` / `ON_KILL`）。禁止 `expiry` / `UPGRADE_LEVEL`。
+
+**`use_ability` ADD_POTION 双路径**：无 `expiry` + `duration_ticks > 0` → 右键即时药水（不写 PlayerState）；有 `expiry` + `duration_ticks: 0` → `ability:<itemId>` 直到事件到期。参数键用 `potion:`（非 `effect:`）。
+
+`BUFF_AREA`：右键给 self/allies/enemies 挂限时药水；武器 `mark_fx` 对目标列表全员播放。STAT 战斗版见 `rewards.yml` `trigger` + `params.mark_on`。
+
+`DISABLE_AI`：对敌对生物 `setAI(false)` 一段时间后复原；`targets`: `enemies`（需 `radius`）| `hit_target` | `attacker`；再施加取更长剩余；卸载前 restore（防永久 NoAI）。Phase 1：`use_ability` + STAT；`held_effects` 为 Phase 2。
+
+**下次近战加成**（纯配置）：`effect: ADD_ATTRIBUTE` + 必填 `expiry`（如 `{ trigger: ON_DAMAGE_DEALT, charges: 1 }`）+ `params: { attr, op, value }`；可选 `stack: REPLACE`（默认）。右键写入临时 `PlayerEffect`（id=`ability:<itemId>`），**仅玩家近战** `ON_DAMAGE_DEALT` 消耗；弓箭不触发。样例：`maggoteers:power_strike`。
 
 路由顺序：ItemKind → `registerHandler`（可选覆盖）→ `ItemAbilityRegistry` → 无则 vanilla 交互。
 
 **Escape hatch**：仅当 Effect 系统表达不了的多段/投射物技能时，才写 `ItemUseHandler` 并 `registerHandler`。
 
-奖励侧法术强度：`rewards.yml` 用 `ADD_ATTRIBUTE` + `attr: MAGIC_DAMAGE` + `op: PERCENT` + `stack: ADD`（虚拟 stat，不写 Bukkit）。奖励 `fireTrigger` 白名单：`ON_KILL` / `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN` 或省略（常驻）；**禁止** `ON_INTERACT`。
+奖励侧法术强度：`rewards.yml` 用 `ADD_ATTRIBUTE` + `attr: MAGIC_DAMAGE` + `op: PERCENT` + `stack: ADD`（虚拟 stat，不写 Bukkit）。奖励 `fireTrigger` 白名单：`ON_WAVE_CLEAR` / `ON_ACT_ENTER` / `ON_KILL` / `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN` / **`ON_DEATH`** 或省略（常驻）；**禁止** `ON_TICK_1S`、`ON_INTERACT`、`ON_GAME_END`、`ON_REVIVE`。`GRANT_ITEM`/`SUMMON` **必须**显式 `trigger`（不可省略）。`ON_DEATH` 区域/SUMMON 以**死亡地点**为原点（`eventLocation` / `anchor: death_site`）。
 
 ---
 
