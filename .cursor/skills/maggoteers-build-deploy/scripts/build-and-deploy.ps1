@@ -72,7 +72,7 @@ try {
     Write-Host ("JAR -> {0}" -f (Join-Path $ServerPlugins $jar.Name))
 
     New-Item -ItemType Directory -Force -Path $ServerData | Out-Null
-    foreach ($f in @("config.yml", "waves.yml", "rewards.yml", "affixes.yml")) {
+    foreach ($f in @("config.yml", "waves.yml", "rewards.yml", "affixes.yml", "collectibles.yml")) {
         $src = Join-Path $ResRoot $f
         if (Test-Path $src) {
             Copy-Item $src (Join-Path $ServerData $f) -Force
@@ -80,13 +80,23 @@ try {
         }
     }
 
+    $itemsDest = Join-Path $ServerData "items"
+    New-Item -ItemType Directory -Force -Path $itemsDest | Out-Null
+    $itemsSrc = Join-Path $ResRoot "items"
+    if (Test-Path $itemsSrc) {
+        Get-ChildItem $itemsSrc -File -Filter "*.yml" | ForEach-Object {
+            Copy-Item $_.FullName (Join-Path $itemsDest $_.Name) -Force
+        }
+        Write-Host "Synced items/*.yml"
+    }
+
     if ($SyncAssets) {
-        foreach ($dir in @("items", "maps")) {
-            $srcDir = Join-Path $ResRoot $dir
-            if (Test-Path $srcDir) {
-                Copy-Item $srcDir (Join-Path $ServerData $dir) -Recurse -Force
-                Write-Host "Synced $dir/"
-            }
+        $mapsSrc = Join-Path $ResRoot "maps"
+        $mapsDest = Join-Path $ServerData "maps"
+        if (Test-Path $mapsSrc) {
+            if (Test-Path $mapsDest) { Remove-Item $mapsDest -Recurse -Force }
+            Copy-Item $mapsSrc $mapsDest -Recurse -Force
+            Write-Host "Synced maps/"
         }
     }
 

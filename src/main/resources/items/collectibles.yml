@@ -1,929 +1,1381 @@
-# rewardplan 护符外观（兔子脚/材料预览）
+# rewardplan 护符：RABBIT_FOOT 底材 + itemModel 外观 + 功能 lore
 
 maggoteers:charm_a1b_atk150:
   material: RABBIT_FOOT
-  customName: "<red>攻击+150"
+  itemModel: STONE_AXE
+  customName: "<red>老近卫军之锋"
+  lore:
+    - "<gray>攻击+150"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1b_frost_tree:
   material: RABBIT_FOOT
+  itemModel: DARK_OAK_SAPLING
   customName: "<aqua>霜晶树"
-  glint: true
-
-maggoteers:charm_a1b_hit_penalty:
-  material: RABBIT_FOOT
-  customName: 
+  lore:
+    - "<gray>回合结束时获得2枚金币，但受伤时额外扣除2点生命值"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1b_hp20:
   material: RABBIT_FOOT
-  customName: "<green>生命+20"
+  itemModel: IRON_CHESTPLATE
+  customName: "<green>破旧的巨型甲胄"
+  lore:
+    - "<gray>生命上限+20"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1b_kb1:
   material: RABBIT_FOOT
-  customName: "<gray>击退抗性+1"
+  itemModel: IRON_BLOCK
+  customName: "<gray>东京湾专属配重块"
+  lore:
+    - "<gray>击退抗性+1"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1b_mag150:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+150"
+  itemModel: ENDER_CHEST
+  customName: "<light_purple>皇帝的收藏"
+  lore:
+    - "<gray>魔攻+150"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1b_res1:
   material: RABBIT_FOOT
-  customName: "<gray>抗性 I"
+  itemModel: IRON_GOLEM_SPAWN_EGG
+  customName: "<gray>铁傀儡突变诱发物"
+  lore:
+    - "<gray>抗性提升I（可升级！）"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1b_spd15:
   material: RABBIT_FOOT
-  customName: "<blue>速度+15"
+  itemModel: MUSIC_DISC_11
+  customName: "<blue>黑夜呢喃"
+  lore:
+    - "<gray>速度+15"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1b_wave_coin:
   material: RABBIT_FOOT
+  itemModel: PEONY
   customName: "<yellow>贪婪护符"
-  glint: true
-
-maggoteers:charm_a1b_wave_coin2:
-  material: RABBIT_FOOT
-  customName: a1b_wave_coin2
+  lore:
+    - "<gray>回合结束时，获得1枚额外金币"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1b_wave_gapple:
   material: RABBIT_FOOT
+  itemModel: OAK_SAPLING
   customName: "<gold>赫拉克勒斯的果树"
+  lore:
+    - "<gray>回合结束时，获得一个金苹果"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1b_wave_steak:
   material: RABBIT_FOOT
+  itemModel: PITCHER_PLANT
   customName: "<red>暴食护符"
+  lore:
+    - "<gray>回合结束时，获得个右键消耗以恢复全部生命值的道具"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1b_wave_tnt:
   material: RABBIT_FOOT
+  itemModel: GUNPOWDER
   customName: "<dark_red>死魂灵之影"
-  glint: true
-
-maggoteers:charm_a1s_act_atk20:
-  material: RABBIT_FOOT
-  customName: 
-  glint: true
-
-maggoteers:charm_a1s_act_mag20:
-  material: RABBIT_FOOT
-  customName: 
+  lore:
+    - "<gray>回合结束时，获得一个能够召唤点燃的tnt的消耗性道具"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_ally_invis:
   material: RABBIT_FOOT
+  itemModel: LEATHER_HELMET
   customName: "<gray>捕鳞蓑"
+  lore:
+    - "<gray>10格半径内的其他友军获得隐身"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_atk25:
   material: RABBIT_FOOT
-  customName: "<red>攻击+25"
+  itemModel: MAGMA_CREAM
+  customName: "<red>受潮的力量粉末"
+  lore:
+    - "<gray>攻击+25"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_atk35:
   material: RABBIT_FOOT
-  customName: "<red>攻击+35"
+  itemModel: DAMAGED_ANVIL
+  customName: "<red>开裂的铁砧"
+  lore:
+    - "<gray>攻击+35"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_fire_res:
   material: RABBIT_FOOT
-  customName: "<gold>抗火"
+  itemModel: BLAZE_SPAWN_EGG
+  customName: "<gold>烈焰人突变诱发物"
+  lore:
+    - "<gray>抗火"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_hit_slow:
   material: RABBIT_FOOT
+  itemModel: SUNFLOWER
   customName: "<yellow>懒惰护符"
+  lore:
+    - "<gray>攻击时为敌人附加10s缓慢II"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_hp4:
   material: RABBIT_FOOT
-  customName: "<green>生命+4"
+  itemModel: POTION
+  customName: "<green>热水壶"
+  lore:
+    - "<gray>生命上限+4"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_hp6:
   material: RABBIT_FOOT
-  customName: "<green>生命+6"
+  itemModel: POTION
+  customName: "<green>解渴的西瓜汁"
+  lore:
+    - "<gray>生命上限+6"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_lost_key:
   material: RABBIT_FOOT
+  itemModel: FILLED_MAP
   customName: "<gold>失落之钥"
+  lore:
+    - "<gray>进入新的一层时，获得20攻击力和魔攻加成"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_mag25:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+25"
+  itemModel: SPLASH_POTION
+  customName: "<light_purple>平凡的药剂"
+  lore:
+    - "<gray>魔攻+25"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_mag35:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+35"
+  itemModel: QUARTZ
+  customName: "<light_purple>纯净的魔晶"
+  lore:
+    - "<gray>魔攻+35"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_regen1:
   material: RABBIT_FOOT
-  customName: "<green>生命恢复 I"
+  itemModel: ALLAY_SPAWN_EGG
+  customName: "<green>悦灵突变诱发物"
+  lore:
+    - "<gray>生命恢复I（可升级！）"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_spd5:
   material: RABBIT_FOOT
-  customName: "<blue>速度+5"
+  itemModel: COBWEB
+  customName: "<blue>捕风网"
+  lore:
+    - "<gray>速度+5"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_str1:
   material: RABBIT_FOOT
-  customName: "<red>力量 I"
+  itemModel: PIGLIN_BRUTE_SPAWN_EGG
+  customName: "<red>猪灵蛮兵突变诱发物"
+  lore:
+    - "<gray>力量I（可升级！）"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_taken_str:
   material: RABBIT_FOOT
+  itemModel: POPPY
   customName: "<red>暴怒护符"
+  lore:
+    - "<gray>受击时获得2秒力量III，红色粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_wave_atk5:
   material: RABBIT_FOOT
+  itemModel: PAPER
   customName: "<gray>清算名单"
+  lore:
+    - "<gray>回合结束时，获得5攻击力加成"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_wave_atk_mag:
   material: RABBIT_FOOT
+  itemModel: ENCHANTING_TABLE
   customName: "<dark_purple>稳定的原石祭坛"
+  lore:
+    - "<gray>回合结束时，获得3攻击力和魔改加成"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_wave_atk_mag2:
   material: RABBIT_FOOT
+  itemModel: ENCHANTING_TABLE
   customName: "<dark_purple>稳定的原石祭坛"
+  lore:
+    - "<gray>回合结束时，获得3攻击力和魔改加成"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_wave_full_heal:
   material: RABBIT_FOOT
+  itemModel: CAMPFIRE
   customName: "<gold>温暖的篝火"
+  lore:
+    - "<gray>回合结束时，恢复全部生命值"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1s_wave_mag5:
   material: RABBIT_FOOT
+  itemModel: SOUL_SAND
   customName: "<dark_gray>灵魂立方"
+  lore:
+    - "<gray>回合结束时，获得5魔攻加成"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_act_revive:
   material: RABBIT_FOOT
+  itemModel: VINE
   customName: "<green>增生藤甲"
+  lore:
+    - "<gray>进入新的一层时，获得一次复活机会"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_atk15:
   material: RABBIT_FOOT
-  customName: "<red>攻击+15"
+  itemModel: CHIPPED_ANVIL
+  customName: "<red>严重损坏的铁砧"
+  lore:
+    - "<gray>攻击+15"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_atk20:
   material: RABBIT_FOOT
-  customName: "<red>攻击+20"
+  itemModel: COPPER_INGOT
+  customName: "<red>铜剑刃碎片"
+  lore:
+    - "<gray>攻击+20"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_atk25:
   material: RABBIT_FOOT
-  customName: "<red>攻击+25"
+  itemModel: MAGMA_CREAM
+  customName: "<red>受潮的力量粉末"
+  lore:
+    - "<gray>攻击+25"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_fangs:
   material: RABBIT_FOOT
+  itemModel: EMERALD
   customName: "<dark_purple>黑暗宝珠"
+  lore:
+    - "<gray>攻击时在敌人脚下召唤一个唤魔者尖牙"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_fire_res:
   material: RABBIT_FOOT
-  customName: "<gold>抗火"
+  itemModel: BLAZE_SPAWN_EGG
+  customName: "<gold>烈焰人突变诱发物"
+  lore:
+    - "<gray>抗火"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_hit_splash:
   material: RABBIT_FOOT
+  itemModel: GOLDEN_AXE
   customName: "<red>狂战斧"
+  lore:
+    - "<gray>攻击时对半径3格内敌人造成一次6点的伤害，打击粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_hp4a:
   material: RABBIT_FOOT
-  customName: "<green>生命+4"
+  itemModel: POTION
+  customName: "<green>热水壶"
+  lore:
+    - "<gray>生命上限+4"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_hp4b:
   material: RABBIT_FOOT
-  customName: "<green>生命+4"
+  itemModel: BREAD
+  customName: "<green>干硬的面包"
+  lore:
+    - "<gray>生命上限+4"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_hp4c:
   material: RABBIT_FOOT
-  customName: "<green>生命+4"
+  itemModel: LEATHER
+  customName: "<green>皮革甲片"
+  lore:
+    - "<gray>生命上限+4"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_kill_invis:
   material: RABBIT_FOOT
-  customName: "<gray>微型怨灵"
+  itemModel: GHAST_TEAR
+  customName: "<gray>瓶装怨灵"
+  lore:
+    - "<gray>杀敌时获得3秒隐身，烟雾粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_mag15:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+15"
+  itemModel: LAPIS_LAZULI
+  customName: "<light_purple>浑浊的魔晶"
+  lore:
+    - "<gray>魔攻+15"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_mag20:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+20"
+  itemModel: DEAD_BUSH
+  customName: "<light_purple>磨损的杖芯"
+  lore:
+    - "<gray>魔攻+20"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_mag25:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+25"
+  itemModel: SPLASH_POTION
+  customName: "<light_purple>平凡的药剂"
+  lore:
+    - "<gray>魔攻+25"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_mark_glow:
   material: RABBIT_FOOT
+  itemModel: FIREWORK_STAR
   customName: "<yellow>照明弹"
+  lore:
+    - "<gray>攻击时标记敌人，为其附加60s发光"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_parting_gift:
   material: RABBIT_FOOT
+  itemModel: TRAPPED_CHEST
   customName: "<dark_red>临别赠礼"
-  glint: true
-
-maggoteers:charm_a1w_parting_slow:
-  material: RABBIT_FOOT
-  customName: a1w_parting_slow
-  glint: true
-
-maggoteers:charm_a1w_parting_tnt:
-  material: RABBIT_FOOT
-  customName: a1w_parting_tnt
+  lore:
+    - "<gray>死亡时召唤5个TNT，并使周围半径6格内敌人获得缓慢X"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_spd4a:
   material: RABBIT_FOOT
-  customName: "<blue>速度+4"
+  itemModel: COOKED_CHICKEN
+  customName: "<blue>炒鸡肉"
+  lore:
+    - "<gray>速度+4"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_spd4b:
   material: RABBIT_FOOT
-  customName: "<blue>速度+4"
+  itemModel: BREEZE_ROD
+  customName: "<blue>微风精华"
+  lore:
+    - "<gray>速度+4"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_str1:
   material: RABBIT_FOOT
-  customName: "<red>力量 I"
-  glint: true
-
-maggoteers:charm_a1w_str1_1:
-  material: PIGLIN_BRUTE_SPAWN_EGG
-  customName: "<red>力量 I"
+  itemModel: PIGLIN_BRUTE_SPAWN_EGG
+  customName: "<red>猪灵蛮兵突变诱发物"
+  lore:
+    - "<gray>力量I（可升级！）"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_thorn_arrow:
   material: RABBIT_FOOT
+  itemModel: COPPER_HELMET
   customName: "<gold>青铜羽饰"
+  lore:
+    - "<gray>受击时向伤害来源发射一根箭，造成10点伤害，即箭矢击中敌人时速度为5"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a1w_wave_bone:
   material: RABBIT_FOOT
+  itemModel: BOOK
   customName: "<gray>《德鲁伊入门》"
+  lore:
+    - "<gray>回合结束时，获得一个可以召唤一条已驯服的狼的消耗性道具"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2b_atk225:
   material: RABBIT_FOOT
-  customName: "<red>攻击+225"
+  itemModel: IRON_DOOR
+  customName: "<red>迷迭香之拥"
+  lore:
+    - "<gray>攻击+225"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2b_frost_aura:
   material: RABBIT_FOOT
+  itemModel: POWDER_SNOW_BUCKET
   customName: "<aqua>寒霜领域"
+  lore:
+    - "<gray>5格半径范围内敌人获得缓慢II"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2b_hit_heal:
   material: RABBIT_FOOT
+  itemModel: TORCHFLOWER
   customName: "<green>嫉妒护符"
+  lore:
+    - "<gray>攻击到敌人时恢复1点生命值"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2b_hit_slow10:
   material: RABBIT_FOOT
+  itemModel: GLOWSTONE_DUST
   customName: "<light_purple>安眠迷香"
+  lore:
+    - "<gray>攻击时为敌人附加1s缓慢X"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2b_hp30:
   material: RABBIT_FOOT
-  customName: "<green>生命+30"
+  itemModel: NETHERITE_CHESTPLATE
+  customName: "<green>蒸汽骑士的甲胄"
+  lore:
+    - "<gray>生命上限+30"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2b_invis:
   material: RABBIT_FOOT
-  customName: "<gray>隐身"
+  itemModel: ELYTRA
+  customName: "<gray>隐身衣"
+  lore:
+    - "<gray>隐身，不可叠加"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2b_mag225:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+225"
+  itemModel: DIAMOND_BLOCK
+  customName: "<light_purple>璀璨悲泣"
+  lore:
+    - "<gray>魔攻+225"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2b_reach1:
   material: RABBIT_FOOT
-  customName: "<gray>触及+1"
+  itemModel: PISTON
+  customName: "<gray>活塞式机械臂"
+  lore:
+    - "<gray>生物触及距离+1"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2b_spd20:
   material: RABBIT_FOOT
-  customName: "<blue>速度+20"
+  itemModel: PAINTING
+  customName: "<blue>“大静谧”"
+  lore:
+    - "<gray>速度+20"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2b_taken_heal:
   material: RABBIT_FOOT
+  itemModel: SALMON
   customName: "<aqua>恐鱼生"
+  lore:
+    - "<gray>受击时恢复2点生命值"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2b_taken_lev:
   material: RABBIT_FOOT
+  itemModel: FEATHER
   customName: "<white>天穹尘埃"
+  lore:
+    - "<gray>受击时使伤害来源获得1s浮空V"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_ally_str:
   material: RABBIT_FOOT
+  itemModel: GOAT_HORN
   customName: "<red>岩角号"
+  lore:
+    - "<gray>5格半径内友军获得力量II，红色细粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_arrogance:
   material: RABBIT_FOOT
+  itemModel: TORCHFLOWER
   customName: "<gold>傲慢护符"
-  glint: true
-
-maggoteers:charm_a2s_arrogance_atk:
-  material: RABBIT_FOOT
-  customName: 
-  glint: true
-
-maggoteers:charm_a2s_arrogance_clear:
-  material: RABBIT_FOOT
-  customName: a2s_arrogance_clear
-  glint: true
-
-maggoteers:charm_a2s_arrogance_clear2:
-  material: RABBIT_FOOT
-  customName: a2s_arrogance_clear2
-  glint: true
-
-maggoteers:charm_a2s_arrogance_mag:
-  material: RABBIT_FOOT
-  customName: 
+  lore:
+    - "<gray>回合结束时，你获得50攻击力和魔攻加成，当你受到伤害时，清空该选项带来的加成"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_atk40:
   material: RABBIT_FOOT
-  customName: "<red>攻击+40"
+  itemModel: IRON_SWORD
+  customName: "<red>铁剑刃碎片"
+  lore:
+    - "<gray>攻击+40"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_atk45:
   material: RABBIT_FOOT
-  customName: "<red>攻击+45"
+  itemModel: BLAZE_POWDER
+  customName: "<red>灼热的力量粉末"
+  lore:
+    - "<gray>攻击+45"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_enemy_regen:
   material: RABBIT_FOOT
+  itemModel: WOODEN_SWORD
   customName: "<light_purple>桃木剑"
+  lore:
+    - "<gray>6格半径范围内敌人获得生命恢复I，力量I，慢扩圈，粉色粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_hp8a:
   material: RABBIT_FOOT
-  customName: "<green>生命+8"
+  itemModel: HEAVY_WEIGHTED_PRESSURE_PLATE
+  customName: "<green>防弹插板"
+  lore:
+    - "<gray>生命上限+8"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_hp8b:
   material: RABBIT_FOOT
-  customName: "<green>生命+8"
+  itemModel: POTION
+  customName: "<green>香香的奶耐"
+  lore:
+    - "<gray>生命上限+8"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_mag40:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+40"
+  itemModel: SPRUCE_SAPLING
+  customName: "<light_purple>冬青杖芯"
+  lore:
+    - "<gray>魔攻+40"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_mag45:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+45"
+  itemModel: POTION
+  customName: "<light_purple>魔力药剂"
+  lore:
+    - "<gray>魔攻+45"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_martyr:
   material: RABBIT_FOOT
+  itemModel: RECOVERY_COMPASS
   customName: "<gold>殉道者"
-  glint: true
-
-maggoteers:charm_a2s_martyr_buff:
-  material: RABBIT_FOOT
-  customName: a2s_martyr_buff
-  glint: true
-
-maggoteers:charm_a2s_martyr_heal:
-  material: RABBIT_FOOT
-  customName: a2s_martyr_heal
+  lore:
+    - "<gray>死亡时为其他所有队友恢复全部生命值，并赋予他们60s力量II、速度II"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_reach_a:
   material: RABBIT_FOOT
-  customName: "<gray>触及+0.5"
+  itemModel: LEAD
+  customName: "<gray>流浪商人的长鞭"
+  lore:
+    - "<gray>生物触及距离+0.5"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_reach_b:
   material: RABBIT_FOOT
-  customName: "<gray>触及+0.5"
+  itemModel: GOLDEN_HOE
+  customName: "<gray>挠痒痒痒痒挠"
+  lore:
+    - "<gray>生物触及距离+0.5"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_regen2:
   material: RABBIT_FOOT
-  customName: "<green>生命恢复(可升级)"
+  itemModel: ALLAY_SPAWN_EGG
+  customName: "<green>悦灵突变诱发物"
+  lore:
+    - "<gray>生命恢复II（可升级！）"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_spd10:
   material: RABBIT_FOOT
-  customName: "<blue>速度+10"
+  itemModel: CLOCK
+  customName: "<blue>主观缓时"
+  lore:
+    - "<gray>速度+10"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_spd8:
   material: RABBIT_FOOT
-  customName: "<blue>速度+8"
+  itemModel: LEATHER_BOOTS
+  customName: "<blue>精致跑鞋"
+  lore:
+    - "<gray>速度+8"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_str2:
   material: RABBIT_FOOT
-  customName: "<red>力量(可升级)"
+  itemModel: PIGLIN_BRUTE_SPAWN_EGG
+  customName: "<red>猪灵蛮兵突变诱发物"
+  lore:
+    - "<gray>力量II（可升级！）"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_taken_splash:
   material: RABBIT_FOOT
+  itemModel: DIAMOND_CHESTPLATE
   customName: "<aqua>刺猬胸甲"
+  lore:
+    - "<gray>受击时对周围3格半径内敌人造成一次4点的伤害，箭矢射中墙壁音效，打击粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_wave_potion:
   material: RABBIT_FOOT
+  itemModel: RED_SHULKER_BOX
   customName: "<red>野战医疗箱"
+  lore:
+    - "<gray>回合结束时，获得两瓶治疗药水"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2s_wave_splash:
   material: RABBIT_FOOT
+  itemModel: DISPENSER
   customName: "<aqua>便携生物手雷制造站"
+  lore:
+    - "<gray>回合结束时，获得两瓶喷溅型治疗II药水"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_atk35:
   material: RABBIT_FOOT
-  customName: "<red>攻击+35"
+  itemModel: DAMAGED_ANVIL
+  customName: "<red>开裂的铁砧"
+  lore:
+    - "<gray>攻击+35"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_atk40:
   material: RABBIT_FOOT
-  customName: "<red>攻击+40"
+  itemModel: IRON_SWORD
+  customName: "<red>铁剑刃碎片"
+  lore:
+    - "<gray>攻击+40"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_atk45:
   material: RABBIT_FOOT
-  customName: "<red>攻击+45"
+  itemModel: BLAZE_POWDER
+  customName: "<red>灼热的力量粉末"
+  lore:
+    - "<gray>攻击+45"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_cursed_blade:
   material: RABBIT_FOOT
+  itemModel: STONE_SWORD
   customName: "<dark_red>诅咒之刃"
-  glint: true
   lore:
-    - +300攻/魔，受击额外-10血
+    - "<gray>你获得300攻击力和魔攻加成，但是受伤时额外失去10点生命值"
+    - "<dark_gray>"
+  glint: true
 
 maggoteers:charm_a2w_cursed_blade_mag:
   material: RABBIT_FOOT
+  itemModel: STONE_SWORD
   customName: "<dark_red>诅咒之刃"
+  lore:
+    - "<gray>你获得300攻击力和魔攻加成，但是受伤时额外失去10点生命值"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_death_golem:
   material: RABBIT_FOOT
+  itemModel: CARVED_PUMPKIN
   customName: "<gray>便携魔像"
+  lore:
+    - "<gray>死亡时生成一个铁傀儡"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_hit_wither:
   material: RABBIT_FOOT
+  itemModel: COAL_BLOCK
   customName: "<dark_gray>腐败之油"
+  lore:
+    - "<gray>攻击时为敌人附加10s凋零I"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_hp6:
   material: RABBIT_FOOT
-  customName: "<green>生命+6"
+  itemModel: POTION
+  customName: "<green>解渴的西瓜汁"
+  lore:
+    - "<gray>生命上限+6"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_hp8a:
   material: RABBIT_FOOT
-  customName: "<green>生命+8"
+  itemModel: HEAVY_WEIGHTED_PRESSURE_PLATE
+  customName: "<green>防弹插板"
+  lore:
+    - "<gray>生命上限+8"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_hp8b:
   material: RABBIT_FOOT
-  customName: "<green>生命+8"
+  itemModel: POTION
+  customName: "<green>香香的奶耐"
+  lore:
+    - "<gray>生命上限+8"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_kill_boom:
   material: RABBIT_FOOT
+  itemModel: CREEPER_HEAD
   customName: "<dark_green>裂变之颅"
+  lore:
+    - "<gray>杀敌时对周围敌人造成4点伤害，爆炸音效，火焰粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_kill_heal:
   material: RABBIT_FOOT
+  itemModel: ZOMBIE_HEAD
   customName: "<green>肉食之颅"
+  lore:
+    - "<gray>杀敌时恢复4点生命值，附魔音效，火焰粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_kill_spd:
   material: RABBIT_FOOT
+  itemModel: SKELETON_SKULL
   customName: "<red>狂暴之颅"
+  lore:
+    - "<gray>杀敌时获得2s速度II，烈焰人叫声，火焰粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_kill_str:
   material: RABBIT_FOOT
+  itemModel: PIGLIN_HEAD
   customName: "<gold>嗜血之颅"
+  lore:
+    - "<gray>杀敌时获得2s力量II，猪灵被激怒叫声，火焰粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_kill_wither:
   material: RABBIT_FOOT
+  itemModel: WITHER_SKELETON_SKULL
   customName: "<dark_gray>凋萎之颅"
+  lore:
+    - "<gray>杀敌时使3格半径范围内敌人获得凋零I，慢扩圈，火焰粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_mag35:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+35"
+  itemModel: QUARTZ
+  customName: "<light_purple>纯净的魔晶"
+  lore:
+    - "<gray>魔攻+35"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_mag40:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+40"
+  itemModel: SPRUCE_SAPLING
+  customName: "<light_purple>冬青杖芯"
+  lore:
+    - "<gray>魔攻+40"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_mag45:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+45"
+  itemModel: POTION
+  customName: "<light_purple>魔力药剂"
+  lore:
+    - "<gray>魔攻+45"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_reach_a:
   material: RABBIT_FOOT
-  customName: "<gray>触及+0.5"
+  itemModel: LEAD
+  customName: "<gray>流浪商人的长鞭"
+  lore:
+    - "<gray>生物触及距离+0.5"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_reach_b:
   material: RABBIT_FOOT
-  customName: "<gray>触及+0.5"
+  itemModel: GOLDEN_HOE
+  customName: "<gray>挠痒痒痒痒挠"
+  lore:
+    - "<gray>生物触及距离+0.5"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_regen2:
   material: RABBIT_FOOT
-  customName: "<green>生命恢复(可升级)"
-  glint: true
-
-maggoteers:charm_a2w_regen2_1:
-  material: ALLAY_SPAWN_EGG
-  customName: "<green>再生 I"
-  glint: true
-
-maggoteers:charm_a2w_regen2_2:
-  material: ALLAY_SPAWN_EGG
-  customName: "<green>再生 II"
+  itemModel: ALLAY_SPAWN_EGG
+  customName: "<green>悦灵突变诱发物"
+  lore:
+    - "<gray>生命恢复II（可升级！）"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_spd10:
   material: RABBIT_FOOT
-  customName: "<blue>速度+10"
+  itemModel: CLOCK
+  customName: "<blue>主观缓时"
+  lore:
+    - "<gray>速度+10"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_spd8a:
   material: RABBIT_FOOT
-  customName: "<blue>速度+8"
+  itemModel: LEATHER_BOOTS
+  customName: "<blue>精致跑鞋"
+  lore:
+    - "<gray>速度+8"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_spd8b:
   material: RABBIT_FOOT
-  customName: "<blue>速度+8"
+  itemModel: RABBIT_FOOT
+  customName: "<blue>兔子脚"
+  lore:
+    - "<gray>速度+8"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a2w_str2:
   material: RABBIT_FOOT
-  customName: "<red>力量(可升级)"
-  glint: true
-
-maggoteers:charm_a2w_str2_1:
-  material: PIGLIN_BRUTE_SPAWN_EGG
-  customName: "<red>力量 I"
-  glint: true
-
-maggoteers:charm_a2w_str2_2:
-  material: PIGLIN_BRUTE_SPAWN_EGG
-  customName: "<red>力量 II"
+  itemModel: PIGLIN_BRUTE_SPAWN_EGG
+  customName: "<red>猪灵蛮兵突变诱发物"
+  lore:
+    - "<gray>力量II（可升级！）"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_ally_regen:
   material: RABBIT_FOOT
+  itemModel: ROSE_BUSH
   customName: "<white>白玫瑰"
+  lore:
+    - "<gray>5格半径内友军获得生命恢复I，绿色交易粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_atk60:
   material: RABBIT_FOOT
-  customName: "<red>攻击+60"
+  itemModel: ANVIL
+  customName: "<red>崭新的铁砧"
+  lore:
+    - "<gray>攻击+60"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_atk70:
   material: RABBIT_FOOT
-  customName: "<red>攻击+70"
+  itemModel: NETHERITE_SWORD
+  customName: "<red>合金剑刃碎片"
+  lore:
+    - "<gray>攻击+70"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_atk80:
   material: RABBIT_FOOT
-  customName: "<red>攻击+80"
+  itemModel: BLAZE_ROD
+  customName: "<red>力量之源"
+  lore:
+    - "<gray>攻击+80"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_hp12:
   material: RABBIT_FOOT
-  customName: "<green>生命+12"
+  itemModel: COOKED_BEEF
+  customName: "<green>永恒牛排"
+  lore:
+    - "<gray>生命上限+12"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_hp18:
   material: RABBIT_FOOT
-  customName: "<green>生命+18"
+  itemModel: CHAINMAIL_CHESTPLATE
+  customName: "<green>秘银软甲"
+  lore:
+    - "<gray>生命上限+18"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_hp30:
   material: RABBIT_FOOT
-  customName: "<green>生命+30"
+  itemModel: MILK_BUCKET
+  customName: "<green>一大桶奶耐"
+  lore:
+    - "<gray>生命上限+30"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_kb1a:
   material: RABBIT_FOOT
-  customName: "<gray>击退抗性+1"
+  itemModel: IRON_BLOCK
+  customName: "<gray>东京湾专属配重块"
+  lore:
+    - "<gray>击退抗性+1"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_kb1b:
   material: RABBIT_FOOT
-  customName: "<gray>击退抗性+1"
+  itemModel: NETHERITE_BLOCK
+  customName: "<gray>合金配重块"
+  lore:
+    - "<gray>击退抗性+1"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_kill_atk10:
   material: RABBIT_FOOT
+  itemModel: GOLDEN_AXE
   customName: "<red>嗜血之斧"
+  lore:
+    - "<gray>杀敌时获得10攻击力加成，本回合结束时清空该被动获得的加成"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_kill_mag10:
   material: RABBIT_FOOT
+  itemModel: REDSTONE_BLOCK
   customName: "<light_purple>嗜血宝石"
+  lore:
+    - "<gray>杀敌时获得10魔攻加成，本回合结束时清空该被动获得的加成"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_lust:
   material: RABBIT_FOOT
+  itemModel: LILY_OF_THE_VALLEY
   customName: "<light_purple>色欲护符"
-  glint: true
   lore:
-    - 持续伤害吸收 I，攻/魔 -20
-
-maggoteers:charm_a3s_lust_abs:
-  material: RABBIT_FOOT
-  customName: 
-  glint: true
-
-maggoteers:charm_a3s_lust_atk:
-  material: RABBIT_FOOT
-  customName: 
-  glint: true
-
-maggoteers:charm_a3s_lust_mag:
-  material: RABBIT_FOOT
-  customName: 
+    - "<gray>每10s获得伤害吸收II，但是攻击力和魔攻-20"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_mag60:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+60"
+  itemModel: AMETHYST_CLUSTER
+  customName: "<light_purple>原初魔晶"
+  lore:
+    - "<gray>魔攻+60"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_mag70:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+70"
+  itemModel: PALE_OAK_SAPLING
+  customName: "<light_purple>接骨木杖芯"
+  lore:
+    - "<gray>魔攻+70"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_mag80:
   material: RABBIT_FOOT
-  customName: "<light_purple>魔攻+80"
+  itemModel: EXPERIENCE_BOTTLE
+  customName: "<light_purple>魔力之源"
+  lore:
+    - "<gray>魔攻+80"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_reach1a:
   material: RABBIT_FOOT
-  customName: "<gray>触及+1"
+  itemModel: PISTON
+  customName: "<gray>活塞式机械臂"
+  lore:
+    - "<gray>生物触及距离+1"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_reach1b:
   material: RABBIT_FOOT
-  customName: "<gray>触及+1"
+  itemModel: STRING
+  customName: "<gray>人偶牵线"
+  lore:
+    - "<gray>生物触及距离+1"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_regen4:
   material: RABBIT_FOOT
-  customName: "<green>生命恢复(可升级)"
-  glint: true
-
-maggoteers:charm_a3s_regen4_1:
-  material: ALLAY_SPAWN_EGG
-  customName: "<green>再生 1"
-  glint: true
-
-maggoteers:charm_a3s_regen4_2:
-  material: ALLAY_SPAWN_EGG
-  customName: "<green>再生 2"
-  glint: true
-
-maggoteers:charm_a3s_regen4_3:
-  material: ALLAY_SPAWN_EGG
-  customName: "<green>再生 3"
-  glint: true
-
-maggoteers:charm_a3s_regen4_4:
-  material: ALLAY_SPAWN_EGG
-  customName: "<green>再生 4"
+  itemModel: ALLAY_SPAWN_EGG
+  customName: "<green>悦灵突变诱发物"
+  lore:
+    - "<gray>生命恢复III（已满级！）"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_res3:
   material: RABBIT_FOOT
-  customName: "<gray>抗性(可升级)"
-  glint: true
-
-maggoteers:charm_a3s_res3_1:
-  material: IRON_GOLEM_SPAWN_EGG
-  customName: "<gray>抗性 1"
-  glint: true
-
-maggoteers:charm_a3s_res3_2:
-  material: IRON_GOLEM_SPAWN_EGG
-  customName: "<gray>抗性 2"
-  glint: true
-
-maggoteers:charm_a3s_res3_3:
-  material: IRON_GOLEM_SPAWN_EGG
-  customName: "<gray>抗性 3"
+  itemModel: IRON_GOLEM_SPAWN_EGG
+  customName: "<gray>铁傀儡突变诱发物"
+  lore:
+    - "<gray>抗性提升II（已满级！）"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_spd10:
   material: RABBIT_FOOT
-  customName: "<blue>速度+10"
+  itemModel: CLOCK
+  customName: "<blue>主观缓时"
+  lore:
+    - "<gray>速度+10"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_spd15:
   material: RABBIT_FOOT
-  customName: "<blue>速度+15"
+  itemModel: WIND_CHARGE
+  customName: "<blue>风神的印记"
+  lore:
+    - "<gray>速度+15"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_spd20:
   material: RABBIT_FOOT
-  customName: "<blue>速度+20"
+  itemModel: IRON_BOOTS
+  customName: "<blue>火箭靴"
+  lore:
+    - "<gray>速度+20"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_str3:
   material: RABBIT_FOOT
-  customName: "<red>力量(可升级)"
-  glint: true
-
-maggoteers:charm_a3s_str3_1:
-  material: PIGLIN_BRUTE_SPAWN_EGG
-  customName: "<red>力量 1"
-  glint: true
-
-maggoteers:charm_a3s_str3_2:
-  material: PIGLIN_BRUTE_SPAWN_EGG
-  customName: "<red>力量 2"
-  glint: true
-
-maggoteers:charm_a3s_str3_3:
-  material: PIGLIN_BRUTE_SPAWN_EGG
-  customName: "<red>力量 3"
+  itemModel: PIGLIN_BRUTE_SPAWN_EGG
+  customName: "<red>猪灵蛮兵突变诱发物"
+  lore:
+    - "<gray>力量，可叠加，上限1"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_taken_abs:
   material: RABBIT_FOOT
+  itemModel: WAXED_OXIDIZED_COPPER_TRAPDOOR
   customName: "<yellow>护心镜"
+  lore:
+    - "<gray>受击时获得1秒伤害吸收I，黄色粒子"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3s_taken_res:
   material: RABBIT_FOOT
+  itemModel: WAXED_OXIDIZED_COPPER
   customName: "<gray>咒魂护符"
+  lore:
+    - "<gray>受击时获得1秒抗性提升IV，打击粒子，铁砧放置音效"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3w_glass_regen:
   material: RABBIT_FOOT
+  itemModel: DIAMOND_HOE
   customName: "<aqua>自修复玻璃刀"
-  glint: true
   lore:
-    - 每波清空获得一把玻璃刀
+    - "<gray>右键获得一把玻璃刀：【钻石锄，耐久剩余1点，锋利100】；冷却时间120s"
+    - "<dark_gray>"
+  glint: true
 
 maggoteers:charm_a3w_imm_poison:
   material: RABBIT_FOOT
-  customName: "<green>免疫中毒/虚弱"
+  itemModel: CAVE_SPIDER_SPAWN_EGG
+  customName: "<green>洞穴蜘蛛突变诱发物"
+  lore:
+    - "<gray>免疫中毒、虚弱"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3w_imm_slow:
   material: RABBIT_FOOT
-  customName: "<blue>免疫缓慢/失明"
+  itemModel: WARDEN_SPAWN_EGG
+  customName: "<blue>监守者突变诱发物"
+  lore:
+    - "<gray>免疫缓慢、失明"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_a3w_imm_wither:
   material: RABBIT_FOOT
-  customName: "<dark_gray>免疫凋零/黑暗"
+  itemModel: WITHER_SKELETON_SPAWN_EGG
+  customName: "<dark_gray>凋零骷髅突变诱发物"
+  lore:
+    - "<gray>免疫凋零、黑暗"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_class_guard:
   material: RABBIT_FOOT
-  customName: "<yellow>近卫"
-  glint: true
+  itemModel: SMITHING_TABLE
+  customName: "<yellow>近卫信物"
   lore:
-    - 长矛 + 信物
-
-maggoteers:charm_class_guard_token_atk:
-  material: RABBIT_FOOT
-  customName: "<yellow>近卫信物"
-  glint: true
-
-maggoteers:charm_class_guard_token_reach:
-  material: RABBIT_FOOT
-  customName: "<yellow>近卫信物"
+    - "<gray>+0.5触及范围，+30攻击力"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_class_heavy:
   material: RABBIT_FOOT
-  customName: "<blue>重装"
-  glint: true
+  itemModel: IRON_TRAPDOOR
+  customName: "<blue>重装信物"
   lore:
-    - 圣剑 + 信物
-
-maggoteers:charm_class_heavy_token_atk:
-  material: RABBIT_FOOT
-  customName: "<gray>重装信物"
-  glint: true
-
-maggoteers:charm_class_heavy_token_hp:
-  material: RABBIT_FOOT
-  customName: "<gray>重装信物"
+    - "<gray>+20攻击力，+8生命上限"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_class_mage:
   material: RABBIT_FOOT
-  customName: "<green>术师"
-  glint: true
+  itemModel: EMERALD_BLOCK
+  customName: "<green>术师信物"
   lore:
-    - 魔剑 + 信物
-
-maggoteers:charm_class_mage_token_atk:
-  material: RABBIT_FOOT
-  customName: "<green>术师信物"
-  glint: true
-
-maggoteers:charm_class_mage_token_hp:
-  material: RABBIT_FOOT
-  customName: "<green>术师信物"
-  glint: true
-
-maggoteers:charm_class_mage_token_mag:
-  material: RABBIT_FOOT
-  customName: "<green>术师信物"
+    - "<gray>+20攻击力，+20魔攻，-8生命上限"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_class_sniper:
   material: RABBIT_FOOT
-  customName: "<aqua>狙击"
-  glint: true
+  itemModel: SPYGLASS
+  customName: "<aqua>狙击信物"
   lore:
-    - 弩 + 信物
-
-maggoteers:charm_class_sniper_token_hp:
-  material: RABBIT_FOOT
-  customName: "<aqua>狙击信物"
-  glint: true
-
-maggoteers:charm_class_sniper_token_mag:
-  material: RABBIT_FOOT
-  customName: "<aqua>狙击信物"
-  glint: true
-
-maggoteers:charm_class_sniper_token_spd:
-  material: RABBIT_FOOT
-  customName: "<aqua>狙击信物"
+    - "<gray>+40魔攻，+8移动速度，-12生命上限"
+    - "<dark_gray>"
   glint: true
 
 maggoteers:charm_class_vanguard:
   material: RABBIT_FOOT
-  customName: "<gold>先锋"
-  glint: true
+  itemModel: RED_BANNER
+  customName: "<gold>先锋信物"
   lore:
-    - 战斧 + 信物
-
-maggoteers:charm_class_vanguard_token:
-  material: RABBIT_FOOT
-  customName: "<red>先锋信物"
+    - "<gray>+30攻击力，+4生命上限"
+    - "<dark_gray>"
   glint: true
-  lore:
-    - +30攻击 +4生命
 
-maggoteers:charm_class_vanguard_token_hp:
+maggoteers:charm_a1w_str1_1:
   material: RABBIT_FOOT
-  customName: "<red>先锋信物"
+  itemModel: RABBIT_FOOT
+  customName: "<red>力量 I"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a2w_regen2_1:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<green>再生 I"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a2w_regen2_2:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<green>再生 II"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a2w_str2_1:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<red>力量 I"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a2w_str2_2:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<red>力量 II"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a3s_regen4_1:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<green>再生 1"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a3s_regen4_2:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<green>再生 2"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a3s_regen4_3:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<green>再生 3"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a3s_regen4_4:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<green>再生 4"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a3s_res3_1:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<gray>抗性 1"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a3s_res3_2:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<gray>抗性 2"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a3s_res3_3:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<gray>抗性 3"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a3s_str3_1:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<red>力量 1"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a3s_str3_2:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<red>力量 2"
+  lore:
+    - "<dark_gray>"
+  glint: true
+
+maggoteers:charm_a3s_str3_3:
+  material: RABBIT_FOOT
+  itemModel: RABBIT_FOOT
+  customName: "<red>力量 3"
+  lore:
+    - "<dark_gray>"
   glint: true

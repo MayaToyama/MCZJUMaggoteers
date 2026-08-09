@@ -30,6 +30,7 @@ import io.mczju.maggoteers.effect.EffectService;
 import io.mczju.maggoteers.effect.PlayerEffect;
 import io.mczju.maggoteers.effect.Stack;
 import org.bukkit.entity.Player;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -202,17 +203,7 @@ public class MaggoteersGame extends AbstractGame {
     }
 
     private void cleanupRun() {
-        for (var pe : getPlayers()) {
-            var pl = pe.player();
-            pl.getInventory().clear();                                      // 先清游戏残留
-            pe.switchProfile(null);                                         // 再恢复大厅 profile（含大厅背包）
-            pl.setGameMode(org.bukkit.GameMode.SURVIVAL);
-            pl.setHealth(20.0);
-            pl.setFoodLevel(20);
-            pl.setFallDistance(0f);
-            pl.setFireTicks(0);
-        }
-        io.mczju.maggoteers.effect.EffectService.fireTrigger(this, io.mczju.maggoteers.effect.Trigger.ON_GAME_END);
+        EffectService.fireTrigger(this, io.mczju.maggoteers.effect.Trigger.ON_GAME_END);
 
         // 结算：按 outcome 发账户货币（D4）
         {
@@ -234,7 +225,15 @@ public class MaggoteersGame extends AbstractGame {
             }
         }
 
-        for (var pe : getPlayers()) io.mczju.maggoteers.effect.EffectService.removeAll(pe.player());
+        for (var pe : getPlayers()) {
+            var pl = pe.player();
+            pl.getInventory().clear();
+            EffectService.removeAll(pl);
+            pe.switchProfile(null);
+            pl.setGameMode(GameMode.SURVIVAL);
+            resetLobbyVitality(pl);
+        }
+
         io.mczju.maggoteers.effect.SummonRegistry.clearAll(this);
         io.mczju.maggoteers.effect.MobAiLockRegistry.restoreAll();
         io.mczju.maggoteers.effect.EffectListener.stopTick();
@@ -244,6 +243,17 @@ public class MaggoteersGame extends AbstractGame {
         PlayerStateManager.destroyAll(this);
         WorldService.cleanup(this);
         io.mczju.maggoteers.effect.AuraService.clearGame(this);
+    }
+
+    /** 剥除局内效果后再复位；勿写死 20 血（MAX_HEALTH 加成可能尚未还原）。 */
+    private static void resetLobbyVitality(Player pl) {
+        var maxHp = pl.getAttribute(Attribute.MAX_HEALTH);
+        double max = maxHp != null ? maxHp.getValue() : 20.0;
+        pl.setHealth(max);
+        pl.setFoodLevel(20);
+        pl.setSaturation(5f);
+        pl.setFallDistance(0f);
+        pl.setFireTicks(0);
     }
 
     @Override protected void onGameCancel() { cleanupRun(); }

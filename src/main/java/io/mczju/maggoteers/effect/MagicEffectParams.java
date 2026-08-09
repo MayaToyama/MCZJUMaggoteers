@@ -110,9 +110,18 @@ public final class MagicEffectParams {
                     BuffAreaTargets.TARGET_SELF,
                     AuraParams.TARGET_ALLIES,
                     AuraParams.TARGET_ENEMIES,
-                    BuffAreaTargets.TARGET_HIT_TARGET
+                    BuffAreaTargets.TARGET_HIT_TARGET,
+                    BuffAreaTargets.TARGET_ATTACKER
             ).contains(t)) {
                 return Optional.of("unknown targets: " + t);
+            }
+            if (BuffAreaTargets.TARGET_ATTACKER.equals(t)) {
+                if (weaponPath) {
+                    return Optional.of("targets=attacker ineffective on weapon right-click");
+                }
+                if (triggerOrNull == Trigger.ON_KILL || triggerOrNull == Trigger.ON_DAMAGE_DEALT) {
+                    return Optional.of("targets=attacker incompatible with " + triggerOrNull);
+                }
             }
             if ((AuraParams.TARGET_ALLIES.equals(t) || AuraParams.TARGET_ENEMIES.equals(t))
                     && p.has(EffectKeys.RADIUS)) {

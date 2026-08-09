@@ -86,13 +86,54 @@ public final class EffectService {
         }
     }
 
+    private static final ThreadLocal<Boolean> BULK_RESYNC = ThreadLocal.withInitial(() -> false);
+
     /** Strip + reapply permanent attribute/potion derived views (no collectible sync). */
     static void resyncDerived(Player p, PlayerState st) {
         if (p == null || st == null) return;
-        stripDerived(p, st.effects());
-        for (PlayerEffect e : new ArrayList<>(st.effects())) {
-            if (e.isPermanent() && e.effect() != Effect.AURA) applyDerived(p, e);
+        var maxInst = p.getAttribute(Attribute.MAX_HEALTH);
+        double healthBefore = p.getHealth();
+        double maxBefore = maxInst != null ? maxInst.getValue() : 20.0;
+
+        BULK_RESYNC.set(true);
+        try {
+            stripDerived(p, st.effects());
+            for (PlayerEffect e : new ArrayList<>(st.effects())) {
+                if (e.isPermanent() && e.effect() != Effect.AURA) applyDerived(p, e);
+            }
+        } finally {
+            BULK_RESYNC.set(false);
         }
+
+        double maxAfter = maxInst != null ? maxInst.getValue() : 20.0;
+        p.setHealth(finalizeHealthAfterResync(healthBefore, maxBefore, maxAfter));
+    }
+
+    /**
+     * strip/reapply 后确定当前血量：净增上限 → 等量加当前血；否则保留比例（切换武器/重算属性）。
+     */
+    static double finalizeHealthAfterResync(double healthBefore, double maxBefore, double maxAfter) {
+        double maxDelta = maxAfter - maxBefore;
+        if (maxDelta > 0) {
+            return Math.min(maxAfter, healthBefore + maxDelta);
+        }
+        return preserveHealthAcrossResync(healthBefore, maxBefore, maxAfter);
+    }
+
+    /** MAX_HEALTH 实际升高时，给玩家补上同等当前血量（上限与血量同步增长）。 */
+    static void bumpHealthForMaxGain(Player p, double maxBefore, double maxAfter) {
+        if (p == null || maxAfter <= maxBefore) return;
+        p.setHealth(Math.min(maxAfter, p.getHealth() + (maxAfter - maxBefore)));
+    }
+
+    /**
+     * strip/reapply 属性时保留血量比例；避免 MC 在移除 MAX_HEALTH 修饰符时把当前血 clamp 到 20，
+     * 导致刚用补给/heal 恢复的血量在切换手持物后被“打回”基础上限。
+     */
+    static double preserveHealthAcrossResync(double healthBefore, double maxBefore, double maxAfter) {
+        if (maxAfter <= 0) return Math.max(0, healthBefore);
+        if (maxBefore <= 0) return Math.min(maxAfter, healthBefore);
+        return Math.min(maxAfter, healthBefore * (maxAfter / maxBefore));
     }
 
     /** 对局结束：剥除派生视图 + 清 PlayerState 效果。 */
@@ -618,10 +659,14 @@ public final class EffectService {
         AttributeModifier.Operation operation = "PERCENT".equalsIgnoreCase(op)
                 ? AttributeModifier.Operation.MULTIPLY_SCALAR_1
                 : AttributeModifier.Operation.ADD_NUMBER;
+        double maxBefore = attr == Attribute.MAX_HEALTH ? inst.getValue() : 0;
         // D5：唯一 key = id + level + 自增序号
         NamespacedKey key = new NamespacedKey(MaggoteersPlugin.getInstance(),
                 e.id() + "_" + e.level() + "_" + KEY_SEQ.incrementAndGet());
         inst.addModifier(new AttributeModifier(key, value, operation));
+        if (attr == Attribute.MAX_HEALTH && !BULK_RESYNC.get()) {
+            bumpHealthForMaxGain(p, maxBefore, inst.getValue());
+        }
     }
 
     private static void applyPotionPermanent(Player p, PlayerEffect e) {

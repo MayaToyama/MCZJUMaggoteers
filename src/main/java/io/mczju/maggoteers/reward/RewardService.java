@@ -35,7 +35,7 @@ public final class RewardService {
         POOLS.clear();
         UpgradeLevelCaps.load(plugin);
         File f = new File(plugin.getDataFolder(), "rewards.yml");
-        if (!f.exists()) plugin.saveResource("rewards.yml", false);
+        io.mczju.maggoteers.util.PluginFiles.saveResourceIfMissing(plugin, "rewards.yml");
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(f);
         ConfigurationSection root = yaml.getConfigurationSection("reward_pools");
         if (root == null) return;
@@ -195,15 +195,23 @@ public final class RewardService {
             return false;
         }
         for (RewardOption grant : bundle.grants()) {
-            if (!applySingle(player, grant, game, pool)) {
+            if (!applySingle(player, grant, game, pool, true)) {
                 LOG.warning("RewardService: bundle 子项失败 parent=" + bundle.id() + " grant=" + grant.id());
                 return false;
             }
+        }
+        if (CollectibleRegistry.hasMapping(bundle.id())) {
+            CollectibleService.grant(player, bundle.id(), 1);
         }
         return true;
     }
 
     private static boolean applySingle(Player player, RewardOption opt, AbstractGame game, RewardPool pool) {
+        return applySingle(player, opt, game, pool, false);
+    }
+
+    private static boolean applySingle(Player player, RewardOption opt, AbstractGame game, RewardPool pool,
+                                       boolean bundleGrant) {
         switch (opt.category()) {
             case SUPPLY, WEAPON -> {
                 ItemService.give(player, opt.item(), opt.amount());
@@ -219,7 +227,7 @@ public final class RewardService {
                     }
                     return true;
                 }
-                return applyStat(player, opt, game, pool);
+                return applyStat(player, opt, game, pool, bundleGrant);
             }
             case BUNDLE -> {
                 LOG.warning("RewardService: 嵌套 bundle 不支持 id=" + opt.id());
@@ -229,7 +237,8 @@ public final class RewardService {
         return false;
     }
 
-    private static boolean applyStat(Player player, RewardOption opt, AbstractGame game, RewardPool pool) {
+    private static boolean applyStat(Player player, RewardOption opt, AbstractGame game, RewardPool pool,
+                                     boolean bundleGrant) {
         if (!opt.isSingleRewardValid()) {
             LOG.warning("RewardService: STAT 配置不完整 id=" + opt.id());
             return false;
@@ -263,7 +272,7 @@ public final class RewardService {
         pe.setLevel(level);
         EffectService.apply(player, pe, mg);
         PlayerEffect merged = ps.effects().stream().filter(e -> e.id().equals(opt.id())).findFirst().orElse(null);
-        if (merged != null && CollectibleRegistry.hasMapping(opt.id())) {
+        if (!bundleGrant && merged != null && CollectibleRegistry.hasMapping(opt.id())) {
             CollectibleService.grant(player, opt.id(), merged.level());
         }
         return true;

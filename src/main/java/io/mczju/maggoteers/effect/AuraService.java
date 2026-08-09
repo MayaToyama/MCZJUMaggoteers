@@ -213,7 +213,11 @@ public final class AuraService {
                 ? AttributeModifier.Operation.MULTIPLY_SCALAR_1
                 : AttributeModifier.Operation.ADD_NUMBER;
         NamespacedKey key = auraKey(sourceId, instanceKey, "attr/" + attr.getKey().getKey());
+        double maxBefore = attr == Attribute.MAX_HEALTH ? inst.getValue() : 0;
         AttributeModifierKeys.replace(inst, key, value, operation);
+        if (attr == Attribute.MAX_HEALTH && le instanceof Player player) {
+            EffectService.bumpHealthForMaxGain(player, maxBefore, inst.getValue());
+        }
     }
 
     private static void applyPotionDerived(LivingEntity le, UUID sourceId, String instanceKey, EffectContext gp) {

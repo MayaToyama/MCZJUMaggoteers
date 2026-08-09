@@ -1,11 +1,9 @@
-# rewardplan 护符映射
+# rewardplan 护符映射（bundle 仅映射父选项 id）
 collectibles:
   a1b_atk150:
     item: maggoteers:charm_a1b_atk150
   a1b_frost_tree:
     item: maggoteers:charm_a1b_frost_tree
-  a1b_hit_penalty:
-    item: maggoteers:charm_a1b_hit_penalty
   a1b_hp20:
     item: maggoteers:charm_a1b_hp20
   a1b_kb1:
@@ -18,18 +16,12 @@ collectibles:
     item: maggoteers:charm_a1b_spd15
   a1b_wave_coin:
     item: maggoteers:charm_a1b_wave_coin
-  a1b_wave_coin2:
-    item: maggoteers:charm_a1b_wave_coin2
   a1b_wave_gapple:
     item: maggoteers:charm_a1b_wave_gapple
   a1b_wave_steak:
     item: maggoteers:charm_a1b_wave_steak
   a1b_wave_tnt:
     item: maggoteers:charm_a1b_wave_tnt
-  a1s_act_atk20:
-    item: maggoteers:charm_a1s_act_atk20
-  a1s_act_mag20:
-    item: maggoteers:charm_a1s_act_mag20
   a1s_ally_invis:
     item: maggoteers:charm_a1s_ally_invis
   a1s_atk25:
@@ -100,10 +92,6 @@ collectibles:
     item: maggoteers:charm_a1w_mark_glow
   a1w_parting_gift:
     item: maggoteers:charm_a1w_parting_gift
-  a1w_parting_slow:
-    item: maggoteers:charm_a1w_parting_slow
-  a1w_parting_tnt:
-    item: maggoteers:charm_a1w_parting_tnt
   a1w_spd4a:
     item: maggoteers:charm_a1w_spd4a
   a1w_spd4b:
@@ -140,14 +128,6 @@ collectibles:
     item: maggoteers:charm_a2s_ally_str
   a2s_arrogance:
     item: maggoteers:charm_a2s_arrogance
-  a2s_arrogance_atk:
-    item: maggoteers:charm_a2s_arrogance_atk
-  a2s_arrogance_clear:
-    item: maggoteers:charm_a2s_arrogance_clear
-  a2s_arrogance_clear2:
-    item: maggoteers:charm_a2s_arrogance_clear2
-  a2s_arrogance_mag:
-    item: maggoteers:charm_a2s_arrogance_mag
   a2s_atk40:
     item: maggoteers:charm_a2s_atk40
   a2s_atk45:
@@ -164,10 +144,6 @@ collectibles:
     item: maggoteers:charm_a2s_mag45
   a2s_martyr:
     item: maggoteers:charm_a2s_martyr
-  a2s_martyr_buff:
-    item: maggoteers:charm_a2s_martyr_buff
-  a2s_martyr_heal:
-    item: maggoteers:charm_a2s_martyr_heal
   a2s_reach_a:
     item: maggoteers:charm_a2s_reach_a
   a2s_reach_b:
@@ -260,12 +236,6 @@ collectibles:
     item: maggoteers:charm_a3s_kill_mag10
   a3s_lust:
     item: maggoteers:charm_a3s_lust
-  a3s_lust_abs:
-    item: maggoteers:charm_a3s_lust_abs
-  a3s_lust_atk:
-    item: maggoteers:charm_a3s_lust_atk
-  a3s_lust_mag:
-    item: maggoteers:charm_a3s_lust_mag
   a3s_mag60:
     item: maggoteers:charm_a3s_mag60
   a3s_mag70:
@@ -302,35 +272,11 @@ collectibles:
     item: maggoteers:charm_a3w_imm_wither
   class_guard:
     item: maggoteers:charm_class_guard
-  class_guard_token_atk:
-    item: maggoteers:charm_class_guard_token_atk
-  class_guard_token_reach:
-    item: maggoteers:charm_class_guard_token_reach
   class_heavy:
     item: maggoteers:charm_class_heavy
-  class_heavy_token_atk:
-    item: maggoteers:charm_class_heavy_token_atk
-  class_heavy_token_hp:
-    item: maggoteers:charm_class_heavy_token_hp
   class_mage:
     item: maggoteers:charm_class_mage
-  class_mage_token_atk:
-    item: maggoteers:charm_class_mage_token_atk
-  class_mage_token_hp:
-    item: maggoteers:charm_class_mage_token_hp
-  class_mage_token_mag:
-    item: maggoteers:charm_class_mage_token_mag
   class_sniper:
     item: maggoteers:charm_class_sniper
-  class_sniper_token_hp:
-    item: maggoteers:charm_class_sniper_token_hp
-  class_sniper_token_mag:
-    item: maggoteers:charm_class_sniper_token_mag
-  class_sniper_token_spd:
-    item: maggoteers:charm_class_sniper_token_spd
   class_vanguard:
     item: maggoteers:charm_class_vanguard
-  class_vanguard_token:
-    item: maggoteers:charm_class_vanguard_token
-  class_vanguard_token_hp:
-    item: maggoteers:charm_class_vanguard_token_hp

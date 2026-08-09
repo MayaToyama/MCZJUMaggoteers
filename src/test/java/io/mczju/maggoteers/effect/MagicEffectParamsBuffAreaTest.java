@@ -27,10 +27,19 @@ class MagicEffectParamsBuffAreaTest {
     }
 
     @Test
-    void acceptsValidPotions() {
+    void acceptsAttackerOnDamageTaken() {
         EffectContext p = new EffectContext();
-        p.put(EffectKeys.TARGETS, AuraParams.TARGET_ALLIES);
-        p.put(EffectKeys.POTIONS, List.of(new BuffPotionSpec(null, 0, 60)));
-        assertTrue(MagicEffectParams.validateBuffArea(p, Trigger.ON_KILL, false).isEmpty());
+        p.put(EffectKeys.TARGETS, BuffAreaTargets.TARGET_ATTACKER);
+        p.put(EffectKeys.POTIONS, List.of(new BuffPotionSpec(null, 4, 20)));
+        assertTrue(MagicEffectParams.validateBuffArea(p, Trigger.ON_DAMAGE_TAKEN, false).isEmpty());
+    }
+
+    @Test
+    void rejectsAttackerOnDamageDealt() {
+        EffectContext p = new EffectContext();
+        p.put(EffectKeys.TARGETS, BuffAreaTargets.TARGET_ATTACKER);
+        p.put(EffectKeys.POTIONS, List.of(new BuffPotionSpec(null, 4, 20)));
+        assertTrue(MagicEffectParams.validateBuffArea(p, Trigger.ON_DAMAGE_DEALT, false)
+                .orElse("").contains("attacker"));
     }
 }

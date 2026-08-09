@@ -1,6 +1,7 @@
 package io.mczju.maggoteers.config;
 
 import io.mczju.maggoteers.util.GameRegistries;
+import io.mczju.maggoteers.util.PluginFiles;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EntityType;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -22,7 +23,7 @@ public final class WavesConfig {
 
     /** 从 waves.yml 文件加载（不混入 config.yml）。onEnable 调一次。 */
     public static void loadFromFile(JavaPlugin plugin) {
-        plugin.saveResource("waves.yml", false);
+        PluginFiles.saveResourceIfMissing(plugin, "waves.yml");
         var file = new java.io.File(plugin.getDataFolder(), "waves.yml");
         var cfg = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(file);
         INSTANCE = new WavesConfig();

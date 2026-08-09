@@ -1,5 +1,6 @@
 package io.mczju.maggoteers.config;
 
+import io.mczju.maggoteers.util.PluginFiles;
 import io.mczju.maggoteers.wave.PotionSpec;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -14,7 +15,7 @@ public final class AffixService {
     final Map<String, Affix> affixes = new HashMap<>();
 
     public static void load(JavaPlugin plugin) {
-        plugin.saveResource("affixes.yml", false);
+        PluginFiles.saveResourceIfMissing(plugin, "affixes.yml");
         File f = new File(plugin.getDataFolder(), "affixes.yml");
         var cfg = YamlConfiguration.loadConfiguration(f);
         INSTANCE = new AffixService();

@@ -35,8 +35,7 @@ affixes:
     display: "<blue>重甲"
   eternal_curse:
     potions:
-      - { effect: SLOWNESS, amp: 255, dur: 0 }
-      - { effect: WITHER, amp: 255, dur: 0 }
+      - { effect: SLOWNESS, amp: 255, dur: 10 }
     display: "<dark_gray>永恒诅咒"
 
   greedy:  { drop: 1.5, display: "<gold>贪婪" }

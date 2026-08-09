@@ -93,24 +93,17 @@ strategies:
         coeff: { speed: 1.5 }
         passengers:
           - { type: SKELETON, count: 1 }
-      - point: "5"
-        type: SPIDER
-        count: 2
-        delay: 10
-        coeff: { speed: 1.5 }
-        passengers:
-          - { type: SKELETON, count: 1 }
 
   # 意外（w1_accident）
   w1_accident:
     repeat: 1
     clearReward: [ { item: maggoteers:currency_normal, amount: 2 } ]
     steps:
-      - { point: "1", type: SKELETON, count: 5, delay: 0 }
-      - { point: "2", type: SKELETON, count: 1, delay: 0 }
-      - { point: "2", type: SKELETON, count: 4, delay: 2 }
-      - { point: "5", type: SKELETON, count: 1, delay: 0 }
-      - { point: "5", type: SKELETON, count: 4, delay: 4 }
+      - { point: "1", type: SKELETON, coeff: { hp: 0.4 }, count: 5, delay: 0 }
+      - { point: "2", type: SKELETON, coeff: { hp: 0.4 }, count: 1, delay: 8 }
+      - { point: "2", type: SKELETON, coeff: { hp: 0.4 }, count: 4, delay: 16 }
+      - { point: "5", type: SKELETON, coeff: { hp: 0.4 }, count: 1, delay: 8 }
+      - { point: "5", type: SKELETON, coeff: { hp: 0.4 }, count: 4, delay: 24 }
 
   # 共生（w1_symbiosis）
   w1_symbiosis:
@@ -119,15 +112,15 @@ strategies:
     steps:
       - { point: "3", type: ENDERMITE, count: 10, delay: 0 }
       - { point: "4", type: ENDERMITE, count: 10, delay: 2 }
-      - { point: boss, type: VINDICATOR, count: 3, coeff: { hp: 2.0 }, infernal: { level: 1, affixes: [lifesteal] }, delay: 0 }
+      - { point: boss, type: VINDICATOR, count: 3, coeff: { hp: 0.6 }, infernal: { level: 1, affixes: [lifesteal] }, delay: 0 }
 
   # 病症（w1_symptom）
   w1_symptom:
     repeat: 1
     clearReward: [ { item: maggoteers:currency_normal, amount: 2 } ]
     steps:
-      - { point: "1", type: ZOMBIE, count: 4, delay: 0 }
-      - { point: "2", type: ZOMBIE, count: 4, delay: 2 }
+      - { point: "1", type: ZOMBIE, count: 2, delay: 0, affixes: [infected], on_death: [ { type: ENDERMITE, count: 3 } ] }
+      - { point: "2", type: ZOMBIE, count: 2, delay: 2, affixes: [infected], on_death: [ { type: ENDERMITE, count: 3 } ] }
       - point: "3"
         type: SLIME
         count: 4
@@ -154,11 +147,11 @@ strategies:
     repeat: 1
     clearReward: [ { item: maggoteers:currency_normal, amount: 2 } ]
     steps:
-      - { point: "1", type: ZOMBIE, count: 8, delay: 0 }
-      - { point: "2", type: ZOMBIE, count: 8, delay: 2 }
-      - { point: "3", type: ZOMBIE, count: 8, delay: 2 }
-      - { point: "4", type: ZOMBIE, count: 8, delay: 2 }
-      - { point: "5", type: ZOMBIE, count: 8, coeff: { scale: 0.8, speed: 1.2 }, delay: 2 }
+      - { point: "1", type: ZOMBIE, count: 8, coeff: { scale: 0.8, speed: 1.2, hp: 0.5 },delay: 0 }
+      - { point: "2", type: ZOMBIE, count: 8, coeff: { scale: 0.8, speed: 1.2, hp: 0.5 },delay: 4 }
+      - { point: "3", type: ZOMBIE, count: 8, coeff: { scale: 0.8, speed: 1.2, hp: 0.5 },delay: 8 }
+      - { point: "4", type: ZOMBIE, count: 8, coeff: { scale: 0.8, speed: 1.2, hp: 0.5 },delay: 12 }
+      - { point: "5", type: ZOMBIE, count: 8, coeff: { scale: 0.8, speed: 1.2, hp: 0.5 }, delay: 16 }
 
   # 度假村冤魂（s1_resort_ghosts）
   s1_resort_ghosts:
@@ -168,18 +161,20 @@ strategies:
       - point: "1"
         type: ZOMBIE
         count: 4
+        coeff: { hp: 0.5, speed: 1.5 }
         delay: 0
         equipment:
           - { slot: HAND, item: maggoteers:mob_iron_spear }
       - point: "2"
         type: ZOMBIE
         count: 4
+        coeff: { hp: 0.5, speed: 1.5 }
         delay: 5
         equipment:
           - { slot: HAND, item: maggoteers:mob_iron_spear }
       - point: "3"
         type: ZOMBIFIED_PIGLIN
-        count: 4
+        count: 2 
         delay: 1
         equipment:
           - { slot: HAND, item: maggoteers:mob_gold_spear }
@@ -195,7 +190,7 @@ strategies:
       - point: "1"
         type: STRIDER
         count: 2
-        coeff: { speed: 2.0 }
+        coeff: { speed: 3.0 }
         delay: 0
         passengers:
           - type: STRIDER
@@ -209,7 +204,7 @@ strategies:
       - point: "2"
         type: STRIDER
         count: 2
-        coeff: { speed: 2.0 }
+        coeff: { speed: 3.0 }
         delay: 10
         passengers:
           - type: STRIDER
@@ -223,7 +218,7 @@ strategies:
       - point: "5"
         type: STRIDER
         count: 2
-        coeff: { speed: 2.0 }
+        coeff: { speed: 3.0 }
         delay: 10
         passengers:
           - type: STRIDER
@@ -258,7 +253,6 @@ strategies:
 
   # 事不过四（w1_desert_four_camels）
   w1_desert_four_camels:
-    repeat: 1
     clearReward: [ { item: maggoteers:currency_normal, amount: 2 } ]
     steps:
       - point: "1"
@@ -328,23 +322,22 @@ strategies:
 
   # 死囚之夜（w1_desert_prisoners）
   w1_desert_prisoners:
-    repeat: 1
     clearReward: [ { item: maggoteers:currency_normal, amount: 2 } ]
     steps:
       - point: "5"
         type: HUSK
-        count: 30
-        coeff: { hp: 2.0 }
+        count: 4
+        coeff: { hp: 0.4 }
         infernal:
           level: 1
           affixes: [quicksand]
-        delay: 1
+        delay: 2
+        repeat: 10
         equipment:
           - { slot: HAND, item: maggoteers:mob_gold_shovel }
 
   # 公害（w1_desert_plague）
   w1_desert_plague:
-    repeat: 1
     clearReward: [ { item: maggoteers:currency_normal, amount: 2 } ]
     steps:
       - { point: "1", type: CREEPER, count: 3, coeff: { scale: 0.7, speed: 1.5 }, delay: 0 }
@@ -355,7 +348,6 @@ strategies:
 
   # 幽影与鬼魅（w1_jungle_shadows）
   w1_jungle_shadows:
-    repeat: 2
     clearReward: [ { item: maggoteers:currency_normal, amount: 2 } ]
     steps:
       - { point: "1", type: DROWNED, count: 3, affixes: [cloaked], delay: 0 }
@@ -365,74 +357,71 @@ strategies:
 
   # 拆东补西（w1_jungle_spider_swap）
   w1_jungle_spider_swap:
-    repeat: 1
     clearReward: [ { item: maggoteers:currency_normal, amount: 2 } ]
     steps:
       - point: "1"
         type: CAVE_SPIDER
-        count: 3
-        coeff: { speed: 2.0 }
+        count: 2
         delay: 0
         passengers:
           - { type: BOGGED, count: 1 }
       - point: "2"
         type: CAVE_SPIDER
-        count: 3
-        coeff: { speed: 2.0 }
+        count: 2
         delay: 4
         passengers:
           - { type: BOGGED, count: 1 }
       - point: "3"
         type: CAVE_SPIDER
-        count: 3
-        coeff: { speed: 2.0 }
+        count: 1
         delay: 4
         passengers:
           - { type: WITCH, count: 1 }
       - point: "4"
         type: CAVE_SPIDER
-        count: 3
-        coeff: { speed: 2.0 }
+        count: 1
         delay: 4
         passengers:
           - { type: WITCH, count: 1 }
 
   # 卡兹瀑布（w1_jungle_spider_falls）
   w1_jungle_spider_falls:
-    repeat: 1
+    repeat: 20
     clearReward: [ { item: maggoteers:currency_normal, amount: 2 } ]
     steps:
-      - { point: "5", type: CAVE_SPIDER, count: 40, infernal: { level: 1, affixes: [firework] }, delay: 1 }
+      - { point: "1", type: CAVE_SPIDER, coeff: { hp:0.1 }, count: 1, delay: 1 }
+      - { point: "2", type: CAVE_SPIDER, coeff: { hp:0.1 }, count: 1, delay: 1 }
+      - { point: "3", type: CAVE_SPIDER, coeff: { hp:0.1 }, count: 1, delay: 1 }
+      - { point: "4", type: CAVE_SPIDER, coeff: { hp:0.1 }, count: 1, delay: 1 }
 
   # 无主巨像（b1_colossus）
   b1_colossus:
     repeat: 1
     clearReward: [ { item: maggoteers:currency_boss, amount: 1 } ]
     steps:
-      - { point: boss, type: IRON_GOLEM, count: 1, coeff: { hp: 5.0, speed: 1.3, scale: 1.2 }, affixes: [mechanical], infernal: { level: 3, affixes: [storm, molten] }, delay: 0 }
+      - { point: boss, type: IRON_GOLEM, count: 1, coeff: { hp: 0.5, speed: 1.3, scale: 1.2 }, affixes: [mechanical], infernal: { level: 3, affixes: [storm, molten] }, delay: 0 }
 
   # 永恒安息（b1_eternal_rest）
   b1_eternal_rest:
-    repeat: 1
     clearReward: [ { item: maggoteers:currency_boss, amount: 1 } ]
     steps:
       - point: "1"
-        type: ZOMBIE
-        count: 5
+        type: SKELETON
+        count: 3
         delay: 0
         equipment:
           - { slot: HEAD, item: maggoteers:mob_iron_helmet_ub10 }
           - { slot: HAND, item: maggoteers:mob_iron_sword_ub10 }
       - point: "2"
-        type: ZOMBIE
-        count: 5
-        delay: 10
+        type: SKELETON
+        count: 3
+        delay: 15
         equipment:
           - { slot: HEAD, item: maggoteers:mob_iron_helmet_ub10 }
           - { slot: HAND, item: maggoteers:mob_iron_sword_ub10 }
       - point: "5"
         type: SKELETON
-        count: 5
+        count: 3
         delay: 10
         equipment:
           - { slot: HEAD, item: maggoteers:mob_iron_helmet_ub10 }
@@ -440,7 +429,7 @@ strategies:
       - point: boss
         type: SKELETON
         count: 1
-        coeff: { hp: 10.0 }
+        coeff: { hp: 2.0 }
         affixes: [eternal_curse, mechanical]
         infernal: { level: 3, affixes: [necromancer, archer] }
         delay: 15
@@ -459,7 +448,7 @@ strategies:
       - point: "1"
         type: STRIDER
         count: 5
-        coeff: { speed: 2.0 }
+        coeff: { speed: 4.0 }
         delay: 0
         passengers:
           - type: STRIDER
@@ -469,7 +458,7 @@ strategies:
       - point: "2"
         type: STRIDER
         count: 5
-        coeff: { speed: 2.0 }
+        coeff: { speed: 4.0 }
         delay: 5
         passengers:
           - type: STRIDER
@@ -479,7 +468,7 @@ strategies:
       - point: "5"
         type: STRIDER
         count: 2
-        coeff: { speed: 2.0 }
+        coeff: { speed: 4.0 }
         delay: 10
         passengers:
           - type: STRIDER
@@ -498,7 +487,7 @@ strategies:
             passengers:
               - type: PILLAGER
                 count: 1
-                coeff: { hp: 5.0, speed: 0.5 }
+                coeff: { hp: 2.0, speed: 0.5 }
                 infernal: { level: 2, affixes: [ghastly, weakness] }
                 equipment:
                   - { slot: HAND, item: maggoteers:mob_crossbow_power3 }

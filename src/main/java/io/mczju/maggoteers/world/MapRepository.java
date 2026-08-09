@@ -2,6 +2,7 @@ package io.mczju.maggoteers.world;
 
 import io.mczju.maggoteers.config.MapPoints;
 import io.mczju.maggoteers.config.WavesConfig;
+import io.mczju.maggoteers.util.PluginFiles;
 import io.mczju.maggoteers.wave.Vec3;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -105,7 +106,7 @@ public final class MapRepository {
 
     private static void ensureResource(JavaPlugin plugin, String path) {
         if (plugin.getResource(path) == null) return;
-        plugin.saveResource(path, false);
+        PluginFiles.saveResourceIfMissing(plugin, path);
     }
 
     private MapRepository() {}

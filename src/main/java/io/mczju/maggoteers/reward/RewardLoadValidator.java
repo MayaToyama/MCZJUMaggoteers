@@ -132,6 +132,12 @@ public final class RewardLoadValidator {
 
         Trigger fire = opt.trigger();
         String targets = params.get(EffectKeys.TARGETS);
+        if (targets != null && BuffAreaTargets.TARGET_ATTACKER.equalsIgnoreCase(targets)) {
+            if (fire == Trigger.ON_KILL || fire == Trigger.ON_DAMAGE_DEALT) {
+                return new ValidationResult(
+                        Optional.of("targets=attacker incompatible with " + fire), params);
+            }
+        }
         if (targets != null && BuffAreaTargets.TARGET_HIT_TARGET.equalsIgnoreCase(targets)) {
             if (fire == Trigger.ON_DAMAGE_TAKEN) {
                 return new ValidationResult(

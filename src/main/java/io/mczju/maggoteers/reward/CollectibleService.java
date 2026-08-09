@@ -97,18 +97,25 @@ public final class CollectibleService {
         PlayerState ps = PlayerStateManager.get(game, player.getUniqueId());
         if (ps == null) return;
 
-        Set<String> mappedEffectIds = new HashSet<>();
+        Set<String> keepCharmIds = new HashSet<>();
         for (PlayerEffect pe : ps.effects()) {
             if (!CollectibleRegistry.hasMapping(pe.id())) continue;
-            mappedEffectIds.add(pe.id());
+            keepCharmIds.add(pe.id());
             if (!hasCharm(player, pe.id(), pe.level())) {
                 grant(player, pe.id(), pe.level());
+            }
+        }
+        for (String acquiredId : ps.acquiredUnique()) {
+            if (!CollectibleRegistry.hasMapping(acquiredId)) continue;
+            keepCharmIds.add(acquiredId);
+            if (!hasCharm(player, acquiredId, 1)) {
+                grant(player, acquiredId, 1);
             }
         }
 
         for (ItemStack stack : allInventoryStacks(player)) {
             RunItemTags.readRewardId(stack).ifPresent(rid -> {
-                if (!mappedEffectIds.contains(rid)) {
+                if (!keepCharmIds.contains(rid)) {
                     remove(player, rid);
                 }
             });

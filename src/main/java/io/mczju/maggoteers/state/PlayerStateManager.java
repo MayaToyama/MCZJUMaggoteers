@@ -2,6 +2,9 @@ package io.mczju.maggoteers.state;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import io.mczju.maggoteers.game.MaggoteersGame;
+import io.mczju.maggoteers.effect.EffectService;
+import io.mczju.maggoteers.effect.Trigger;
+import io.mczju.maggoteers.effect.TriggerContext;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.attribute.Attribute;
@@ -66,7 +69,16 @@ public final class PlayerStateManager {
         PlayerState st = get(game, uuid);
         if (st == null || st.isAlive()) return false;
         st.setAlive(true);
-        applyAdventure(Bukkit.getPlayer(uuid));
+        Player p = Bukkit.getPlayer(uuid);
+        if (p == null) return true;
+        applyAdventure(p);
+        if (game instanceof MaggoteersGame mg) {
+            EffectService.fireTriggerPlayer(mg, p, Trigger.ON_REVIVE,
+                    TriggerContext.atEvent(Trigger.ON_REVIVE, p.getLocation()));
+            EffectService.resync(p);
+            io.mczju.maggoteers.reward.CollectibleService.resync(p, mg);
+        }
+        restoreFullHealth(p);
         return true;
     }
 
@@ -80,12 +92,21 @@ public final class PlayerStateManager {
         st.setReviveCount(st.getReviveCount() + n);
     }
 
-    /** 把玩家设为冒险模式并满血（复活/开局用，主线程）。 */
+    /** 把玩家设为冒险模式（血量须另调 {@link #restoreFullHealth}，通常在 resync 之后）。 */
     static void applyAdventure(Player p) {
         if (p == null) return;
         p.setGameMode(GameMode.ADVENTURE);
+        p.setFallDistance(0f);
+        p.setFireTicks(0);
+        p.setNoDamageTicks(40);
+    }
+
+    /** 按当前 MAX_HEALTH 属性回满血（须在 EffectService.resync 之后调用）。 */
+    public static void restoreFullHealth(Player p) {
+        if (p == null) return;
         var maxHp = p.getAttribute(Attribute.MAX_HEALTH);
-        p.setHealth(maxHp != null ? maxHp.getValue() : 20.0);
+        double max = maxHp != null ? maxHp.getValue() : 20.0;
+        p.setHealth(max);
         p.setFallDistance(0f);
         p.setFireTicks(0);
         p.setNoDamageTicks(40);

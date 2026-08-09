@@ -145,16 +145,20 @@ COLLECTIBLE_ITEMS: dict[str, dict] = {}
 
 
 def map_stat(opt: dict, mat: str, charm_name: str | None = None):
-    if opt.get("category") != "STAT" and not opt.get("grants"):
+    if opt.get("grants"):
+        rid = opt["id"]
+        name = charm_name or opt.get("display", rid)
+        iid, item = coll(rid, mat, name, opt.get("description"))
+        COLLECTIBLE_MAP[rid] = iid
+        COLLECTIBLE_ITEMS[iid] = item
+        return
+    if opt.get("category") != "STAT":
         return
     rid = opt["id"]
     name = charm_name or opt.get("display", rid)
     iid, item = coll(rid, mat, name, opt.get("description"))
     COLLECTIBLE_MAP[rid] = iid
     COLLECTIBLE_ITEMS[iid] = item
-    for g in opt.get("grants", []):
-        if g.get("category") == "STAT":
-            map_stat(g, mat, charm_name)
 
 
 def map_leveled(rid, levels: dict[int, tuple[str, str]]):
@@ -1050,11 +1054,16 @@ def build_collectibles():
     return coll_yaml, items_yaml
 
 
-def map_pool_stats(options, default_mat="RABBIT_FOOT"):
-    for opt in options:
-        if opt.get("category") == "STAT" or opt.get("grants"):
-            mat = default_mat
-            map_stat(opt, mat)
+def map_class_collectibles():
+    class_mats = {
+        "class_vanguard": "RED_BANNER",
+        "class_mage": "EMERALD_BLOCK",
+        "class_heavy": "IRON_TRAPDOOR",
+        "class_sniper": "SPYGLASS",
+        "class_guard": "SMITHING_TABLE",
+    }
+    for rid, mat in class_mats.items():
+        map_stat({"id": rid, "display": rid, "grants": [{}]}, mat)
 
 
 def main():
@@ -1075,7 +1084,7 @@ def main():
         "act3_boss": act3_boss(),
     }
     for opts in pools_data.values():
-        map_pool_stats(opts)
+        pass  # collectibles mapped in pool builders
     rewards = build_rewards_yaml_from_pools(pools_data)
     OUT_REWARDS.write_text(rewards + "\n", encoding="utf-8", newline="\n")
     OUT_ITEMS.write_text(build_items_yaml(), encoding="utf-8", newline="\n")

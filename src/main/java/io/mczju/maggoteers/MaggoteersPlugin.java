@@ -17,6 +17,7 @@ import io.mczju.maggoteers.menu.PickMenu;
 import io.mczju.maggoteers.menu.RestMenu;
 import io.mczju.maggoteers.reward.CollectibleRegistry;
 import io.mczju.maggoteers.reward.RewardService;
+import io.mczju.maggoteers.util.PluginFiles;
 import io.mczju.maggoteers.world.MapRepository;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -30,8 +31,8 @@ public final class MaggoteersPlugin extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
-        saveResourceIfMissing("rewards.yml");
-        saveResourceIfMissing("collectibles.yml");
+        PluginFiles.saveResourceIfMissing(this, "rewards.yml");
+        PluginFiles.saveResourceIfMissing(this, "collectibles.yml");
         io.mczju.maggoteers.world.WorldService.cleanupOrphansOnEnable();
         saveDefaultRooms();
         MCZJUGameCore.getGameManager().registerGame(MaggoteersGame.class, MaggoteersRoom.class);
@@ -86,11 +87,6 @@ public final class MaggoteersPlugin extends JavaPlugin {
 
     public static MaggoteersPlugin getInstance() {
         return instance;
-    }
-
-    private void saveResourceIfMissing(String name) {
-        File f = new File(getDataFolder(), name);
-        if (!f.exists()) saveResource(name, false);
     }
 
     private void saveDefaultRooms() {

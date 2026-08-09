@@ -43,7 +43,6 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
                 TriggerContext.atEvent(Trigger.ON_DEATH, deathLoc));
 
         if (st.tryAutoRevive()) {
-            healAndInvuln(p);
             Location spawn = io.mczju.maggoteers.wave.WaveScheduler.currentSpawnLocation(game);
             if (spawn != null) {
                 p.teleport(spawn);
@@ -52,6 +51,7 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
                     TriggerContext.atEvent(Trigger.ON_REVIVE, deathLoc));
             EffectService.resync(p);
             io.mczju.maggoteers.reward.CollectibleService.resync(p, mg);
+            PlayerStateManager.restoreFullHealth(p);
             game.sender().info("<yellow>" + p.getName()
                     + " 倒下，自动复活！（剩余 " + st.getReviveCount() + " 次）");
             return;
@@ -59,7 +59,7 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
 
         st.markDown();
         io.mczju.maggoteers.effect.AuraService.stripAllFromSource(game, p.getUniqueId());
-        healAndInvuln(p);
+        applyDownInvuln(p);
         p.setGameMode(GameMode.SPECTATOR);
         game.sender().warn("<red>" + p.getName() + " 倒下！转为观察者（可用复活币救援）。");
 
@@ -68,7 +68,7 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
         }
     }
 
-    private static void healAndInvuln(Player p) {
+    private static void applyDownInvuln(Player p) {
         var maxHp = p.getAttribute(Attribute.MAX_HEALTH);
         double max = maxHp != null ? maxHp.getValue() : 20.0;
         p.setHealth(Math.min(p.getHealth() <= 0 ? max : Math.max(p.getHealth(), 1.0), max));

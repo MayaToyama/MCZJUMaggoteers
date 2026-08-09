@@ -85,6 +85,7 @@ public final class ItemService {
                 case CURRENCY_NORMAL -> idCurrencyNormal = itemId;
                 case CURRENCY_BOSS -> idCurrencyBoss = itemId;
                 case CLASS_TICKET -> idClassTicket = itemId;
+                default -> { }
             }
         }
     }

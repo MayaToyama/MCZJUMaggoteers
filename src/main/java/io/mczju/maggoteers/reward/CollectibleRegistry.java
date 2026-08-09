@@ -20,7 +20,7 @@ public final class CollectibleRegistry {
     public static void load(MaggoteersPlugin plugin) {
         BY_REWARD_ID.clear();
         File f = new File(plugin.getDataFolder(), "collectibles.yml");
-        if (!f.exists()) plugin.saveResource("collectibles.yml", false);
+        io.mczju.maggoteers.util.PluginFiles.saveResourceIfMissing(plugin, "collectibles.yml");
         mergeYaml(YamlConfiguration.loadConfiguration(f));
         for (var e : BY_REWARD_ID.entrySet()) {
             validateMapping(e.getKey(), e.getValue());

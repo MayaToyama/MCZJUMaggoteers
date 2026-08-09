@@ -45,6 +45,19 @@ items:
       - "<dark_gray>右键重新打开职业菜单"
       - "<dark_gray>选定职业后消耗"
     glint: true
+  shop_emerald:
+    item_id: maggoteers:shop_emerald
+    kind: shop_emerald
+    material: EMERALD
+    name: "<green>休整菜单"
+    lore:
+      - "<gray>右键打开升级菜单"
+      - "<dark_gray>波间休整与奖励兑换"
+    glint: true
+
+# 局内奖励物品丢弃/放入容器保护（false = 允许丢弃）
+run_items:
+  drop_protection: false
 
 act_origins:
   act1: [0, 64, 0]
@@ -55,7 +68,7 @@ waves_per_act:
   act2: { weak: 4, strong: 4 }
   act3: { weak: 1, strong: 4 }
 rest:
-  duration_sec: 30
+  duration_sec: 60
   extend_sec: 15
   extend_max: 2
 map:

@@ -1,6 +1,7 @@
 package io.mczju.maggoteers.listener;
 
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
+import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.item.RunItemTags;
 import org.bukkit.entity.Player;
@@ -15,12 +16,17 @@ import org.bukkit.inventory.ItemStack;
 
 public final class RunItemGuardListener implements Listener {
 
+    private static boolean dropProtectionEnabled() {
+        return MaggoteersPlugin.getInstance().getConfig().getBoolean("run_items.drop_protection", true);
+    }
+
     private static boolean inRun(Player player) {
         return new PlayerExt(player).isInGame(MaggoteersGame.class);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onDrop(PlayerDropItemEvent event) {
+        if (!dropProtectionEnabled()) return;
         if (!inRun(event.getPlayer())) return;
         if (RunItemTags.isRunItem(event.getItemDrop().getItemStack())) {
             event.setCancelled(true);
@@ -29,6 +35,7 @@ public final class RunItemGuardListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onClick(InventoryClickEvent event) {
+        if (!dropProtectionEnabled()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!inRun(player)) return;
         if (isBlockedMove(event.getCurrentItem(), event.getCursor(), event.getAction())) {
@@ -44,6 +51,7 @@ public final class RunItemGuardListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onDrag(InventoryDragEvent event) {
+        if (!dropProtectionEnabled()) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!inRun(player)) return;
         var view = event.getView();

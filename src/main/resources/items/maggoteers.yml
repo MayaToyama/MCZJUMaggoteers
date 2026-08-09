@@ -5,8 +5,8 @@ maggoteers:revive_coin:
   material: TOTEM_OF_UNDYING
   customName: "<green>复活币"
   lore:
-    - "<gray>对死者：拉回战场"
-    - "<gray>对活者：+1 自动复活次数"
+    - "<gray>右键消耗，选择一名玩家，为其添加1次复活机会，若玩家已死亡则将其复活"
+    - "<dark_gray>"
   glint: true
   pdc:
     - key: maggoteers:kind
@@ -18,6 +18,7 @@ maggoteers:supply_healing:
   customName: "<red>应急口粮"
   lore:
     - "<gray>立即恢复 6 颗心"
+    - "<dark_gray>"
   pdc:
     - key: maggoteers:kind
       type: STRING
@@ -27,8 +28,8 @@ maggoteers:wolf_whistle:
   material: BONE
   customName: "<gray>美味的骨头"
   lore:
-    - "<gray>右键：召唤驯服狼"
-    - "<dark_gray>消耗 1 个"
+    - "<gray>右键消耗，原地召唤一条已驯服的狼"
+    - "<dark_gray>"
   maxStackSize: 8
   pdc:
     - key: maggoteers:id
@@ -47,6 +48,9 @@ maggoteers:wolf_whistle:
 maggoteers:anacreon:
   material: COPPER_SWORD
   customName: "<gold>阿纳克吕翁"
+  lore:
+    - "<gray>9伤害，亡灵杀手VI，节肢杀手VI，穿刺VI"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -68,6 +72,9 @@ maggoteers:anacreon:
 maggoteers:art_tyrant:
   material: CROSSBOW
   customName: "<light_purple>艺术暴君"
+  lore:
+    - "<gray>手持时速度+10，右键释放伤害光束，基础伤害10，冷却1.5s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -94,6 +101,9 @@ maggoteers:art_tyrant:
 maggoteers:bible:
   material: BOOK
   customName: "<white>圣经"
+  lore:
+    - "<gray>亡灵杀手20"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -107,6 +117,9 @@ maggoteers:bible:
 maggoteers:blast_unit:
   material: IRON_SWORD
   customName: "<green>爆破单元"
+  lore:
+    - "<gray>10伤害，右键治疗范围内玩家14点生命值，冷却20s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -132,6 +145,9 @@ maggoteers:blast_unit:
 maggoteers:bleed_knife:
   material: IRON_INGOT
   customName: "<red>放血小刀"
+  lore:
+    - "<gray>右键扣除自己1点生命值，没有冷却"
+    - "<dark_gray>"
   maxStackSize: 1
   pdc:
     -
@@ -152,6 +168,9 @@ maggoteers:bleed_knife:
 maggoteers:boss_golden_apple:
   material: GOLDEN_APPLE
   customName: "<gold>金苹果"
+  lore:
+    - "<gray>右键消耗，恢复1000点生命值"
+    - "<dark_gray>"
   maxStackSize: 4
   pdc:
     -
@@ -171,6 +190,9 @@ maggoteers:boss_golden_apple:
 maggoteers:burn_blade:
   material: IRON_SWORD
   customName: "<red>一刀一刀燃烧刀"
+  lore:
+    - "<gray>8伤害，火焰附加V，攻击速度为2.0"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -195,6 +217,9 @@ maggoteers:burn_blade:
 maggoteers:cat_hammer:
   material: MACE
   customName: "<light_purple>充气猫猫锤"
+  lore:
+    - "<gray>右键获得0.2s漂浮V，冷却5s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -208,11 +233,14 @@ maggoteers:cat_hammer:
     params:
       potion: LEVITATION
       amp: 4
-      duration_ticks: 4
+      duration_ticks: 20
 
 maggoteers:cataclysm:
   material: OBSIDIAN
   customName: "<dark_red>灾变核心"
+  lore:
+    - "<gray>攻击到敌人时扣除自己1点生命值，右键对半径8格内的所有敌人造成一次20点伤害，并使其沉默，冷却40s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -270,7 +298,8 @@ maggoteers:class_guard_spear:
   itemModel: "minecraft:iron_spear"
   customName: "<yellow>初心者长矛"
   lore:
-    - <gray>10 伤害 · 快攻速 · +0.5 触及
+    - "<gray>10伤害，1攻击速度，+0.5触及范围"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -299,8 +328,8 @@ maggoteers:class_heavy_sword:
   material: IRON_SWORD
   customName: "<blue>初心者圣剑"
   lore:
-    - <gray>右键：范围治疗 10 心
-    - <dark_gray>冷却 20 秒
+    - "<gray>6伤害，右键治疗范围内玩家10点生命值，冷却20s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -327,8 +356,8 @@ maggoteers:class_mage_sword:
   material: GOLDEN_SWORD
   customName: "<green>初心者魔剑"
   lore:
-    - <gray>右键：4格范围 4 伤害
-    - <dark_gray>冷却 12 秒
+    - "<gray>5伤害，右键对半径4格内敌人造成4点范围伤害，冷却12s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -355,8 +384,8 @@ maggoteers:class_sniper_bow:
   material: CROSSBOW
   customName: "<aqua>初心者之弓"
   lore:
-    - <gray>右键：伤害光束 6
-    - <dark_gray>冷却 3 秒
+    - "<gray>右键释放伤害光束，造成6点伤害，冷却3s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -378,8 +407,8 @@ maggoteers:class_vanguard_axe:
   material: IRON_AXE
   customName: "<gold>初心者战斧"
   lore:
-    - <gray>右键：下次攻击 +100% 伤害
-    - <dark_gray>冷却 20 秒
+    - "<gray>10伤害，右键强化自身，直到下次攻击前获得100攻击力，冷却20s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -408,6 +437,9 @@ maggoteers:class_vanguard_axe:
 maggoteers:eighty_hammer:
   material: MACE
   customName: "<red>八十！"
+  lore:
+    - "<gray>28伤害，0.5攻击速度，右键下次攻击会眩晕敌人5s，冷却10s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -440,6 +472,9 @@ maggoteers:eighty_hammer:
 maggoteers:emp:
   material: COPPER_BLOCK
   customName: "<blue>E.M.P"
+  lore:
+    - "<gray>右键使8格半径内所有敌人沉默且眩晕10s，冷却时间40s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -487,6 +522,9 @@ maggoteers:emp:
 maggoteers:excalibur_a3:
   material: GOLDEN_SWORD
   customName: "<gold>Excalibur"
+  lore:
+    - "<gray>12伤害，右键释放伤害光束，基础伤害30，冷却25s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -512,6 +550,9 @@ maggoteers:excalibur_a3:
 maggoteers:famed_name:
   material: DIAMOND_SWORD
   customName: "<aqua>显赫声名"
+  lore:
+    - "<gray>5伤害，右键对4格半径内所有敌人造成6点伤害，冷却9s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -537,6 +578,9 @@ maggoteers:famed_name:
 maggoteers:frostmourne:
   material: DIAMOND_SWORD
   customName: "<blue>霜之哀伤"
+  lore:
+    - "<gray>18伤害，手持时获得凋零效果，攻击时恢复1点生命值，并使敌人获得5s缓慢I，右键对4格半径内所有敌人造成2点伤害"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -569,6 +613,9 @@ maggoteers:frostmourne:
 maggoteers:full_heal_steak:
   material: COOKED_BEEF
   customName: "<red>免费牛排！"
+  lore:
+    - "<gray>免费牛排！"
+    - "<dark_gray>"
   maxStackSize: 4
   pdc:
     -
@@ -589,7 +636,8 @@ maggoteers:glass_blade:
   material: DIAMOND_HOE
   customName: "<aqua>玻璃刀"
   lore:
-    - <gray>耐久 1 · 锋利 100
+    - "<gray>耐久剩余1点，锋利100"
+    - "<dark_gray>"
   maxStackSize: 1
   enchantments:
     - minecraft:sharpness: 100
@@ -602,6 +650,9 @@ maggoteers:glass_blade:
 maggoteers:griffon_claw:
   material: NETHERITE_HOE
   customName: "<white>骏鹰之爪"
+  lore:
+    - "<gray>10伤害，横扫攻击X，生物触及距离+0.5"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -626,6 +677,9 @@ maggoteers:griffon_claw:
 maggoteers:heal_potion_item:
   material: POTION
   customName: "<red>瞬间治疗药水"
+  lore:
+    - "<gray>瞬间治疗药水，右键消耗，恢复10点生命值"
+    - "<dark_gray>"
   maxStackSize: 8
   pdc:
     -
@@ -645,6 +699,9 @@ maggoteers:heal_potion_item:
 maggoteers:heat_cutter_a1:
   material: GOLDEN_SWORD
   customName: "<red>热熔切割器"
+  lore:
+    - "<gray>5伤害，右键对4格半径内所有敌人造成4点伤害，冷却10s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -670,6 +727,9 @@ maggoteers:heat_cutter_a1:
 maggoteers:herafinger:
   material: DIAMOND_SWORD
   customName: "<gold>赫拉芬格"
+  lore:
+    - "<gray>18伤害，1.0攻击速度，攻击会使敌人获得1s缓慢X，右键强化自身，直到下次攻击前获得200攻击力，并对使3格半径内的敌人获得3s缓慢X，冷却10s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -703,6 +763,9 @@ maggoteers:herafinger:
 maggoteers:holy_water:
   material: POTION
   customName: "<aqua>圣水"
+  lore:
+    - "<gray>右键恢复10点生命值并净化自身，冷却时间15s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -749,6 +812,9 @@ maggoteers:jet_a1:
   material: GOLDEN_SWORD
   itemModel: "minecraft:golden_spear"
   customName: "<aqua>J.E.T"
+  lore:
+    - "<gray>11伤害，1.1攻击速度，+0.5触及范围，右键获得2s速度III，冷却20s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -784,6 +850,9 @@ maggoteers:knight_greatsword:
   material: SHIELD
   itemModel: "minecraft:iron_sword"
   customName: "<blue>骑士巨剑"
+  lore:
+    - "<gray>8伤害，1.2攻击速度，+1触及距离，手持时获得抗性提升I，缓慢I"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -824,6 +893,9 @@ maggoteers:knight_greatsword:
 maggoteers:knight_spirit:
   material: IRON_SWORD
   customName: "<blue>骑士精神"
+  lore:
+    - "<gray>10伤害，右键治疗范围内玩家14点生命值，冷却20s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -849,6 +921,9 @@ maggoteers:knight_spirit:
 maggoteers:macro_wish:
   material: GOLDEN_SWORD
   customName: "<light_purple>宏愿"
+  lore:
+    - "<gray>10伤害，右键对半径3格内的敌人造成一次8点伤害，并使其获得3s缓慢x，冷却10s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -874,6 +949,9 @@ maggoteers:macro_wish:
 maggoteers:mission_sure:
   material: HEART_OF_THE_SEA
   customName: "<aqua>使命必达"
+  lore:
+    - "<gray>6伤害，2.0攻击速度，右键治疗范围内玩家20点生命值，并使其获得10s速度+15，冷却10s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -904,6 +982,9 @@ maggoteers:mission_sure:
 maggoteers:molten_flame:
   material: COPPER_SWORD
   customName: "<red>熔铸火焰"
+  lore:
+    - "<gray>8伤害，火焰附加，右键对5格半径内所有敌人造成8点伤害，冷却8s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -931,6 +1012,9 @@ maggoteers:molten_flame:
 maggoteers:mystery_blade:
   material: DIAMOND_SWORD
   customName: "<dark_gray>？？？？"
+  lore:
+    - "<gray>12伤害，锋利VI，亡灵杀手V"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -951,6 +1035,9 @@ maggoteers:mystery_blade:
 maggoteers:navigator:
   material: BOW
   customName: "<green>领航者"
+  lore:
+    - "<gray>7伤害，右键释放伤害光束，基础伤害8，冷却2s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -976,6 +1063,9 @@ maggoteers:navigator:
 maggoteers:old_wand:
   material: STICK
   customName: "<dark_purple>老魔杖"
+  lore:
+    - "<gray>击杀敌人时扣除6点生命上限，右键释放绿色光束，造成1000点伤害，冷却时间60s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -1010,8 +1100,8 @@ maggoteers:past_fine:
   material: IRON_AXE
   customName: "<gold>昔日精品"
   lore:
-    - <gray>右键：下次攻击 +120% 伤害
-    - <dark_gray>冷却 15 秒
+    - "<gray>12伤害，右键强化自身，直到下次攻击前获得120攻击力，冷却15s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -1040,6 +1130,9 @@ maggoteers:past_fine:
 maggoteers:phantasm:
   material: GOLDEN_SWORD
   customName: "<blue>幻景"
+  lore:
+    - "<gray>8伤害，右键对自己造成4点伤害，赋予自己净化效果，直到下次攻击前获得抗性提升V，冷却20s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -1097,6 +1190,9 @@ maggoteers:phantasm:
 maggoteers:portable_fort:
   material: CROSSBOW
   customName: "<gray>便携要塞"
+  lore:
+    - "<gray>右键释放伤害光束，基础伤害3，无冷却，手持时速度-100"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -1123,6 +1219,9 @@ maggoteers:portable_fort:
 maggoteers:ritual_dagger:
   material: FLINT
   customName: "<dark_purple>仪式匕首"
+  lore:
+    - "<gray>右键扣除自己5点生命值，获得5s速度+20，魔攻+100，冷却20s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -1149,8 +1248,8 @@ maggoteers:shattered_king:
   material: COPPER_AXE
   customName: "<gold>破碎君王"
   lore:
-    - <gray>右键：下次攻击 +150% 伤害
-    - <dark_gray>冷却 12 秒
+    - "<gray>15伤害，右键强化自身，直到下次攻击前获得150攻击力，冷却12s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -1179,6 +1278,9 @@ maggoteers:shattered_king:
 maggoteers:silver_sword:
   material: IRON_SWORD
   customName: "<white>猎魔人的银剑"
+  lore:
+    - "<gray>8伤害，亡灵杀手VI"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1199,6 +1301,9 @@ maggoteers:spike_wall:
   material: SHIELD
   itemModel: "minecraft:iron_sword"
   customName: "<gray>尖刺壁垒"
+  lore:
+    - "<gray>10伤害，0.8攻击速度，受到攻击时或右键对2格半径内敌人造成2点伤害，1秒冷却"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -1238,6 +1343,9 @@ maggoteers:spike_wall:
 maggoteers:splash_heal2:
   material: SPLASH_POTION
   customName: "<red>喷溅治疗II"
+  lore:
+    - "<gray>喷溅治疗II"
+    - "<dark_gray>"
   maxStackSize: 8
   pdc:
     -
@@ -1257,6 +1365,9 @@ maggoteers:splash_heal2:
 maggoteers:supreme_art:
   material: IRON_SWORD
   customName: "<light_purple>至高之术"
+  lore:
+    - "<gray>4伤害，2.0攻击速度，生物触及距离+0.5，击杀敌人时获得5s急迫II，力量II"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -1299,6 +1410,9 @@ maggoteers:supreme_art:
 maggoteers:thunder_rod:
   material: LIGHTNING_ROD
   customName: "<yellow>雷霆之杖"
+  lore:
+    - "<gray>右键射出伤害射线，造成3点伤害且使目标眩晕4s，冷却时间8s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -1316,6 +1430,9 @@ maggoteers:thunder_rod:
 maggoteers:tnt_orb:
   material: TNT
   customName: "<dark_red>TNT 宝珠"
+  lore:
+    - "<gray>TNT 宝珠"
+    - "<dark_gray>"
   maxStackSize: 4
   pdc:
     -
@@ -1335,6 +1452,9 @@ maggoteers:tnt_orb:
 maggoteers:unlit_glory:
   material: GOLDEN_SWORD
   customName: "<white>未照耀的荣光"
+  lore:
+    - "<gray>0伤害，锋利100，攻击速度0.1，手持时获得抗性提升I，受击时对伤害来源造成2点伤害"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1375,6 +1495,9 @@ maggoteers:valor:
   material: IRON_SWORD
   itemModel: "minecraft:iron_spear"
   customName: "<yellow>骁勇"
+  lore:
+    - "<gray>12伤害，1.1攻击速度，+1触及范围，右键获得2s速度III，冷却15s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   attributeModifiers:
@@ -1410,6 +1533,9 @@ maggoteers:wedge:
   material: IRON_SWORD
   itemModel: "minecraft:trident"
   customName: "<blue>楔子"
+  lore:
+    - "<gray>6伤害，右键释放伤害光束，基础伤害7，冷却3s"
+    - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
   pdc:
@@ -1432,11 +1558,268 @@ maggoteers:wedge:
       targets: enemies
       enemy_scope: tracked
 
+maggoteers:condense:
+  material: IRON_AXE
+  customName: "<blue>凝结核"
+  lore:
+    - "<gray>10伤害，右键对半径6格内的敌人造成一次6点伤害，并使其获得10s缓慢III，冷却20s"
+    - "<dark_gray>"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 10
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:condense"
+  use_ability:
+    cooldown_sec: 20
+    effect: DAMAGE_AREA
+    params:
+      damage: 6.0
+      radius: 6.0
+      targets: enemies
+      enemy_scope: tracked
+      potions:
+        -
+          potion: SLOWNESS
+          amp: 2
+          duration_ticks: 200
+
+maggoteers:corrupt_orb:
+  material: ENDER_EYE
+  customName: "<dark_purple>腐化宝珠"
+  lore:
+    - "<gray>右键扣除自己10点生命值，发射一道50伤害的伤害光束，冷却40s"
+    - "<dark_gray>"
+  unbreakable: true
+  maxStackSize: 1
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:corrupt_orb"
+  use_ability:
+    cooldown_sec: 40
+    effect: DAMAGE_BEAM
+    self_potions:
+      -
+        potion: INSTANT_DAMAGE
+        amp: 2
+        duration_ticks: 1
+    params:
+      damage: 50.0
+      ray_length: 48.0
+      targets: enemies
+      enemy_scope: tracked
+
+maggoteers:shimingzi:
+  material: IRON_SWORD
+  customName: "<gold>Shimingzi"
+  lore:
+    - "<gray>19伤害，0.7攻击速度，横扫攻击X，击杀时为半径5格内友军恢复6点生命值"
+    - "<dark_gray>"
+  unbreakable: true
+  maxStackSize: 1
+  enchantments:
+    - minecraft:sweeping_edge: 3
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 19
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: -0.9
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:shimingzi"
+  held_effects:
+    -
+      effect: HEAL_AREA
+      trigger: ON_KILL
+      params:
+        amount: 6.0
+        radius: 5.0
+        targets: allies
+        include_self: true
+
+maggoteers:miaooneal:
+  material: MACE
+  customName: "<yellow>妙奥尼尔"
+  lore:
+    - "<gray>16伤害，1.0攻击速度，右键在指针指向的敌人处召唤雷电"
+    - "<dark_gray>"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 16
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 0.4
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:miaooneal"
+  use_ability:
+    cooldown_sec: 8
+    effect: DAMAGE_BEAM
+    params:
+      damage: 8.0
+      ray_length: 32.0
+      targets: enemies
+      enemy_scope: tracked
+
+maggoteers:solar_spear:
+  material: IRON_SWORD
+  itemModel: "minecraft:golden_spear"
+  customName: "<yellow>太阳王的长矛"
+  lore:
+    - "<gray>20伤害，1.1攻击速度，+2触及距离"
+    - "<dark_gray>"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 20
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 0.1
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:entity_interaction_range"
+      amount: 2.0
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:solar_spear"
+
+maggoteers:red_blessing:
+  material: IRON_SWORD
+  itemModel: "minecraft:iron_spear"
+  customName: "<red>镀红祝福"
+  lore:
+    - "<gray>12伤害，1.1攻击速度，+1触及范围，攻击使敌人获得5s凋零II（红色粒子），击杀敌人时对目标周围的敌人造成一次5点伤害，右键获得3s速度III，冷却12s"
+    - "<dark_gray>"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 12
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 0.1
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:entity_interaction_range"
+      amount: 1.0
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:red_blessing"
+  use_ability:
+    cooldown_sec: 12
+    effect: ADD_POTION
+    params:
+      potion: SPEED
+      amp: 2
+      duration_ticks: 60
+  held_effects:
+    -
+      effect: BUFF_AREA
+      trigger: ON_DAMAGE_DEALT
+      params:
+        targets: hit_target
+        potions:
+          -
+            potion: WITHER
+            amp: 1
+            duration_ticks: 100
+        mark_fx:
+          preset: DOT_ABOVE
+          particle: CRIMSON_SPORE
+    -
+      effect: DAMAGE_AREA
+      trigger: ON_KILL
+      params:
+        damage: 5.0
+        radius: 4.0
+        targets: enemies
+        enemy_scope: tracked
+
+maggoteers:paragon:
+  material: IRON_SWORD
+  customName: "<yellow>典范"
+  lore:
+    - "<gray>12伤害，1.2攻击速度，命中时为半径5格内友军恢复1点生命值"
+    - "<dark_gray>"
+  unbreakable: true
+  maxStackSize: 1
+  attributeModifiers:
+    -
+      attribute: "minecraft:attack_damage"
+      amount: 12
+      operation: ADD_NUMBER
+      slot: mainhand
+    -
+      attribute: "minecraft:attack_speed"
+      amount: 0.2
+      operation: ADD_NUMBER
+      slot: mainhand
+  pdc:
+    -
+      key: "maggoteers:id"
+      type: STRING
+      value: "maggoteers:paragon"
+  held_effects:
+    -
+      effect: HEAL_AREA
+      trigger: ON_DAMAGE_DEALT
+      params:
+        amount: 1.0
+        radius: 5.0
+        targets: allies
+        include_self: true
+
 # ── 怪物专用装备（waves.yml equipment 引用，不给玩家）────────────────
 maggoteers:mob_iron_spear:
   material: IRON_SWORD
   itemModel: minecraft:iron_spear
   customName: "<gray>铁矛"
+  lore:
+    - "<gray>12伤害，1.1攻击速度，+1触及范围，右键获得2s速度III，冷却15s"
+    - "<dark_gray>"
   unbreakable: true
   attributeModifiers:
     - attribute: minecraft:attack_damage
@@ -1448,6 +1831,9 @@ maggoteers:mob_gold_spear:
   material: GOLDEN_SWORD
   itemModel: minecraft:golden_spear
   customName: "<gold>金矛"
+  lore:
+    - "<gray>11伤害，1.1攻击速度，+0.5触及范围，右键获得2s速度III，冷却20s"
+    - "<dark_gray>"
   unbreakable: true
   attributeModifiers:
     - attribute: minecraft:entity_interaction_range
@@ -1461,12 +1847,16 @@ maggoteers:mob_gold_spear:
 
 maggoteers:mob_iron_sword_ub10:
   material: IRON_SWORD
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:unbreaking: 10
 
 maggoteers:mob_iron_sword_reach:
   material: IRON_SWORD
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:unbreaking: 10
@@ -1482,68 +1872,94 @@ maggoteers:mob_iron_sword_reach:
 
 maggoteers:mob_iron_axe:
   material: IRON_AXE
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_diamond_axe_sharp5:
   material: DIAMOND_AXE
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:sharpness: 5
 
 maggoteers:mob_diamond_sword:
   material: DIAMOND_SWORD
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_gold_sword_flame:
   material: GOLDEN_SWORD
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:fire_aspect: 2
 
 maggoteers:mob_gold_shovel:
   material: GOLDEN_SHOVEL
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_trident:
   material: TRIDENT
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_bow:
   material: BOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_bow_power1:
   material: BOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:power: 1
 
 maggoteers:mob_bow_power2:
   material: BOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:power: 2
 
 maggoteers:mob_bow_power4:
   material: BOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:power: 4
 
 maggoteers:mob_bow_power5:
   material: BOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:power: 5
 
 maggoteers:mob_bow_punch2:
   material: BOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:punch: 2
 
 maggoteers:mob_bow_flame_punch:
   material: BOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:flame: 1
@@ -1551,28 +1967,38 @@ maggoteers:mob_bow_flame_punch:
 
 maggoteers:mob_crossbow:
   material: CROSSBOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_crossbow_power2:
   material: CROSSBOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:piercing: 2
 
 maggoteers:mob_crossbow_power3:
   material: CROSSBOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:piercing: 3
 
 maggoteers:mob_crossbow_flame:
   material: CROSSBOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:flame: 1
 
 maggoteers:mob_crossbow_flame_quick:
   material: CROSSBOW
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:flame: 1
@@ -1580,58 +2006,82 @@ maggoteers:mob_crossbow_flame_quick:
 
 maggoteers:mob_iron_helmet_ub10:
   material: IRON_HELMET
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:unbreaking: 10
 
 maggoteers:mob_iron_chest_ub10:
   material: IRON_CHESTPLATE
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:unbreaking: 10
 
 maggoteers:mob_iron_legs_ub10:
   material: IRON_LEGGINGS
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:unbreaking: 10
 
 maggoteers:mob_iron_boots_ub10:
   material: IRON_BOOTS
+  lore:
+    - "<dark_gray>"
   unbreakable: true
   enchantments:
     - minecraft:unbreaking: 10
 
 maggoteers:mob_gold_helmet:
   material: GOLDEN_HELMET
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_gold_chest:
   material: GOLDEN_CHESTPLATE
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_gold_legs:
   material: GOLDEN_LEGGINGS
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_gold_boots:
   material: GOLDEN_BOOTS
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_diamond_helmet:
   material: DIAMOND_HELMET
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_diamond_chest:
   material: DIAMOND_CHESTPLATE
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_diamond_legs:
   material: DIAMOND_LEGGINGS
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:mob_diamond_boots:
   material: DIAMOND_BOOTS
+  lore:
+    - "<dark_gray>"
   unbreakable: true
 
 maggoteers:field_ration:
@@ -1640,6 +2090,7 @@ maggoteers:field_ration:
   lore:
     - "<gray>右键：获得应急治疗包"
     - "<dark_gray>冷却 15 秒"
+    - "<dark_gray>"
   maxStackSize: 16
   pdc:
     - key: maggoteers:id
@@ -1655,37 +2106,13 @@ maggoteers:field_ration:
       preset: DOT_ABOVE
       particle: HAPPY_VILLAGER
 
-maggoteers:wolf_whistle:
-  material: BONE
-  customName: "<gray>驯狼哨"
-  lore:
-    - "<gray>右键：召唤驯服狼助战"
-    - "<dark_gray>消耗 1 个 · 冷却 30 秒"
-  maxStackSize: 8
-  pdc:
-    - key: maggoteers:id
-      type: STRING
-      value: maggoteers:wolf_whistle
-  use_ability:
-    cooldown_sec: 30
-    consume: true
-    effect: SUMMON
-    params:
-      entity: WOLF
-      cleanup: wave_clear
-      tamed: true
-      friendly_fire: false
-    fx:
-      preset: RIPPLE_RINGS
-      particle: CLOUD
-      radius: 2.0
-
 maggoteers:fire_orb:
   material: FIRE_CHARGE
   customName: "<red>火球宝珠"
   lore:
     - "<gray>右键：朝准星射出火球"
     - "<dark_gray>冷却 5 秒"
+    - "<dark_gray>"
   glint: true
   maxStackSize: 1
   pdc:

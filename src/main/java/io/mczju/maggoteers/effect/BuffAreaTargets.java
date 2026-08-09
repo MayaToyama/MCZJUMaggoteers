@@ -35,6 +35,8 @@ public final class BuffAreaTargets {
             case TARGET_SELF -> caster == null ? List.of() : List.of(caster);
             case TARGET_HIT_TARGET -> ctx != null && ctx.hitTarget() != null
                     ? List.of(ctx.hitTarget()) : List.of();
+            case TARGET_ATTACKER -> ctx != null && ctx.attacker() != null
+                    ? List.of(ctx.attacker()) : List.of();
             case AuraParams.TARGET_ALLIES -> {
                 double r = params.getOrDefault(EffectKeys.RADIUS, 5.0);
                 boolean inc = AuraParams.includeSelf(params);
