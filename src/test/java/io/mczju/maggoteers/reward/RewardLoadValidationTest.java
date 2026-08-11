@@ -10,7 +10,9 @@ import io.mczju.maggoteers.effect.Stack;
 import io.mczju.maggoteers.effect.Trigger;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -167,6 +169,32 @@ class RewardLoadValidationTest {
     }
 
     @Test
+    void rejectsBoundEquipWithTrigger() {
+        RewardOption opt = boundEquipStat("prot_a", Trigger.ON_WAVE_CLEAR, Stack.UPGRADE_LEVEL, 8);
+        assertTrue(RewardLoadValidator.validateStatOption(opt).isPresent());
+    }
+
+    @Test
+    void rejectsBoundEquipWithoutUpgradeStack() {
+        RewardOption opt = boundEquipStat("prot_a", null, Stack.IGNORE, 8);
+        assertTrue(RewardLoadValidator.validateStatOption(opt).isPresent());
+    }
+
+    @Test
+    void acceptsBoundEquipOk() {
+        RewardOption opt = boundEquipStat("prot_a", null, Stack.UPGRADE_LEVEL, 8);
+        assertTrue(RewardLoadValidator.validateStatOption(opt).isEmpty());
+    }
+
+    @Test
+    void secondChestBoundEquipRejectedByUniquenessHelper() {
+        RewardOption a = boundEquipStat("prot_a", null, Stack.UPGRADE_LEVEL, 8);
+        RewardOption b = boundEquipStat("prot_b", null, Stack.UPGRADE_LEVEL, 8);
+        assertTrue(RewardLoadValidator.chestBoundEquipConflict(List.of(a), b).isPresent());
+        assertTrue(RewardLoadValidator.chestBoundEquipConflict(List.of(), a).isEmpty());
+    }
+
+    @Test
     void acceptsBundleRevokeSibling() {
         EffectContext stack = new EffectContext();
         stack.put(EffectKeys.ATTR_NAME, "MAGIC_DAMAGE");
@@ -215,5 +243,25 @@ class RewardLoadValidationTest {
                 trigger, effect, params, Stack.ADD,
                 expiry, charges,
                 false, 0, false, 0, java.util.List.of());
+    }
+
+    private static EffectContext boundEquipParams(int max) {
+        EffectContext p = new EffectContext();
+        p.put(EffectKeys.SLOT, "CHEST");
+        Map<Integer, String> m = new HashMap<>();
+        for (int i = 1; i <= max; i++) {
+            m.put(i, "maggoteers:prot_chest_l" + i);
+        }
+        p.put(EffectKeys.ITEMS_BY_LEVEL, m);
+        return p;
+    }
+
+    private static RewardOption boundEquipStat(String id, Trigger trigger, Stack stack, int upgradeMax) {
+        return new RewardOption(
+                id, "<gray>test", "", RewardOption.Category.STAT,
+                null, 1,
+                trigger, Effect.BOUND_EQUIP, boundEquipParams(upgradeMax), stack,
+                null, 0,
+                false, 0, false, upgradeMax, List.of());
     }
 }

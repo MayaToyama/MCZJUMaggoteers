@@ -39,6 +39,7 @@ public final class RewardService {
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(f);
         ConfigurationSection root = yaml.getConfigurationSection("reward_pools");
         if (root == null) return;
+        List<RewardOption> acceptedChestBound = new ArrayList<>();
         for (String poolId : root.getKeys(false)) {
             ConfigurationSection sec = root.getConfigurationSection(poolId);
             if (sec == null) continue;
@@ -70,6 +71,14 @@ public final class RewardService {
                 if (err.isPresent()) {
                     LOG.warning("rewards.yml 池 " + poolId + " 选项 " + opt.id() + " 已跳过：" + err.get());
                     continue;
+                }
+                var chestConflict = RewardLoadValidator.chestBoundEquipConflict(acceptedChestBound, opt);
+                if (chestConflict.isPresent()) {
+                    LOG.warning("rewards.yml 池 " + poolId + " 选项 " + opt.id() + " 已跳过：" + chestConflict.get());
+                    continue;
+                }
+                if (opt.effect() == Effect.BOUND_EQUIP) {
+                    acceptedChestBound.add(opt);
                 }
                 if (opt.category() == RewardOption.Category.STAT && !opt.unique()) {
                     LOG.warning("rewards.yml 池 " + poolId + " STAT 选项 " + opt.id()
@@ -243,9 +252,17 @@ public final class RewardService {
             LOG.warning("RewardService: STAT 配置不完整 id=" + opt.id());
             return false;
         }
-        if (!(game instanceof MaggoteersGame mg)) return false;
-        PlayerState ps = PlayerStateManager.get(game, player.getUniqueId());
-        if (ps == null) return false;
+        MaggoteersGame mg = game instanceof MaggoteersGame g ? g
+                : PlayerStateManager.gameForPlayer(player.getUniqueId());
+        if (mg == null) {
+            LOG.warning("RewardService: 无法解析 MaggoteersGame id=" + opt.id());
+            return false;
+        }
+        PlayerState ps = PlayerStateManager.get(mg, player.getUniqueId());
+        if (ps == null) {
+            PlayerStateManager.warnMissingState("RewardService.applyStat", mg, player.getUniqueId());
+            return false;
+        }
         int upgradeMax = UpgradeLevelCaps.resolve(pool, opt);
         if (opt.stack() == Stack.UPGRADE_LEVEL) {
             int cur = ps.effects().stream().filter(e -> e.id().equals(opt.id()))

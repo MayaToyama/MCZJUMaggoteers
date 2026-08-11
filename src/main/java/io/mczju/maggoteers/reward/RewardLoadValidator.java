@@ -1,18 +1,22 @@
 package io.mczju.maggoteers.reward;
 
 import io.mczju.maggoteers.effect.AuraParams;
+import io.mczju.maggoteers.effect.BoundEquipParams;
 import io.mczju.maggoteers.effect.BuffAreaTargets;
 import io.mczju.maggoteers.effect.Effect;
 import io.mczju.maggoteers.effect.EffectContext;
 import io.mczju.maggoteers.effect.EffectKeys;
 import io.mczju.maggoteers.effect.GrantItemParams;
 import io.mczju.maggoteers.effect.MagicEffectParams;
+import io.mczju.maggoteers.effect.Stack;
 import io.mczju.maggoteers.effect.SummonParamsParser;
 import io.mczju.maggoteers.effect.Trigger;
 import io.mczju.maggoteers.effect.TriggeredGrantAttribute;
 import io.mczju.maggoteers.effect.VirtualStats;
+import io.mczju.maggoteers.item.ItemService;
 import org.bukkit.attribute.Attribute;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -72,6 +76,34 @@ public final class RewardLoadValidator {
         if (opt.effect() == Effect.AURA && (fire != null || opt.expiryTrigger() != null)) {
             return Optional.of("AURA reward must not have trigger or expiry");
         }
+        if (opt.effect() == Effect.BOUND_EQUIP) {
+            if (fire != null || opt.expiryTrigger() != null) {
+                return Optional.of("BOUND_EQUIP reward must not have trigger or expiry");
+            }
+            if (opt.stack() != Stack.UPGRADE_LEVEL) {
+                return Optional.of("BOUND_EQUIP requires stack UPGRADE_LEVEL");
+            }
+            int upgradeMax = opt.upgradeMax();
+            if (upgradeMax <= 0) {
+                return Optional.of("BOUND_EQUIP requires upgrade_max > 0");
+            }
+            Optional<String> paramsErr = BoundEquipParams.validate(opt.params(), upgradeMax)
+                    .map(msg -> "BOUND_EQUIP " + msg);
+            if (paramsErr.isPresent()) {
+                return paramsErr;
+            }
+            if (io.mczju.maggoteers.MaggoteersPlugin.getInstance() != null && opt.params() != null) {
+                java.util.Map<Integer, String> byLevel = opt.params().get(EffectKeys.ITEMS_BY_LEVEL);
+                if (byLevel != null) {
+                    for (String itemId : byLevel.values()) {
+                        if (itemId != null && !itemId.isBlank() && !ItemService.hasItem(itemId)) {
+                            return Optional.of("BOUND_EQUIP unknown item: " + itemId);
+                        }
+                    }
+                }
+            }
+            return Optional.empty();
+        }
         Optional<String> magic = validateMagicDamagePercent(opt);
         if (magic.isPresent()) {
             return magic;
@@ -87,6 +119,24 @@ public final class RewardLoadValidator {
             return validateAndNormalizeDisableAi(opt).skipReason();
         }
         return Optional.empty();
+    }
+
+    public static Optional<String> chestBoundEquipConflict(
+            List<RewardOption> alreadyAccepted, RewardOption candidate) {
+        if (candidate == null || candidate.effect() != Effect.BOUND_EQUIP) return Optional.empty();
+        EffectContext params = candidate.params();
+        String slot = params == null ? null : params.get(EffectKeys.SLOT);
+        if (slot == null || !BoundEquipParams.SLOT_CHEST.equalsIgnoreCase(slot)) {
+            return Optional.empty();
+        }
+        boolean exists = alreadyAccepted.stream().anyMatch(o ->
+                o.effect() == Effect.BOUND_EQUIP
+                        && o.params() != null
+                        && BoundEquipParams.SLOT_CHEST.equalsIgnoreCase(
+                                String.valueOf(o.params().get(EffectKeys.SLOT))));
+        return exists
+                ? Optional.of("duplicate BOUND_EQUIP slot CHEST: " + candidate.id())
+                : Optional.empty();
     }
 
     private static Optional<String> validateGrantSummon(RewardOption opt) {
