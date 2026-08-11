@@ -11,7 +11,8 @@ public enum ItemKind {
     SUPPLY_HEALING("supply_healing"),
     SHOP_EMERALD("shop_emerald"),
     COLLECTIBLE("collectible"),
-    RUN_GEAR("run_gear");
+    RUN_GEAR("run_gear"),
+    BOUND_EQUIP("bound_equip");
 
     private final String pdcValue;
 

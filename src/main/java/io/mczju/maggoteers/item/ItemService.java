@@ -1,7 +1,11 @@
 package io.mczju.maggoteers.item;
 
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.effect.WeaponHeldService;
+import io.mczju.maggoteers.game.MaggoteersGame;
+import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import io.mczju.mczjuitemcreator.api.ItemCreatorApi;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -57,9 +61,13 @@ public final class ItemService {
         if (files != null && api != null) {
             for (File f : files) {
                 YamlConfiguration yaml = YamlConfiguration.loadConfiguration(f);
-                Map<String, ItemStack> parsed = api.parseYamlToItems(yaml);
+                Map<String, String> itemModels = extractItemModels(yaml);
+                YamlConfiguration forCreator = yamlWithoutItemModels(yaml);
+                Map<String, ItemStack> parsed = api.parseYamlToItems(forCreator);
                 for (var e : parsed.entrySet()) {
-                    if (!CACHE.containsKey(e.getKey())) CACHE.put(e.getKey(), e.getValue());
+                    ItemStack stack = e.getValue();
+                    applyItemModel(stack, itemModels.get(e.getKey()));
+                    if (!CACHE.containsKey(e.getKey())) CACHE.put(e.getKey(), stack);
                 }
                 total += parsed.size();
             }
@@ -143,7 +151,7 @@ public final class ItemService {
             case REVIVE_COIN -> "maggoteers:revive_coin";
             case SUPPLY_HEALING -> "maggoteers:supply_healing";
             case SHOP_EMERALD -> "maggoteers:shop_emerald";
-            case COLLECTIBLE, RUN_GEAR -> null;
+            case COLLECTIBLE, RUN_GEAR, BOUND_EQUIP -> null;
         };
     }
 
@@ -179,8 +187,78 @@ public final class ItemService {
 
     public static void give(Player player, String id, int amount) {
         createItem(id, amount).ifPresentOrElse(
-                stack -> player.getInventory().addItem(stack),
+                stack -> {
+                    player.getInventory().addItem(stack);
+                    scheduleHeldSync(player);
+                },
                 () -> LOG.warning("物品不存在，无法发放：" + id));
+    }
+
+    /** 发奖/换槽后下一 tick 同步主手 held_effects（避免须手动切槽才生效）。 */
+    private static void scheduleHeldSync(Player player) {
+        Bukkit.getScheduler().runTask(MaggoteersPlugin.getInstance(), () -> {
+            PlayerExt pe = new PlayerExt(player);
+            if (!pe.isInGame()) return;
+            if (pe.getGame() instanceof MaggoteersGame mg) {
+                WeaponHeldService.sync(player, mg);
+            }
+        });
+    }
+
+    /** ItemCreator 误把 itemModel 当 Material 解析；先从 YAML 剥离再自行 setItemModel(Key)。 */
+    private static YamlConfiguration yamlWithoutItemModels(YamlConfiguration source) {
+        YamlConfiguration copy = new YamlConfiguration();
+        for (String id : source.getKeys(false)) {
+            if (!source.isConfigurationSection(id)) continue;
+            ConfigurationSection src = source.getConfigurationSection(id);
+            ConfigurationSection dst = copy.createSection(id);
+            if (src == null) continue;
+            for (String key : src.getKeys(true)) {
+                if ("itemModel".equals(key)) continue;
+                dst.set(key, src.get(key));
+            }
+        }
+        return copy;
+    }
+
+    private static Map<String, String> extractItemModels(YamlConfiguration yaml) {
+        Map<String, String> models = new HashMap<>();
+        for (String id : yaml.getKeys(false)) {
+            String model = yaml.getString(id + ".itemModel");
+            if (model != null && !model.isBlank()) {
+                models.put(id, model.trim());
+            }
+        }
+        return models;
+    }
+
+    /** 支持 {@code minecraft:mace} / {@code MACE} / {@code golden_spear} 等 Paper item model key。 */
+    static void applyItemModel(ItemStack stack, String rawModel) {
+        if (stack == null || rawModel == null || rawModel.isBlank()) return;
+        Key modelKey = parseItemModelKey(rawModel);
+        if (modelKey == null) return;
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null) return;
+        meta.setItemModel(NamespacedKey.fromString(modelKey.asString()));
+        stack.setItemMeta(meta);
+    }
+
+    private static Key parseItemModelKey(String raw) {
+        String s = raw.trim();
+        if (s.contains(":")) {
+            int colon = s.indexOf(':');
+            return Key.key(s.substring(0, colon), s.substring(colon + 1));
+        }
+        Material mat = Material.matchMaterial(s);
+        if (mat != null) {
+            return mat.getKey();
+        }
+        try {
+            Material enumMat = Material.valueOf(s.toUpperCase(Locale.ROOT));
+            return enumMat.getKey();
+        } catch (IllegalArgumentException ignored) {
+            return Key.key("minecraft", s.toLowerCase(Locale.ROOT));
+        }
     }
 
     public static void giveKind(Player player, ItemKind kind, int amount) {

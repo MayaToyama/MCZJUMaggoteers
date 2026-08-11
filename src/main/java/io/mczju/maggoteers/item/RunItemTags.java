@@ -48,4 +48,21 @@ public final class RunItemTags {
         pdc.set(rewardIdKey(), PersistentDataType.STRING, rewardId);
         pdc.set(rewardLevelKey(), PersistentDataType.INTEGER, level);
     }
+
+    public static void setBoundEquipPdc(ItemMeta meta, String rewardId, int level) {
+        if (meta == null) return;
+        var pdc = meta.getPersistentDataContainer();
+        pdc.set(new NamespacedKey(MaggoteersPlugin.getInstance(), "kind"),
+                PersistentDataType.STRING, ItemKind.BOUND_EQUIP.pdcValue());
+        pdc.set(rewardIdKey(), PersistentDataType.STRING, rewardId);
+        pdc.set(rewardLevelKey(), PersistentDataType.INTEGER, level);
+    }
+
+    public static boolean isBoundEquip(ItemStack stack) {
+        return ItemService.readKind(stack) == ItemKind.BOUND_EQUIP;
+    }
+
+    public static boolean isBoundEquipFor(ItemStack stack, String rewardId) {
+        return isBoundEquip(stack) && readRewardId(stack).filter(rewardId::equals).isPresent();
+    }
 }
