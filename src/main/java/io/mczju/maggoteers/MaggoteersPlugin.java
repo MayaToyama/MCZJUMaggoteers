@@ -68,6 +68,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         io.mczju.maggoteers.effect.MobAiLockRegistry.start(this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.PurifyListener(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.RunItemGuardListener(), this);
+        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.BoundEquipLockListener(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.GameplayTickListener(), this);
         io.mczju.maggoteers.listener.GameplayTickListener.start();
         var mc = getCommand("maggoteers");
