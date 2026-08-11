@@ -28,7 +28,6 @@
 | `affixes` | 原生词缀 id（`affixes.yml`） |
 | `infernal` | `{ level: 1–100, affixes: [IM技能…] }`；与原生独立、不继承 |
 | `delay` | 秒，步前等待 |
-| `repeat` | 可选，默认 1：该 step 按 `delay` 再刷几次（与 strategy 顶层 `repeat` 不同；顶层是整份 steps 再跑一轮） |
 | `equipment` / `on_death` / `passengers` | 见下 |
 
 ### coeff
