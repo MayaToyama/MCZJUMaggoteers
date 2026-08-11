@@ -141,12 +141,17 @@ public final class EffectService {
         return Math.min(maxAfter, healthBefore * (maxAfter / maxBefore));
     }
 
-    /** 对局结束：剥除派生视图 + 清 PlayerState 效果。 */
+    /** 对局结束：剥除派生视图 + 清 PlayerState 效果 + 剥离绑定装备/护符视图。 */
     public static void removeAll(Player p) {
-        PlayerState st = PlayerStateManager.get(currentGame(p), p.getUniqueId());
+        MaggoteersGame game = currentGame(p);
+        PlayerState st = PlayerStateManager.get(game, p.getUniqueId());
         if (st == null) return;
         stripDerived(p, st.effects());
         st.clearEffects();
+        if (game != null) {
+            io.mczju.maggoteers.reward.CollectibleService.resync(p, game);
+            BoundEquipService.resync(p, game);
+        }
     }
 
     /** 剥除本插件施加的派生视图：插件命名空间下的 AttributeModifier + 常驻 ADD_POTION 药水。 */

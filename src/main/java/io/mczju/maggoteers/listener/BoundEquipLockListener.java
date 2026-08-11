@@ -76,6 +76,9 @@ public final class BoundEquipLockListener implements Listener {
                 return true;
             }
         }
+        if (!RunItemTags.isBoundEquip(player.getInventory().getChestplate())) {
+            return false;
+        }
         InventoryView view = event.getView();
         for (int rawSlot : event.getRawSlots()) {
             if (isPlayerChestArmorSlot(view, rawSlot, player)) {

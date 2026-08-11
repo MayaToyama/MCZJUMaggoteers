@@ -18,7 +18,18 @@ import java.util.logging.Logger;
 public final class BoundEquipService {
     private static final Logger LOG = Logger.getLogger("Maggoteers");
 
+    /** {@link org.bukkit.inventory.PlayerInventory} index for equipped chestplate (Paper 26.2). */
+    static final int CHESTPLATE_ARMOR_INDEX = 38;
+
     private BoundEquipService() {}
+
+    /**
+     * Orphan sweep indices: storage, hotbar, and armor slots except the equipped chest.
+     * The chest slot is managed explicitly by {@link #sync} / {@link #remove}, not orphan cleanup.
+     */
+    static boolean isOrphanSweepIndex(int inventoryIndex) {
+        return inventoryIndex != CHESTPLATE_ARMOR_INDEX;
+    }
 
     public static boolean isConflictToDestroy(boolean occupied, boolean sameRewardBound) {
         return occupied && !sameRewardBound;
@@ -100,6 +111,7 @@ public final class BoundEquipService {
         int removed = 0;
         var inv = player.getInventory();
         for (int i = 0; i < inv.getSize(); i++) {
+            if (!isOrphanSweepIndex(i)) continue;
             ItemStack stack = inv.getItem(i);
             if (!RunItemTags.isBoundEquipFor(stack, rewardId)) continue;
             inv.setItem(i, null);
