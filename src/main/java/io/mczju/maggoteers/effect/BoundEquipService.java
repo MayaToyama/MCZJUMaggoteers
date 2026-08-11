@@ -71,9 +71,7 @@ public final class BoundEquipService {
         for (PlayerEffect pe : ps.effects()) {
             if (pe.effect() != Effect.BOUND_EQUIP) continue;
             keepIds.add(pe.id());
-            if (!hasCorrectChest(player, pe.id(), pe.level())) {
-                sync(player, pe);
-            }
+            sync(player, pe);
         }
 
         for (ItemStack stack : allInventoryStacks(player)) {
@@ -96,12 +94,6 @@ public final class BoundEquipService {
         }
         removed += removeInventoryOrphans(player, rewardId);
         return removed;
-    }
-
-    private static boolean hasCorrectChest(Player player, String rewardId, int level) {
-        ItemStack chest = player.getInventory().getChestplate();
-        return RunItemTags.isBoundEquipFor(chest, rewardId)
-                && RunItemTags.readRewardLevel(chest) == level;
     }
 
     private static int removeInventoryOrphans(Player player, String rewardId) {
