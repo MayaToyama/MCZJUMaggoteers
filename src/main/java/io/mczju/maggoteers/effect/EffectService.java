@@ -1,6 +1,5 @@
 package io.mczju.maggoteers.effect;
 
-import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.game.AllyTargeting;
 import io.mczju.maggoteers.game.MaggoteersGame;
@@ -14,7 +13,6 @@ import io.mczju.maggoteers.state.PlayerStateManager;
 import io.mczju.maggoteers.util.GameRegistries;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Particle;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
@@ -110,14 +108,10 @@ public final class EffectService {
             }
         } finally {
             BULK_RESYNC.set(false);
-            // 即使中途抛错（如非法 NamespacedKey），也要按当前上限恢复血量，避免卡在 strip 后的 20/0
-            double maxAfter = maxInst != null ? maxInst.getValue() : 20.0;
-            try {
-                p.setHealth(finalizeHealthAfterResync(healthBefore, maxBefore, maxAfter));
-            } catch (IllegalArgumentException ignored) {
-                // 玩家可能已离线/无效
-            }
         }
+
+        double maxAfter = maxInst != null ? maxInst.getValue() : 20.0;
+        p.setHealth(finalizeHealthAfterResync(healthBefore, maxBefore, maxAfter));
     }
 
     /**
@@ -153,51 +147,6 @@ public final class EffectService {
         if (st == null) return;
         stripDerived(p, st.effects());
         st.clearEffects();
-    }
-
-    /** 剥除单条常驻派生视图（卸载 held 武器时须在从 PlayerState 移除之前调用）。 */
-    static void stripOneDerived(Player p, PlayerEffect e) {
-        if (p == null || e == null || !e.isPermanent()) return;
-        switch (e.effect()) {
-            case ADD_ATTRIBUTE -> {
-                if (!isVirtualAttribute(e)) {
-                    Attribute attr = e.params().get(EffectKeys.ATTR);
-                    if (attr == null) {
-                        String name = e.params().get(EffectKeys.ATTR_NAME);
-                        if (name != null) attr = GameRegistries.attribute(name);
-                    }
-                    if (attr != null) {
-                        AttributeInstance inst = p.getAttribute(attr);
-                        if (inst != null) {
-                            String prefix = AttributeModifierKeys.sanitizeKeyPath(e.id());
-                            for (AttributeModifier m : new ArrayList<>(inst.getModifiers())) {
-                                if (m.getKey().namespace().equals(MaggoteersPlugin.getInstance().getName().toLowerCase())
-                                        && m.getKey().value().startsWith(prefix)) {
-                                    inst.removeModifier(m);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            case ADD_POTION -> {
-                PotionEffectType type = e.params().get(EffectKeys.POTION);
-                if (type != null) p.removePotionEffect(type);
-            }
-            default -> { }
-        }
-    }
-
-    /** 常驻 ADD_POTION 施加时长：held 用 params.duration_ticks（0→1s 刷新）；STAT 奖励仍 30s。 */
-    static int resolvePotionDurationTicks(PlayerEffect e) {
-        Integer configured = e.params().get(EffectKeys.DURATION_TICKS);
-        if (configured != null && configured > 0) {
-            return configured;
-        }
-        if (e.id() != null && e.id().startsWith(WeaponHeldService.HELD_PREFIX)) {
-            return 20; // duration_ticks:0 = 手持期间每 1s 刷新
-        }
-        return 20 * 30;
     }
 
     /** 剥除本插件施加的派生视图：插件命名空间下的 AttributeModifier + 常驻 ADD_POTION 药水。 */
@@ -451,17 +400,9 @@ public final class EffectService {
                 double dmg = baseDmg * PlayerCombatStats.magicDamageMultiplier(game, p.getUniqueId());
                 org.bukkit.Location origin = TriggerContext.resolveOrigin(p, useCtx);
                 if (origin == null || origin.getWorld() == null) return false;
-                Particle ringParticle = weaponFx != null && weaponFx.particle() != null
-                        ? weaponFx.particle() : Particle.FLAME;
-                io.mczju.maggoteers.util.ParticleEffects.playAreaRing(
-                        origin.getWorld(), origin, radius, ringParticle,
-                        Math.max(32, (int) (radius * 12)));
+                io.mczju.maggoteers.util.ParticleEffects.playAreaRing(origin.getWorld(), origin, radius);
                 List<LivingEntity> targets = TargetResolver.collect(game, p, origin, radius, effect, params);
                 List<BuffPotionSpec> potions = params.get(EffectKeys.POTIONS);
-                EffectContext markFxCtx = params.get(EffectKeys.MARK_FX);
-                MagicUseFx markFx = markFxCtx == null ? null
-                        : MagicFxBuilder.fromContext(markFxCtx, MagicUseFx.defaults());
-                int markDurationSec = params.getOrDefault(EffectKeys.MARK_DURATION_SEC, 0);
                 Runnable action = () -> {
                     for (LivingEntity le : targets) {
                         le.damage(dmg, p);
@@ -469,9 +410,6 @@ public final class EffectService {
                             for (BuffPotionSpec spec : potions) {
                                 PotionMerge.applyIfNeeded(le, spec.type(), spec.amp(), spec.durationTicks());
                             }
-                        }
-                        if (markFx != null && markDurationSec > 0 && le.isValid() && !le.isDead()) {
-                            MagicFxPresets.followMarkAbove(le, markFx, markDurationSec);
                         }
                     }
                 };
@@ -662,7 +600,7 @@ public final class EffectService {
         MagicUseFx fx = weaponFx != null ? weaponFx : MagicFxConfig.forWeapon(null);
         fx = new MagicUseFx(fx.sound(), fx.soundVolume(), fx.soundPitch(), fx.preset(), fx.particle(),
                 fx.radius(), length, fx.density(), fx.rippleRings(), fx.expandSteps(), fx.spiralTicks());
-        if (weaponFx == null && fx.sound() != null) {
+        if (fx.sound() != null) {
             p.playSound(eye, fx.sound(), fx.soundVolume(), fx.soundPitch());
         }
         MagicFxPresets.playBeamAlong(eye, dir, length, fx);
@@ -729,8 +667,8 @@ public final class EffectService {
                 ? AttributeModifier.Operation.MULTIPLY_SCALAR_1
                 : AttributeModifier.Operation.ADD_NUMBER;
         double maxBefore = attr == Attribute.MAX_HEALTH ? inst.getValue() : 0;
-        // D5：唯一 key = id + level + 自增序号；sanitize：ability:/held: 等 id 含冒号非法
-        NamespacedKey key = AttributeModifierKeys.pluginKey(MaggoteersPlugin.getInstance(),
+        // D5：唯一 key = id + level + 自增序号
+        NamespacedKey key = new NamespacedKey(MaggoteersPlugin.getInstance(),
                 e.id() + "_" + e.level() + "_" + KEY_SEQ.incrementAndGet());
         inst.addModifier(new AttributeModifier(key, value, operation));
         if (attr == Attribute.MAX_HEALTH && !BULK_RESYNC.get()) {
@@ -744,11 +682,11 @@ public final class EffectService {
         int amp = e.params().getOrDefault(EffectKeys.AMP, 0);
         // D1 净化技巧：amp >= 255 视为"免疫该效果"（0s 255 级抵消）——Paper 实测若无效，靠 PurifyListener fallback
         if (amp >= 255) {
-            p.addPotionEffect(new PotionEffect(type, resolvePotionDurationTicks(e), 255, false, false, false));
+            p.addPotionEffect(new PotionEffect(type, 20 * 30, 255, false, false, false));
             return;
         }
-        int duration = resolvePotionDurationTicks(e);
-        p.addPotionEffect(new PotionEffect(type, duration, amp, false, false, true));
+        // 常驻药水：用足够长时长模拟 infinite（定期由 ON_TICK_1S 刷新，见 Task 5）；这里先施加长时长
+        p.addPotionEffect(new PotionEffect(type, 20 * 30, amp, false, false, true));
     }
 
     /**
@@ -768,21 +706,17 @@ public final class EffectService {
                 int amp = e.params().getOrDefault(EffectKeys.AMP, 0);
                 if (amp >= 255) {
                     // D1 净化技巧：amp >= 255 → 0s 255 级抵消（PurifyListener fallback）
-                    p.addPotionEffect(new PotionEffect(type, resolvePotionDurationTicks(e), 255, false, false, false));
+                    p.addPotionEffect(new PotionEffect(type, 20 * 30, 255, false, false, false));
                 } else {
-                    p.addPotionEffect(new PotionEffect(type, resolvePotionDurationTicks(e), amp, false, false, true));
+                    p.addPotionEffect(new PotionEffect(type, 20 * 30, amp, false, false, true));
                 }
             }
         }
     }
 
     private static MaggoteersGame currentGame(Player p) {
-        if (p == null) return null;
-        MaggoteersGame bound = PlayerStateManager.gameForPlayer(p.getUniqueId());
-        if (bound != null) return bound;
         var pe = new com.github.mczjuops.mczjugamecore.player.PlayerExt(p);
-        AbstractGame g = pe.getGame();
-        return g instanceof MaggoteersGame mg ? mg : null;
+        return pe.isInGame() ? (MaggoteersGame) pe.getGame() : null;
     }
 
     private EffectService() {}
