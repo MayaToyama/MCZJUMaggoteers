@@ -17,5 +17,7 @@ public enum Effect {
     /** params: item (IC id), amount */
     GRANT_ITEM,
     /** params: entity, anchor, cleanup, attributes, tamed, projectile, friendly_fire */
-    SUMMON
+    SUMMON,
+    /** Bound equipment view; params: slot, items_by_level. Permanent only. */
+    BOUND_EQUIP
 }

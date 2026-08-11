@@ -37,6 +37,8 @@ public final class EffectKeys {
     /** 携带者脚下每秒播放的粒子（preset/particle/radius/density 等）。 */
     public static final EffectKey<EffectContext> CARRIER_FX = new EffectKey<>("carrier_fx");
     public static final EffectKey<EffectContext> MARK_FX = new EffectKey<>("mark_fx");
+    /** mark_fx 跟随目标播放的秒数（DAMAGE_AREA 等）。 */
+    public static final EffectKey<Integer> MARK_DURATION_SEC = new EffectKey<>("mark_duration_sec");
     public static final EffectKey<EffectContext> FX = new EffectKey<>("fx");
     public static final EffectKey<String> MARK_ON = new EffectKey<>("mark_on");
     public static final EffectKey<java.util.List<BuffPotionSpec>> POTIONS = new EffectKey<>("potions");
@@ -50,5 +52,8 @@ public final class EffectKeys {
     public static final EffectKey<Boolean> TAMED = new EffectKey<>("tamed");
     public static final EffectKey<Boolean> FRIENDLY_FIRE = new EffectKey<>("friendly_fire");
     public static final EffectKey<EffectContext> PROJECTILE = new EffectKey<>("projectile");
+    public static final EffectKey<String> SLOT = new EffectKey<>("slot");
+    public static final EffectKey<java.util.Map<Integer, String>> ITEMS_BY_LEVEL =
+            new EffectKey<>("items_by_level");
     private EffectKeys() {}
 }

@@ -31,6 +31,7 @@ public final class EffectParamsParser {
                 case "include_self" -> ctx.put(EffectKeys.INCLUDE_SELF, sec.getBoolean(k));
                 case "potions" -> ctx.put(EffectKeys.POTIONS, BuffPotionParser.parseList(sec.getList(k)));
                 case "mark_fx" -> ctx.put(EffectKeys.MARK_FX, parseFxContext(sec.getConfigurationSection(k)));
+                case "mark_duration_sec" -> ctx.put(EffectKeys.MARK_DURATION_SEC, sec.getInt(k));
                 case "fx" -> ctx.put(EffectKeys.FX, parseFxContext(sec.getConfigurationSection(k)));
                 case "carrier_fx" -> ctx.put(EffectKeys.CARRIER_FX, parseFxContext(sec.getConfigurationSection(k)));
                 case "mark_on" -> ctx.put(EffectKeys.MARK_ON, String.valueOf(v).toLowerCase(Locale.ROOT));
@@ -53,6 +54,9 @@ public final class EffectParamsParser {
                 case "potion" -> putPotion(ctx, v);
                 case "amp" -> ctx.put(EffectKeys.AMP, sec.getInt(k));
                 case "duration_ticks" -> ctx.put(EffectKeys.DURATION_TICKS, sec.getInt(k));
+                case "slot" -> ctx.put(EffectKeys.SLOT, String.valueOf(v).toUpperCase(Locale.ROOT));
+                case "items_by_level" -> ctx.put(EffectKeys.ITEMS_BY_LEVEL,
+                        parseItemsByLevel(sec.getConfigurationSection(k)));
                 default -> { }
             }
         }
@@ -130,5 +134,16 @@ public final class EffectParamsParser {
         if (sec.contains("speed")) proj.put(EffectKeys.PROJECTILE_SPEED, sec.getDouble("speed"));
         if (sec.contains("toward")) proj.put(EffectKeys.PROJECTILE_TOWARD, sec.getString("toward", "look"));
         return proj;
+    }
+
+    private static Map<Integer, String> parseItemsByLevel(ConfigurationSection sec) {
+        Map<Integer, String> out = new HashMap<>();
+        if (sec == null) return Map.of();
+        for (String k : sec.getKeys(false)) {
+            try {
+                out.put(Integer.parseInt(k), sec.getString(k));
+            } catch (NumberFormatException ignored) { }
+        }
+        return Map.copyOf(out);
     }
 }

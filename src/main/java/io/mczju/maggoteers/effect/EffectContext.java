@@ -31,6 +31,10 @@ public final class EffectContext {
         if (pots != null) {
             c.put(EffectKeys.POTIONS, java.util.List.copyOf(pots));
         }
+        java.util.Map<Integer, String> itemsByLevel = c.get(EffectKeys.ITEMS_BY_LEVEL);
+        if (itemsByLevel != null) {
+            c.put(EffectKeys.ITEMS_BY_LEVEL, java.util.Map.copyOf(itemsByLevel));
+        }
         return c;
     }
 
