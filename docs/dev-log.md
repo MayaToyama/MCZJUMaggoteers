@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-08-11 — BOUND_EQUIP 保护胸甲内容与 GUI 预览
+
+- **做了什么**：`RewardOptionIcons` STAT 分支对 `BOUND_EQUIP` 走 `BoundEquipParams.previewLevel` + `ItemService.createItem`（不经 collectibles）；`items/maggoteers.yml` 新增 `prot_chest_l1`–`l8`（保护 II–XVI、0 护甲/韧性）；`rewards.yml` `act1_strong` 池加入 `prot_chest` STAT（`UPGRADE_LEVEL` max 8）；reference Effect 表补 `BOUND_EQUIP` 行。
+- **原因**：spec `2026-08-11-bound-equip-protection-design.md` Task 6——首条可玩 YAML 内容与 3 选 1 预览。
+- **决策**：强怪池投放（Act1 中后期）；无护符映射；`unique: true` 仅首抽去重，升级靠 `RewardDrawVisibility` UPGRADE 路径。
+- **遗留**：服内手测绑定/冲突销毁/槽位锁；其他层池是否追加同类奖励待内容迭代。
+
+---
+
 ## 2026-08-08 — DISABLE_AI Effect（Phase 1）
 
 - **做了什么**：`Effect.DISABLE_AI`；`MobAiLockRegistry`（longer-wins、`EntityRemoveEvent` 卸载 restore、1-tick 扫描）；`DisableAiTargets`（enemies|hit_target|attacker + 跳过 Player/`SummonRegistry`）；`executeEffect`/`executeMagicEffect` 接线；武器 `use_ability` 与 STAT `RewardLoadValidator` 加载矩阵（含 `ON_KILL`+`hit_target` warn+skip）。

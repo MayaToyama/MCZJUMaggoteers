@@ -28,6 +28,7 @@
 | `affixes` | 原生词缀 id（`affixes.yml`） |
 | `infernal` | `{ level: 1–100, affixes: [IM技能…] }`；与原生独立、不继承 |
 | `delay` | 秒，步前等待 |
+| `repeat` | 可选，默认 1：该 step 按 `delay` 再刷几次（与 strategy 顶层 `repeat` 不同；顶层是整份 steps 再跑一轮） |
 | `equipment` / `on_death` / `passengers` | 见下 |
 
 ### coeff
@@ -127,6 +128,7 @@ option.upgrade_max (>0) → pool.upgrade_level_cap (>0) → config rewards.upgra
 | `AURA` | **禁** trigger/expiry | `radius>0`, `targets`, `grant: { effect, … }`, 可选 `carrier_fx`/`mark_*`/`grant_pulse_sec` |
 | `GRANT_ITEM` | **须 trigger** | `item`（IC id）, `count` 或 `amount` |
 | `SUMMON` | **须 trigger** | 见 SUMMON params |
+| `BOUND_EQUIP` | **禁** trigger/expiry | `slot: CHEST`（v1）, `items_by_level` 1..`upgrade_max`；须 `stack: UPGRADE_LEVEL` + `upgrade_max`；无 `collectibles.yml`；GUI 预览走 `items_by_level`；`unique: true` **不**阻止 UPGRADE 重抽 |
 
 #### 示例
 

@@ -1,7 +1,12 @@
 package io.mczju.maggoteers.reward;
 
+import io.mczju.maggoteers.effect.BoundEquipParams;
+import io.mczju.maggoteers.effect.Effect;
+import io.mczju.maggoteers.effect.PlayerEffect;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.item.ItemService;
+import io.mczju.maggoteers.state.PlayerState;
+import io.mczju.maggoteers.state.PlayerStateManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -40,6 +45,9 @@ public final class RewardOptionIcons {
             case WEAPON, SUPPLY -> ItemService.createItem(opt.item(), 1)
                     .orElse(new ItemStack(Material.PAPER));
             case STAT -> {
+                if (opt.effect() == Effect.BOUND_EQUIP) {
+                    yield boundEquipPreview(opt, viewer, game).orElse(fallbackPaper(opt));
+                }
                 if (game != null) {
                     yield CollectibleService.preview(opt.id(), viewer, game)
                             .orElse(fallbackPaper(opt));
@@ -49,6 +57,23 @@ public final class RewardOptionIcons {
             }
             case BUNDLE -> fallbackPaper(opt);
         };
+    }
+
+    private static Optional<ItemStack> boundEquipPreview(
+            RewardOption opt, Player viewer, MaggoteersGame game) {
+        int owned = 0;
+        int upgradeMax = Math.max(1, opt.upgradeMax());
+        if (viewer != null && game != null) {
+            PlayerState ps = PlayerStateManager.get(game, viewer.getUniqueId());
+            if (ps != null) {
+                owned = ps.effects().stream().filter(e -> e.id().equals(opt.id()))
+                        .mapToInt(PlayerEffect::level).max().orElse(0);
+            }
+        }
+        Integer ownedOrNull = owned > 0 ? owned : null;
+        int level = BoundEquipParams.previewLevel(ownedOrNull, upgradeMax);
+        return BoundEquipParams.itemIdForLevel(opt.params(), level)
+                .flatMap(id -> ItemService.createItem(id, 1));
     }
 
     public static ItemStack fallbackPaper(RewardOption opt) {
