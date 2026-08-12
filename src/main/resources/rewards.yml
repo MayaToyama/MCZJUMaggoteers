@@ -1922,8 +1922,7 @@ reward_pools:
         effect: ADD_POTION
         params:
           potion: WITHER
-          amp: 255
-          duration_ticks: 0
+          immunity: true
         unique: true
         stack: IGNORE
       -
@@ -1933,8 +1932,7 @@ reward_pools:
         effect: ADD_POTION
         params:
           potion: POISON
-          amp: 255
-          duration_ticks: 0
+          immunity: true
         unique: true
         stack: IGNORE
       -
@@ -1944,8 +1942,7 @@ reward_pools:
         effect: ADD_POTION
         params:
           potion: SLOWNESS
-          amp: 255
-          duration_ticks: 0
+          immunity: true
         unique: true
         stack: IGNORE
       -

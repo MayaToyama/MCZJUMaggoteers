@@ -33,7 +33,7 @@ maggoteers:wolf_whistle:
   customName: "<gray>美味的骨头"
   lore:
     - "<gray>右键消耗，原地召唤一条已驯服的狼"
-    - "<dark_gray>"
+    - "<dark_gray>小心别让你的手被咬了"
   maxStackSize: 8
   enchantments:
     - minecraft:unbreaking: 10
@@ -58,8 +58,7 @@ maggoteers:anacreon:
   material: COPPER_SWORD
   customName: "<gold>阿纳克吕翁"
   lore:
-    - "<gray>9伤害，亡灵杀手VI，节肢杀手VI，穿刺VI"
-    - "<dark_gray>"
+    - "<dark_gray>只对凡人仁慈."
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -84,8 +83,8 @@ maggoteers:art_tyrant:
   material: BOW
   customName: "<light_purple>艺术暴君"
   lore:
-    - "<gray>手持时速度+10，右键释放伤害光束，基础伤害10，冷却1.5s"
-    - "<dark_gray>"
+    - "<gray>铳械,手持时速度+10，基础伤害10，冷却1.5s"
+    - "<dark_gray>塔塔离开的时候,一定很痛苦......"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -118,8 +117,7 @@ maggoteers:bible:
   material: WRITABLE_BOOK
   customName: "<white>圣经"
   lore:
-    - "<gray>亡灵杀手20"
-    - "<dark_gray>"
+    - "<dark_gray>分量足够惩戒邪恶的亡灵."
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -135,8 +133,8 @@ maggoteers:blast_unit:
   material: IRON_SWORD
   customName: "<green>爆破单元"
   lore:
-    - "<gray>10伤害，右键治疗范围内玩家14点生命值，冷却20s"
-    - "<dark_gray>"
+    - "<gray>右键治疗5格半径内玩家14点生命值，冷却20s"
+    - "<dark_gray>为什么北进重工的医疗干员要装配爆破施术单元啊?"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -169,8 +167,8 @@ maggoteers:bleed_knife:
   material: IRON_INGOT
   customName: "<red>放血小刀"
   lore:
-    - "<gray>右键扣除自己1点生命值，没有冷却"
-    - "<dark_gray>"
+    - "<gray>右键扣除自己1点生命值"
+    - "<dark_gray>感觉不如去咬打火机"
   maxStackSize: 1
   enchantments:
     - minecraft:unbreaking: 10
@@ -197,8 +195,8 @@ maggoteers:boss_golden_apple:
   material: GOLDEN_APPLE
   customName: "<gold>金苹果"
   lore:
-    - "<gray>右键消耗，恢复1000点生命值"
-    - "<dark_gray>"
+    - "<gray>右键消耗，恢复全部的生命值"
+    - "<dark_gray>祝你好牙口"
   maxStackSize: 4
   enchantments:
     - minecraft:unbreaking: 10
@@ -224,8 +222,7 @@ maggoteers:burn_blade:
   material: IRON_SWORD
   customName: "<red>一刀一刀燃烧刀"
   lore:
-    - "<gray>8伤害，火焰附加V，攻击速度为2.0"
-    - "<dark_gray>"
+    - "<dark_gray>太痛苦了!太痛苦了!"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -252,8 +249,8 @@ maggoteers:cat_hammer:
   material: MACE
   customName: "<light_purple>充气猫猫锤"
   lore:
-    - "<gray>右键获得0.2s漂浮V，冷却5s"
-    - "<dark_gray>"
+    - "<gray>右键可以短暂飘起一段时间，冷却5s"
+    - "<dark_gray>你们不要打了喵!一点伤害都没有喵!"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -278,8 +275,8 @@ maggoteers:cataclysm:
   material: OBSIDIAN
   customName: "<dark_red>灾变核心"
   lore:
-    - "<gray>攻击到敌人时扣除自己1点生命值，右键对半径8格内的所有敌人造成一次20点伤害，并使其沉默，冷却40s"
-    - "<dark_gray>"
+    - "<gray>右键对半径8格内的所有敌人造成一次20点伤害，并使其沉默，冷却60s"
+    - "<dark_gray>建议搭配机械克苏恩使用"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -297,31 +294,7 @@ maggoteers:cataclysm:
       radius: 8.0
       targets: enemies
       enemy_scope: tracked
-      potions:
-        -
-          potion: STRENGTH
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: SPEED
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: INVISIBILITY
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: FIRE_RESISTANCE
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: RESISTANCE
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: REGENERATION
-          amp: 255
-          duration_ticks: 1
+      clear_potions: [STRENGTH, SPEED, INVISIBILITY, FIRE_RESISTANCE, RESISTANCE, REGENERATION]
   useCooldown:
     cooldownGroup: "maggoteers:cataclysm"
     seconds: 40
@@ -341,7 +314,6 @@ maggoteers:class_guard_spear:
   material: IRON_SPEAR
   customName: "<yellow>初心者长矛"
   lore:
-    - "<gray>10伤害，1攻击速度，+0.5触及范围"
     - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
@@ -570,31 +542,8 @@ maggoteers:emp:
       radius: 8.0
       targets: enemies
       enemy_scope: tracked
+      clear_potions: [STRENGTH, SPEED, INVISIBILITY, FIRE_RESISTANCE, RESISTANCE, REGENERATION]
       potions:
-        -
-          potion: STRENGTH
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: SPEED
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: INVISIBILITY
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: FIRE_RESISTANCE
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: RESISTANCE
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: REGENERATION
-          amp: 255
-          duration_ticks: 1
         -
           potion: SLOWNESS
           amp: 9
@@ -910,31 +859,8 @@ maggoteers:holy_water:
     effect: BUFF_AREA
     params:
       targets: self
+      clear_potions: [WITHER, SLOWNESS, WEAKNESS, BLINDNESS, POISON, DARKNESS]
       potions:
-        -
-          potion: WITHER
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: SLOWNESS
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: WEAKNESS
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: BLINDNESS
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: POISON
-          amp: 255
-          duration_ticks: 1
-        -
-          potion: DARKNESS
-          amp: 255
-          duration_ticks: 1
         -
           potion: INSTANT_HEALTH
           amp: 1
@@ -1348,31 +1274,8 @@ maggoteers:phantasm:
   use_ability:
     cooldown_sec: 20
     effect: ADD_POTION
+    self_clear_potions: [WITHER, SLOWNESS, WEAKNESS, BLINDNESS, POISON, DARKNESS]
     self_potions:
-      -
-        potion: WITHER
-        amp: 255
-        duration_ticks: 1
-      -
-        potion: SLOWNESS
-        amp: 255
-        duration_ticks: 1
-      -
-        potion: WEAKNESS
-        amp: 255
-        duration_ticks: 1
-      -
-        potion: BLINDNESS
-        amp: 255
-        duration_ticks: 1
-      -
-        potion: POISON
-        amp: 255
-        duration_ticks: 1
-      -
-        potion: DARKNESS
-        amp: 255
-        duration_ticks: 1
       -
         potion: INSTANT_DAMAGE
         amp: 0
