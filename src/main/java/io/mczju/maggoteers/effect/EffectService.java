@@ -301,22 +301,38 @@ public final class EffectService {
     /** Weapon entry: FX already played by {@link io.mczju.maggoteers.item.interact.ConfigMagicHandler}. */
     public static boolean executeAbility(Player p, MaggoteersGame game, ItemAbility ability) {
         if (p == null || game == null || ability == null) return false;
-        applySelfPotions(p, ability.selfPotions());
+        boolean didSide = false;
+        List<org.bukkit.potion.PotionEffectType> selfClear = ability.selfClearPotions();
+        if (selfClear != null && !selfClear.isEmpty()) {
+            PotionClear.apply(p, selfClear);
+            didSide = true;
+        }
+        List<BuffPotionSpec> selfPots = ability.selfPotions();
+        if (selfPots != null && !selfPots.isEmpty()) {
+            applySelfPotions(p, selfPots);
+            didSide = true;
+        }
+        boolean main;
         if (ability.effect() == Effect.ADD_ATTRIBUTE) {
-            return applyWeaponTempEffect(p, game, ability);
-        }
-        if (ability.effect() == Effect.ADD_POTION) {
+            main = applyWeaponTempEffect(p, game, ability);
+        } else if (ability.effect() == Effect.ADD_POTION) {
             if (ability.expiryTrigger() != null) {
-                return applyWeaponTempEffect(p, game, ability);
+                main = applyWeaponTempEffect(p, game, ability);
+            } else {
+                int dur = ability.params().getOrDefault(EffectKeys.DURATION_TICKS, 0);
+                if (dur > 0) {
+                    main = applyInstantPotion(p, ability.params());
+                } else {
+                    main = false;
+                }
             }
-            int dur = ability.params().getOrDefault(EffectKeys.DURATION_TICKS, 0);
-            if (dur > 0) {
-                return applyInstantPotion(p, ability.params());
-            }
-            return false;
+        } else {
+            main = executeMagicEffect(p, game, ability.effect(), ability.params(), ability.fx(),
+                    TriggerContext.empty(), true);
         }
-        return executeMagicEffect(p, game, ability.effect(), ability.params(), ability.fx(),
-                TriggerContext.empty(), true);
+        boolean sideConfigured = (selfClear != null && !selfClear.isEmpty())
+                || (selfPots != null && !selfPots.isEmpty());
+        return main || (sideConfigured && didSide);
     }
 
     private static void applySelfPotions(Player p, java.util.List<BuffPotionSpec> potions) {
@@ -330,6 +346,7 @@ public final class EffectService {
         if (p == null || params == null) return false;
         PotionEffectType type = params.get(EffectKeys.POTION);
         if (type == null) return false;
+        if (PotionImmunity.isImmune(p, type)) return false;
         int amp = params.getOrDefault(EffectKeys.AMP, 0);
         int dur = params.getOrDefault(EffectKeys.DURATION_TICKS, 0);
         if (dur <= 0) return false;
@@ -378,6 +395,10 @@ public final class EffectService {
             case ADD_POTION -> {
                 PotionEffectType type = e.params().get(EffectKeys.POTION);
                 if (type == null) return;
+                if (Boolean.TRUE.equals(e.params().get(EffectKeys.IMMUNITY))) {
+                    return;
+                }
+                if (PotionImmunity.isImmune(p, type)) return;
                 int amp = e.params().getOrDefault(EffectKeys.AMP, 0);
                 int dur = e.params().getOrDefault(EffectKeys.DURATION_TICKS, 0);
                 if (dur > 0) p.addPotionEffect(new PotionEffect(type, dur, amp, false, true));
@@ -422,10 +443,15 @@ public final class EffectService {
                 io.mczju.maggoteers.util.ParticleEffects.playAreaRing(origin.getWorld(), origin, radius);
                 List<LivingEntity> targets = TargetResolver.collect(game, p, origin, radius, effect, params);
                 List<BuffPotionSpec> potions = params.get(EffectKeys.POTIONS);
+                List<PotionEffectType> clears = params.get(EffectKeys.CLEAR_POTIONS);
                 Runnable action = () -> {
                     for (LivingEntity le : targets) {
                         le.damage(dmg, p);
-                        if (potions != null && !potions.isEmpty() && le.isValid() && !le.isDead()) {
+                        if (!le.isValid() || le.isDead()) {
+                            continue;
+                        }
+                        PotionClear.apply(le, clears);
+                        if (potions != null && !potions.isEmpty()) {
                             for (BuffPotionSpec spec : potions) {
                                 PotionMerge.applyIfNeeded(le, spec.type(), spec.amp(), spec.durationTicks());
                             }
@@ -554,7 +580,10 @@ public final class EffectService {
             }
         }
         List<BuffPotionSpec> potions = params.get(EffectKeys.POTIONS);
-        if (potions == null || potions.isEmpty()) return;
+        List<PotionEffectType> clears = params.get(EffectKeys.CLEAR_POTIONS);
+        boolean hasPotions = potions != null && !potions.isEmpty();
+        boolean hasClear = clears != null && !clears.isEmpty();
+        if (!hasPotions && !hasClear) return;
 
         List<LivingEntity> targets = BuffAreaTargets.resolve(game, p, params, ctx);
         EffectContext markFxCtx = params.get(EffectKeys.MARK_FX);
@@ -564,8 +593,11 @@ public final class EffectService {
         for (LivingEntity le : targets) {
             if (!le.isValid()) continue;
             if (!le.isDead()) {
-                for (BuffPotionSpec spec : potions) {
-                    PotionMerge.applyIfNeeded(le, spec.type(), spec.amp(), spec.durationTicks());
+                PotionClear.apply(le, clears);
+                if (hasPotions) {
+                    for (BuffPotionSpec spec : potions) {
+                        PotionMerge.applyIfNeeded(le, spec.type(), spec.amp(), spec.durationTicks());
+                    }
                 }
             }
             if (weaponPath && markFx != null) {
@@ -698,20 +730,22 @@ public final class EffectService {
     private static void applyPotionPermanent(Player p, PlayerEffect e) {
         PotionEffectType type = e.params().get(EffectKeys.POTION);
         if (type == null) return;
-        int amp = e.params().getOrDefault(EffectKeys.AMP, 0);
-        // D1 净化技巧：amp >= 255 视为"免疫该效果"（0s 255 级抵消）——Paper 实测若无效，靠 PurifyListener fallback
-        if (amp >= 255) {
-            p.addPotionEffect(new PotionEffect(type, 20 * 30, 255, false, false, false));
+        if (Boolean.TRUE.equals(e.params().get(EffectKeys.IMMUNITY))) {
+            if (PotionImmunity.matchesImmunityEffect(e, type)) {
+                p.removePotionEffect(type);
+            }
             return;
         }
-        // 常驻药水：用足够长时长模拟 infinite（定期由 ON_TICK_1S 刷新，见 Task 5）；这里先施加长时长
+        int amp = e.params().getOrDefault(EffectKeys.AMP, 0);
+        if (PotionImmunity.isImmune(p, type)) {
+            return;
+        }
+        // Permanent potions: long duration refreshed by ON_TICK_1S
         p.addPotionEffect(new PotionEffect(type, 20 * 30, amp, false, false, true));
     }
 
     /**
-     * 刷新常驻药水派生视图（由 GameplayTickListener 每秒调）。
-     * 对 permanent + ADD_POTION 的效果重新施加 30s PotionEffect，
-     * 使其在过期前被刷新，从而真正"永久"。
+     * Refresh permanent potion derived view (called each second by GameplayTickListener).
      */
     public static void refreshPermanentPotions(Player p) {
         io.mczju.maggoteers.game.MaggoteersGame game = currentGame(p);
@@ -722,13 +756,17 @@ public final class EffectService {
             if (e.isPermanent() && e.effect() == Effect.ADD_POTION) {
                 PotionEffectType type = e.params().get(EffectKeys.POTION);
                 if (type == null) continue;
-                int amp = e.params().getOrDefault(EffectKeys.AMP, 0);
-                if (amp >= 255) {
-                    // D1 净化技巧：amp >= 255 → 0s 255 级抵消（PurifyListener fallback）
-                    p.addPotionEffect(new PotionEffect(type, 20 * 30, 255, false, false, false));
-                } else {
-                    p.addPotionEffect(new PotionEffect(type, 20 * 30, amp, false, false, true));
+                if (Boolean.TRUE.equals(e.params().get(EffectKeys.IMMUNITY))) {
+                    if (PotionImmunity.matchesImmunityEffect(e, type)) {
+                        p.removePotionEffect(type);
+                    }
+                    continue;
                 }
+                int amp = e.params().getOrDefault(EffectKeys.AMP, 0);
+                if (PotionImmunity.isImmune(p, type)) {
+                    continue;
+                }
+                p.addPotionEffect(new PotionEffect(type, 20 * 30, amp, false, false, true));
             }
         }
     }

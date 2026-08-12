@@ -24,6 +24,9 @@ public final class PotionMerge {
     public static boolean applyIfNeeded(LivingEntity target, PotionEffectType type, int amp, int durationTicks) {
         if (target == null || type == null || durationTicks <= 0) return false;
         if (!target.isValid() || target.isDead()) return false;
+        if (target instanceof org.bukkit.entity.Player pl && PotionImmunity.isImmune(pl, type)) {
+            return false;
+        }
         PotionEffect existing = target.getPotionEffect(type);
         int curAmp = existing == null ? -1 : existing.getAmplifier();
         int curTicks = existing == null ? 0 : existing.getDuration();
