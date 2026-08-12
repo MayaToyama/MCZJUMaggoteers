@@ -30,17 +30,22 @@ public final class ConfigMagicHandler implements ItemUseHandler {
         if (ability == null) {
             return;
         }
-        if (!CooldownService.tryUse(player, stack, itemId, ability.cooldownSec())) {
+        if (CooldownService.onCooldown(player.getUniqueId(), itemId)) {
             player.sendMessage(Component.text("技能冷却中…", NamedTextColor.GRAY));
             return;
         }
+        if (!(game instanceof MaggoteersGame mg)) {
+            return;
+        }
+        boolean success = EffectService.executeAbility(player, mg, ability);
+        if (!success) {
+            return;
+        }
+        CooldownService.tryUse(player, stack, itemId, ability.cooldownSec());
         MagicFxService.play(player, resolveCastFx(ability),
                 MagicFxConfig.shouldPlayCastAreaRing(ability.effect(), ability.params()));
-        if (game instanceof MaggoteersGame mg) {
-            boolean success = EffectService.executeAbility(player, mg, ability);
-            if (ability.consume() && success) {
-                spendOneFromMainHand(player);
-            }
+        if (ability.consume()) {
+            spendOneFromMainHand(player);
         }
     }
 
