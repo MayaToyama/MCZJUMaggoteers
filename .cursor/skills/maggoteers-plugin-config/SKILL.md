@@ -9,7 +9,7 @@ description: >-
 
 # Maggoteers 插件配置编写
 
-> 与代码对齐：Paper 26.2；奖励含 **GRANT_ITEM / SUMMON / BUFF_AREA / DISABLE_AI / AURA / MAGIC_DAMAGE / BUNDLE**；武器 **use_ability + held_effects**；升级上限 **option → pool → config default**。完整字段见 [reference.md](reference.md)。
+> 与代码对齐：Paper 26.2；奖励含 **GRANT_ITEM / SUMMON / BUFF_AREA / DISABLE_AI / AURA / MAGIC_DAMAGE / BUNDLE / BOUND_EQUIP**；药水 **clear_potions / self_clear_potions / immunity**（禁假 amp-255）；武器 **use_ability + held_effects**；升级上限 **option → pool → config default**。完整字段见 [reference.md](reference.md)。
 
 ## 先读什么
 

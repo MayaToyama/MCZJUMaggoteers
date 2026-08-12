@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-08-12 — 药水清除 / 局内免疫（退役假 amp-255）
+
+- **做了什么**：实现真实 `clear_potions` / `self_clear_potions`（`removePotionEffect`）与奖励 `ADD_POTION` + `immunity: true`（事件拦 ADDED/CHANGED + PurifyListener 伤）；加载硬失败假 255；迁移 `cataclysm`/`emp`/`holy_water`/`phantasm` 与 `a3w_imm_*`；部署默认同步 `items/*.yml`。
+- **原因**：假 amp-255 经 PotionMerge 会变成真实永久/1-tick 高等级药水，沉默/净化/免疫语义全错。
+- **决策**：不新增 Effect 枚举；`DAMAGE_AREA` 固定 damage→clear→potions；CD 仅成功计次；服上 YAML 靠显式同步（`saveResource(false)` 不覆盖）。
+- **遗留**：服内手测沉默/净化/免疫与过期假 YAML 硬失败；`affixes.yml` amp 255 仍是怪物词缀（本任务未改）。
+
+---
+
 ## 2026-08-12 — 近战触及无限：stripDerived 漏剥 ENTITY_INTERACTION_RANGE
 
 - **做了什么**：根因确认后修复——`EffectService.stripDerived` / `AuraService.stripAuraDerived` 改为经 `DerivedViewAttributes` 剥离完整属性列表（含 `entity_interaction_range`）；`EffectService.resync` 在 `WeaponHeldService.sync` 之后**始终** `resyncDerived`（主手未变时 sync early-return 会跳过派生重算）。

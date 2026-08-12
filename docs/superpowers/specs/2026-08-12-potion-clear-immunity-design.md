@@ -1,6 +1,6 @@
 # Potion Clear & Immunity Design (Silence / Purify)
 
-> **Status:** Approved (v1.1)
+> **Status:** Implemented (v1.1)
 > **Date:** 2026-08-12
 > **Revision:** v1.1 — blocking review: deployed YAML hard-fail, clear-only BUFF_AREA, DAMAGE_AREA order, immunity type/lifecycle, listener/tests
 > **Replaces:** D1 `ADD_POTION` amp>=255 cancel trick (CLAUDE.md §10.2 / Plan 6 Task 6)

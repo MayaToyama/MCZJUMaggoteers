@@ -119,11 +119,11 @@ option.upgrade_max (>0) → pool.upgrade_level_cap (>0) → config rewards.upgra
 |--------|----------|--------|
 | `ADD_ATTRIBUTE` | — | `attr`, `op`, `value`；虚拟 `MAGIC_DAMAGE` **必须** `op: PERCENT`；触发型写 `{id}:grant` |
 | `ADD_ATTRIBUTE` + `op: REVOKE_GRANTS` | 须 trigger | `source_id`（无 attr/value）；bundle 内须指向同 bundle grant id |
-| `ADD_POTION` | — | `potion`, `amp`, `duration_ticks`（0=常驻） |
+| `ADD_POTION` | — | `potion`, `amp`, `duration_ticks`（0=常驻）；**免疫**：`immunity: true`（无 trigger/expiry/recurring；非瞬时；忽略 amp/duration） |
 | `HEAL` | — | `amount` |
-| `DAMAGE_AREA` / `DAMAGE_BEAM` / `HEAL_AREA` | 战斗型宜带 trigger | `damage`/`amount`, `radius`, `targets`, `enemy_scope`… |
+| `DAMAGE_AREA` / `DAMAGE_BEAM` / `HEAL_AREA` | 战斗型宜带 trigger | `damage`/`amount`, `radius`, `targets`, `enemy_scope`…；`DAMAGE_AREA` 可选 `clear_potions[]`（顺序：damage → clear → potions） |
 | `GRANT_REVIVE` | — | `count` |
-| `BUFF_AREA` | **须 trigger** | `potions[]`, `targets` (`self`\|`allies`\|`enemies`\|`hit_target`), `radius`, `include_self`, `enemy_scope`, `fx`, `mark_fx`, `mark_on` |
+| `BUFF_AREA` | **须 trigger** | `potions[]` **或** `clear_potions[]`（至少其一）, `targets` (`self`\|`allies`\|`enemies`\|`hit_target`), `radius`, `include_self`, `enemy_scope`, `fx`, `mark_fx`, `mark_on` |
 | `DISABLE_AI` | **须 trigger** | `duration_ticks>0`, `targets` (`enemies`\|`hit_target`\|`attacker`), enemies 需 `radius`/`enemy_scope` |
 | `AURA` | **禁** trigger/expiry | `radius>0`, `targets`, `grant: { effect, … }`, 可选 `carrier_fx`/`mark_*`/`grant_pulse_sec` |
 | `GRANT_ITEM` | **须 trigger** | `item`（IC id）, `count` 或 `amount` |
@@ -165,6 +165,14 @@ option.upgrade_max (>0) → pool.upgrade_level_cap (>0) → config rewards.upgra
     potions: [ { potion: POISON, amp: 0, duration_ticks: 60 } ]
     mark_on: hit_target
 
+# ADD_POTION — 局内免疫（非瞬时）
+- id: a3w_imm_wither
+  category: STAT
+  effect: ADD_POTION
+  params: { potion: WITHER, immunity: true }
+  unique: true
+  stack: IGNORE
+
 # MAGIC_DAMAGE 常驻
 - id: a1s_magic_dmg
   category: STAT
@@ -173,6 +181,8 @@ option.upgrade_max (>0) → pool.upgrade_level_cap (>0) → config rewards.upgra
   unique: true
   stack: ADD
 ```
+
+> **禁止假 255**：`rewards.yml` / `items/*.yml` 中 `amp: 255` 且 `duration_ticks` ∈ `{0,1}` 且非 `immunity: true` → **硬失败**加载。清除用 `clear_potions` / `self_clear_potions`；免疫用 `immunity: true`。`affixes.yml` 不受此规则约束。
 
 ### SUMMON params
 
@@ -189,6 +199,7 @@ option.upgrade_max (>0) → pool.upgrade_level_cap (>0) → config rewards.upgra
 
 ### BUFF_AREA / DISABLE_AI 兼容提示
 
+- `BUFF_AREA`：`potions` 与 `clear_potions` 都空 → 校验失败；仅 `clear_potions`（无 potions）合法
 - `targets=hit_target` 与 `ON_DAMAGE_TAKEN` 不兼容（BUFF）
 - `mark_on=attacker` 与 `ON_KILL`/`ON_DAMAGE_DEALT` 会被强制 `none`（警告）
 - `mark_on=hit_target` 与 `ON_DAMAGE_TAKEN` → `none`
@@ -222,7 +233,9 @@ ItemCreator 格式；PDC `maggoteers:id`（STRING）。
 use_ability:
   cooldown_sec: 15          # 必填 >0（权威 CD；勿靠 Material cooldown）
   effect: ADD_ATTRIBUTE     # 见下支持列表
-  params: { ... }
+  params: { ... }           # 可含 clear_potions[]（DAMAGE_AREA/BUFF_AREA）
+  self_clear_potions: [WITHER, POISON, ...]  # 可选：施法者一次性清效果
+  self_potions: [ ... ]     # 可选：施法者真实药水（勿用假 amp-255）
   fx: { preset: DOT_ABOVE, particle: CRIT }   # 优先于 legacy use_fx
   consume: false            # 可选
   expiry: { trigger: ON_DAMAGE_DEALT, charges: 1 }  # 仅 ADD_ATTRIBUTE / ADD_POTION 临时路径
@@ -231,11 +244,13 @@ use_ability:
 
 支持 effect：`DAMAGE_AREA` | `DAMAGE_BEAM` | `HEAL_AREA` | `BUFF_AREA` | `DISABLE_AI` | `GRANT_ITEM` | `SUMMON` | `ADD_ATTRIBUTE`（须 expiry）| `ADD_POTION`（即时或 expiry 双路径）。
 
-**ADD_POTION**：无 expiry + `duration_ticks>0` = 右键即时；有 expiry → `duration_ticks` 须 0/省略（写入 `ability:<itemId>`）。
+**ADD_POTION**：无 expiry + `duration_ticks>0` = 右键即时；有 expiry → `duration_ticks` 须 0/省略（写入 `ability:<itemId>`）。武器勿用 `immunity: true`（局内免疫只走奖励 STAT）。
+
+**清除**：`params.clear_potions` 或 `self_clear_potions`；CD 仅在 `executeAbility` **成功**后计入（含「仅 self_clear」成功）。
 
 **下次近战加成**：`ADD_ATTRIBUTE` + expiry `ON_DAMAGE_DEALT` charges 1；仅近战消耗（见 `power_strike`）。
 
-样例物品：`test_blade`、`power_strike`、`healing_staff`、`field_shield`、`field_ration`、`wolf_whistle`、`fire_orb`。
+样例：`cataclysm`/`emp`（沉默 clear）、`holy_water`/`phantasm`（净化 clear）、`power_strike`、`healing_staff`。
 
 ### held_effects
 

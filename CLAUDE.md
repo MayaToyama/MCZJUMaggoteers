@@ -338,9 +338,13 @@ world: { cleanup_orphans_on_enable: true }
 
 ### 10.2 Effect 目录
 
-`ADD_ATTRIBUTE` / `ADD_POTION` / `HEAL` / `DAMAGE_AREA` / `DAMAGE_BEAM` / `HEAL_AREA` / `GRANT_REVIVE` / **`GRANT_ITEM`** / **`SUMMON`** / `BUFF_AREA`（`potions[]` + `targets` + 可选 FX/mark） / **`DISABLE_AI`**（`duration_ticks` + `targets`: enemies|hit_target|attacker） / `AURA`
+`ADD_ATTRIBUTE` / `ADD_POTION` / `HEAL` / `DAMAGE_AREA` / `DAMAGE_BEAM` / `HEAL_AREA` / `GRANT_REVIVE` / **`GRANT_ITEM`** / **`SUMMON`** / `BUFF_AREA`（`potions[]` **或** `clear_potions[]` + `targets` + 可选 FX/mark） / **`DISABLE_AI`**（`duration_ticks` + `targets`: enemies|hit_target|attacker） / `AURA`
 
-> **净化**：首选 `ADD_POTION` 技巧（免疫凋零 = 持续给 0 秒 255 级凋零抵消）；⚠️ **该技巧实现期须实测**（D1），若 MC 不认则 fallback = 监听 `EntityDamageEvent` 按 `DamageCause` cancel（作为 `ADD_POTION` 的免疫子能力实现）。
+> **净化 / 沉默 / 免疫**（见 `docs/superpowers/specs/2026-08-12-potion-clear-immunity-design.md`）：
+> - **一次性清除**：`params.clear_potions: [TYPE…]`（`DAMAGE_AREA` / `BUFF_AREA`）或武器顶层 `self_clear_potions`（`removePotionEffect`；不写 PlayerState）。
+> - **局内免疫**：奖励 `ADD_POTION` + `params.immunity: true`（无 trigger/expiry/recurring；非瞬时药水）→ 清现有效果 + 拦 `EntityPotionEffectEvent` ADDED/CHANGED + `PurifyListener` 拦 POISON/WITHER 伤害。
+> - **禁止**用 `amp: 255` + `duration_ticks: 0|1` 伪装清除/免疫：`rewards.yml` / `items/*.yml` **硬失败**加载（`affixes.yml` 的 amp 255 仍是怪物词缀，不在此规则内）。
+> - `DAMAGE_AREA` 顺序：**damage → clear_potions → potions**（本击仍受目标已有 Resistance 影响）。
 
 ### 10.3 生命周期模型（**事件到期，非挂钟计时**）
 ```
@@ -495,7 +499,9 @@ MCZJUGameCore.getLeaderboardManager()
 use_ability:
   cooldown_sec: 3
   effect: BUFF_AREA | DAMAGE_AREA | DAMAGE_BEAM | HEAL_AREA | DISABLE_AI | GRANT_ITEM | SUMMON | ADD_ATTRIBUTE | ADD_POTION
-  params: { radius, targets, potions[], damage, amount, potion, amp, duration_ticks, ... }
+  params: { radius, targets, potions[], clear_potions[], damage, amount, potion, amp, duration_ticks, immunity, ... }
+  self_clear_potions: [WITHER, POISON, ...]   # 可选：施法者一次性清效果（与 self_potions 并列）
+  self_potions: [ { potion: INSTANT_DAMAGE, amp: 0, duration_ticks: 1 } ]
   fx: { preset, particle, radius, ... }
   expiry: { trigger: ON_DAMAGE_DEALT, charges: 1 }   # ADD_ATTRIBUTE / ADD_POTION 临时路径
   stack: REPLACE
@@ -519,7 +525,7 @@ held_effects:   # 主手持有期间生效；禁止 expiry
 
 **`use_ability` ADD_POTION 双路径**：无 `expiry` + `duration_ticks > 0` → 右键即时药水（不写 PlayerState）；有 `expiry` + `duration_ticks: 0` → `ability:<itemId>` 直到事件到期。参数键用 `potion:`（非 `effect:`）。
 
-`BUFF_AREA`：右键给 self/allies/enemies 挂限时药水；武器 `mark_fx` 对目标列表全员播放。STAT 战斗版见 `rewards.yml` `trigger` + `params.mark_on`。
+`BUFF_AREA`：右键给 self/allies/enemies 挂限时药水和/或 `clear_potions` 清除（二者至少其一）；武器 `mark_fx` 对目标列表全员播放。STAT 战斗版见 `rewards.yml` `trigger` + `params.mark_on`。
 
 `DISABLE_AI`：对敌对生物 `setAI(false)` 一段时间后复原；`targets`: `enemies`（需 `radius`）| `hit_target` | `attacker`；再施加取更长剩余；卸载前 restore（防永久 NoAI）。Phase 1：`use_ability` + STAT；`held_effects` 为 Phase 2。
 
@@ -572,7 +578,7 @@ held_effects:   # 主手持有期间生效；禁止 expiry
 - **ItemCreator 物品来源**：默认读它自己 `items/`；我们用 `parseYamlToItems` 解析本插件目录下的物品。
 - **PlayerData 改动忘 `setModified(true)`**：不会落盘——封装一层 setter 提醒。
 - **MGC 版本**：设计基线 **1.0.7**（Paper 26.2）。⚠️ 本地 clone 若仍为 **1.0.0（过时）**，核对 API 须看 GitHub **1.0.7** tag。
-- **净化技巧待实测（D1）**：`ADD_POTION` 0 秒 255 级抵消不一定成立；fallback 走 damage-cancel。
+- **~~净化技巧待实测（D1）~~（已退役）**：假 amp-255 已由真实 `clear_potions` / `immunity: true` 取代；部署须同步 `rewards.yml` + `items/maggoteers.yml`（`saveResource(false)` 不会覆盖服上旧 YAML）。
 - **结构粘贴主线程掉帧（D8）**：粘贴该层 `structure.nbt` 主线程瞬时完成会掉几 tick；接受。已改为"进层时粘该层"（非开局一次性粘三层）摊薄。
 - **缩放开局锁定（D8）**：人数中途减少时仍按开局人数算难度（偏难）；接受。
 - **InfernalMobs 反射（IM1）**：仅调用 `mechanizeWithAffixes`；禁用 `morph`/`mama`/`mounted`/`vexsummoner`/`ghost`；反射签名变更会导致整局 bridge 禁用（dedupe warning）。死亡前须 unregister，否则 IM 会发战利品。

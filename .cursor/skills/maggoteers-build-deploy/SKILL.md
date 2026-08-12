@@ -38,7 +38,7 @@ description: >-
 # 只测不部署
 .cursor/skills/maggoteers-build-deploy/scripts/build-and-deploy.ps1 -SkipDeploy
 
-# 部署并同步 items/、maps/（大资源，按需）
+# 部署并同步 maps/（大资源，按需；items/*.yml 已默认同步）
 .cursor/skills/maggoteers-build-deploy/scripts/build-and-deploy.ps1 -SyncAssets
 ```
 
