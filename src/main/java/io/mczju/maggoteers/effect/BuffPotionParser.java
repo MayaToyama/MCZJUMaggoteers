@@ -12,8 +12,16 @@ public final class BuffPotionParser {
 
     private BuffPotionParser() {}
 
-    @SuppressWarnings("unchecked")
+    /** BUFF_AREA 等：必须 {@code duration_ticks > 0}。 */
     public static List<BuffPotionSpec> parseList(Object yamlList) {
+        return parseList(yamlList, true);
+    }
+
+    /**
+     * @param requirePositiveDuration false 时允许省略 duration（AURA grant 由 refresh 续时）
+     */
+    @SuppressWarnings("unchecked")
+    public static List<BuffPotionSpec> parseList(Object yamlList, boolean requirePositiveDuration) {
         List<BuffPotionSpec> out = new ArrayList<>();
         if (!(yamlList instanceof List<?> list)) {
             return out;
@@ -28,7 +36,11 @@ public final class BuffPotionParser {
             int amp = num(m.get("amp"), 0);
             if (amp < 0) amp = 0;
             int dur = num(m.get("duration_ticks"), num(m.get("dur"), 0));
-            if (dur <= 0) continue;
+            if (requirePositiveDuration) {
+                if (dur <= 0) continue;
+            } else if (dur < 0) {
+                dur = 0;
+            }
             out.add(new BuffPotionSpec(type, amp, dur));
         }
         return List.copyOf(out);

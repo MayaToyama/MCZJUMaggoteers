@@ -7,10 +7,39 @@ import org.bukkit.attribute.AttributeModifier;
 
 import java.util.ArrayList;
 
-/** Paper 26.2：{@link AttributeModifier#getKey()} 为 Adventure {@link Key}，与 {@link NamespacedKey} 比较需统一。 */
+/**
+ * Paper 26.2：{@link AttributeModifier#getKey()} 为 Adventure {@link Key}，与 {@link NamespacedKey} 比较需统一。
+ * <p>效果 id 常含 {@code :}（如 {@code ability:maggoteers:xxx}、{@code held:maggoteers:xxx:0}），
+ * 不能直接写入 NamespacedKey path，须先 {@link #sanitizeKeyPath(String)}。
+ */
 public final class AttributeModifierKeys {
 
     private AttributeModifierKeys() {}
+
+    /**
+     * NamespacedKey path 仅允许 {@code [a-z0-9_-./]}；把其余字符（含 {@code :}）换成 {@code _}。
+     */
+    public static String sanitizeKeyPath(String raw) {
+        if (raw == null || raw.isBlank()) return "unnamed";
+        StringBuilder sb = new StringBuilder(raw.length());
+        for (int i = 0; i < raw.length(); i++) {
+            char c = raw.charAt(i);
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')
+                    || c == '_' || c == '-' || c == '.' || c == '/') {
+                sb.append(c);
+            } else if (c >= 'A' && c <= 'Z') {
+                sb.append(Character.toLowerCase(c));
+            } else {
+                sb.append('_');
+            }
+        }
+        String out = sb.toString();
+        return out.isEmpty() ? "unnamed" : (out.length() > 256 ? out.substring(0, 256) : out);
+    }
+
+    public static NamespacedKey pluginKey(org.bukkit.plugin.Plugin plugin, String rawPath) {
+        return new NamespacedKey(plugin, sanitizeKeyPath(rawPath));
+    }
 
     public static boolean matches(AttributeModifier modifier, NamespacedKey expected) {
         if (modifier == null || expected == null) return false;

@@ -62,4 +62,10 @@ class WeaponHeldServiceTest {
         assertEquals("held:maggoteers:test_blade:2", pe.id());
         assertNull(pe.fireTrigger());
     }
+
+    @Test
+    void parseHeldItemIdNullForNonHeld() {
+        assertNull(WeaponHeldService.parseHeldItemId("class_vanguard_token"));
+        assertNull(WeaponHeldService.parseHeldItemId(null));
+    }
 }

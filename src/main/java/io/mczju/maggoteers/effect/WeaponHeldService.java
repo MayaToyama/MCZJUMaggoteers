@@ -29,19 +29,15 @@ public final class WeaponHeldService {
             return;
         }
 
-        boolean auraTouched = false;
         if (mountedItemId != null) {
-            auraTouched |= removeHeldForItem(st, mountedItemId);
+            removeHeldForItem(st, mountedItemId);
         } else if (hasAnyHeld(st)) {
-            auraTouched |= removeAllHeld(st);
+            removeAllHeld(st);
         }
         if (itemId != null) {
-            auraTouched |= mountHeld(st, itemId);
+            mountHeld(st, itemId);
         }
-        EffectService.resyncDerived(p, st);
-        if (auraTouched) {
-            AuraService.refresh(game);
-        }
+        EffectService.resyncDerived(p, st); // 内部会 AuraService.refresh，恢复被 strip 的光环药水
     }
 
     static boolean removeHeldForItem(PlayerState st, String itemId) {
@@ -91,7 +87,7 @@ public final class WeaponHeldService {
 
     static PlayerEffect toPlayerEffect(String itemId, int index, WeaponHeldEntry entry) {
         Stack stack = entry.stack() != null ? entry.stack() : Stack.IGNORE;
-        EffectContext params = entry.params() != null ? entry.params().copy() : new EffectContext();
+        EffectContext params = entry.params() != null ? entry.params().copyDeep() : new EffectContext();
         return new PlayerEffect(
                 HELD_PREFIX + itemId + ":" + index,
                 entry.effect(),

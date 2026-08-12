@@ -16,6 +16,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /** 开局职业 3 选 1（复用 reward_pools.class）。 */
 public class ClassSelectMenu extends Menu {
@@ -27,8 +28,8 @@ public class ClassSelectMenu extends Menu {
     public ClassSelectMenu(Player player, Object... args) {
         super(player, args);
         this.game = (AbstractGame) args[0];
-        var pool = RewardService.pool("class");
-        this.offers = pool == null ? List.of() : pool.options();
+        // 与休整 3 选 1 相同：可见性过滤 + shuffle，勿写死池内前 3 个
+        this.offers = new ArrayList<>(RewardService.draw("class", SLOTS.length, new Random(), player));
     }
 
     @Override protected String getTitle() { return "选择职业"; }
@@ -53,6 +54,11 @@ public class ClassSelectMenu extends Menu {
                 ClassSelectGate.markChosen(game, p.getUniqueId());
                 p.closeInventory();
                 p.sendMessage(Component.text("职业已选定！", NamedTextColor.GREEN));
+                if (mg != null) {
+                    org.bukkit.Bukkit.getScheduler().runTask(
+                            io.mczju.maggoteers.MaggoteersPlugin.getInstance(),
+                            () -> io.mczju.maggoteers.effect.WeaponHeldService.sync(p, mg));
+                }
                 if (ClassSelectGate.allChosen(game) && game instanceof MaggoteersGame chosenGame) {
                     chosenGame.onAllClassesChosen();
                 }

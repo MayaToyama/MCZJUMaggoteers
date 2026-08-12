@@ -1,12 +1,16 @@
 package io.mczju.maggoteers.item.interact;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
+import io.mczju.maggoteers.effect.Effect;
+import io.mczju.maggoteers.effect.EffectKeys;
 import io.mczju.maggoteers.effect.EffectService;
 import io.mczju.maggoteers.effect.ItemAbility;
 import io.mczju.maggoteers.effect.ItemAbilityRegistry;
+import io.mczju.maggoteers.item.fx.MagicUseFx;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.item.CooldownService;
 import io.mczju.maggoteers.item.ItemService;
+import io.mczju.maggoteers.item.fx.MagicFxConfig;
 import io.mczju.maggoteers.item.fx.MagicFxService;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -30,13 +34,28 @@ public final class ConfigMagicHandler implements ItemUseHandler {
             player.sendMessage(Component.text("技能冷却中…", NamedTextColor.GRAY));
             return;
         }
-        MagicFxService.play(player, ability.fx());
+        MagicFxService.play(player, resolveCastFx(ability),
+                MagicFxConfig.shouldPlayCastAreaRing(ability.effect(), ability.params()));
         if (game instanceof MaggoteersGame mg) {
             boolean success = EffectService.executeAbility(player, mg, ability);
             if (ability.consume() && success) {
                 spendOneFromMainHand(player);
             }
         }
+    }
+
+    private static MagicUseFx resolveCastFx(ItemAbility ability) {
+        MagicUseFx fx = ability.fx();
+        if (ability.effect() != Effect.HEAL_AREA || ability.params() == null) {
+            return fx;
+        }
+        double radius = ability.params().getOrDefault(EffectKeys.RADIUS, fx.radius());
+        if (radius <= 0 || radius == fx.radius()) {
+            return fx;
+        }
+        return new MagicUseFx(
+                fx.sound(), fx.soundVolume(), fx.soundPitch(), fx.preset(), fx.particle(),
+                radius, fx.rayLength(), fx.density(), fx.rippleRings(), fx.expandSteps(), fx.spiralTicks());
     }
 
     private static void spendOneFromMainHand(Player player) {

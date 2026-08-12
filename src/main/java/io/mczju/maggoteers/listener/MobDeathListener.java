@@ -2,12 +2,17 @@ package io.mczju.maggoteers.listener;
 
 import io.mczju.maggoteers.integration.InfernalMobsBridge;
 import io.mczju.maggoteers.wave.WaveEngine;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.ExplosionPrimeEvent;
 import org.bukkit.event.entity.SlimeSplitEvent;
+import org.bukkit.potion.PotionEffect;
+
+import java.util.ArrayList;
 
 /**
  * 怪物死亡监听（借鉴前代 VampireSurvivor MobDeathListener）。
@@ -16,6 +21,19 @@ import org.bukkit.event.entity.SlimeSplitEvent;
  * <p>局内史莱姆/岩浆怪取消分裂，避免 livingMobs 被原版分裂打乱。
  */
 public class MobDeathListener implements Listener {
+
+    /**
+     * 苦力怕等爆炸前清掉追踪怪身上的药水。原版会把存活药水打成 AreaEffectCloud；
+     * affix 常用极大 dur（隐身/致盲/凋零），玩家踩到会挂数小时 buff。
+     */
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void beforeTrackedExplode(ExplosionPrimeEvent e) {
+        if (!(e.getEntity() instanceof LivingEntity le)) return;
+        if (!WaveEngine.isTracked(le.getUniqueId())) return;
+        for (PotionEffect pe : new ArrayList<>(le.getActivePotionEffects())) {
+            le.removePotionEffect(pe.getType());
+        }
+    }
 
     /** 在 IM NORMAL 死亡监听器之前注销，抑制 IM 战利品与死亡技能。 */
     @EventHandler(priority = EventPriority.LOWEST)

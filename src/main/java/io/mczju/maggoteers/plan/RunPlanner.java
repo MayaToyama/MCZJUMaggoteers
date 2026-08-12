@@ -99,7 +99,8 @@ public final class RunPlanner {
                     sc.infernal(),
                     sc.equipment(),
                     onDeath,
-                    passengerSpawns));
+                    passengerSpawns,
+                    sc.repeat()));
         }
         List<RewardItem> rewards = strat.clearReward().stream()
                 .map(r -> new RewardItem(r.item(), r.amount())).toList();
@@ -154,6 +155,7 @@ public final class RunPlanner {
             List<Affix> da = affixes.resolve(dc.affixes());
             Compose.MobScale dms = Compose.compose(dc.coeff(), da, snap);
             int dcnt = ScalingConfig.rollCount(dc.count(), snap.mobCount(), countRng);
+            List<PassengerSpawn> passengers = buildPassengerTrees(dc.passengers(), affixes, snap, countRng);
             List<DeathSpawn> nested = buildDeathSpawns(dc.onDeath(), affixes, snap, countRng);
             for (int i = 0; i < dcnt; i++) {
                 out.add(new DeathSpawn(
@@ -164,6 +166,7 @@ public final class RunPlanner {
                         da.stream().flatMap(a -> a.potions().stream()).toList(),
                         dc.infernal(),
                         dc.equipment(),
+                        passengers,
                         nested));
             }
         }

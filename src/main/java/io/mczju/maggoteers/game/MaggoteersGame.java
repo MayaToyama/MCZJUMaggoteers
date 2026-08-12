@@ -13,7 +13,6 @@ import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.plan.ActPlan;
 import io.mczju.maggoteers.plan.RunPlanner;
-import io.mczju.maggoteers.reward.RewardService;
 import io.mczju.maggoteers.state.PlayerStateManager;
 import io.mczju.maggoteers.ui.RunScoreboard;
 import io.mczju.maggoteers.wave.WaveScheduler;
@@ -83,12 +82,16 @@ public class MaggoteersGame extends AbstractGame {
     public void win() {
         if (outcome != GameOutcome.IN_PROGRESS) return;
         outcome = GameOutcome.WIN;
+        MaggoteersPlugin.getInstance().getLogger().info("对局胜利 endGame identity="
+                + System.identityHashCode(this));
         MCZJUGameCore.getGameManager().endGame(this);
     }
 
     public void fail() {
         if (outcome != GameOutcome.IN_PROGRESS) return;
         outcome = GameOutcome.FAIL;
+        MaggoteersPlugin.getInstance().getLogger().info("对局失败 endGame identity="
+                + System.identityHashCode(this));
         MCZJUGameCore.getGameManager().endGame(this);
     }
 
@@ -169,9 +172,7 @@ public class MaggoteersGame extends AbstractGame {
                 if (ClassSelectGate.allChosen(MaggoteersGame.this)) { cancel(); onAllClassesChosen(); return; }
                 if (--left <= 0) {
                     cancel();
-                    var pool = RewardService.pool("class");
-                    ClassSelectGate.autoPickRemaining(MaggoteersGame.this,
-                            pool == null ? List.of() : pool.options(), new Random());
+                    ClassSelectGate.autoPickRemaining(MaggoteersGame.this, new Random());
                     onAllClassesChosen();
                 }
             }
@@ -182,6 +183,12 @@ public class MaggoteersGame extends AbstractGame {
     public void onAllClassesChosen() {
         if (plannedActs == null || outcome != GameOutcome.IN_PROGRESS || wavesStarted) return;
         wavesStarted = true;
+        // 职业 STAT（含 MAX_HEALTH）应用后统一 resync + 回满，避免切武器/二次粘贴打乱血量
+        for (PlayerExt pe : getPlayers()) {
+            Player pl = pe.player();
+            EffectService.resync(pl);
+            PlayerStateManager.restoreFullHealth(pl);
+        }
         io.mczju.maggoteers.effect.EffectListener.startTick();
         WaveScheduler.start(this, plannedActs);
         int prep = MaggoteersPlugin.getInstance().getConfig().getInt("act_enter.prep_sec", 10);

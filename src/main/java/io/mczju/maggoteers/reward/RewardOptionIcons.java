@@ -29,6 +29,11 @@ public final class RewardOptionIcons {
 
     private static ItemStack resolveBaseStack(RewardOption opt, Player viewer, MaggoteersGame game) {
         if (opt.isBundle()) {
+            // collectibles.yml maps the parent bundle id, not grant child ids
+            ItemStack parentCharm = CollectibleService.preview(opt.id(), viewer, game).orElse(null);
+            if (parentCharm != null && parentCharm.getType() != Material.PAPER) {
+                return parentCharm;
+            }
             for (RewardOption grant : opt.grants()) {
                 ItemStack g = grantStack(grant, viewer, game);
                 if (g != null && g.getType() != Material.PAPER) {

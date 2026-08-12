@@ -31,6 +31,10 @@ public final class EffectStacker {
             case REFRESH:   same.setExpiryCharges(incoming.expiryCharges()); return out;
             case ADD:       out.add(incoming); return out;
             case UPGRADE_LEVEL:
+                // Higher-act pools may raise the cap for the same reward id.
+                if (incoming.upgradeMax() > same.upgradeMax()) {
+                    same.setUpgradeMax(incoming.upgradeMax());
+                }
                 if (same.level() < incoming.upgradeMax()) {
                     same.setLevel(same.level() + 1);
                     Integer amp = same.params().get(EffectKeys.AMP);       // C2: 同步升 amp，resync 不丢

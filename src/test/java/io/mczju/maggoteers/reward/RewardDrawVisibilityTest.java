@@ -83,4 +83,18 @@ class RewardDrawVisibilityTest {
         ps = stateWithEffect("a1s_resist", Stack.UPGRADE_LEVEL, 2, 4);
         assertTrue(RewardDrawVisibility.isVisible(up, ps, Set.of(), strongPool));
     }
+
+    @Test
+    void sameIdHiddenAcrossPoolsOnceOwnedNonUpgrade() {
+        PlayerState ps = stateWithEffect("a1w_atk25", Stack.ADD, 1, 0);
+        assertFalse(RewardDrawVisibility.isVisible(statAdd("a1w_atk25"), ps, Set.of(), poolWithCap(0)));
+    }
+
+    @Test
+    void upgradeSameIdVisibleInHigherCapPoolOnly() {
+        RewardOption up = statUpgrade("a1w_str1");
+        PlayerState ps = stateWithEffect("a1w_str1", Stack.UPGRADE_LEVEL, 1, 1);
+        assertFalse(RewardDrawVisibility.isVisible(up, ps, Set.of(), poolWithCap(1)));
+        assertTrue(RewardDrawVisibility.isVisible(up, ps, Set.of(), poolWithCap(2)));
+    }
 }

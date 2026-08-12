@@ -2,6 +2,8 @@ package io.mczju.maggoteers.item.fx;
 
 /** 魔法物品释放时的粒子预设（config / items YAML 引用 id）。 */
 public enum MagicFxPreset {
+    /** 仅音效，不播放 cast 粒子（范围环由 EffectService 绘制，或光束/自身强化类）。 */
+    NONE,
     /** 默认：加粗水平圆环（替代旧 playAreaRing）。 */
     THICK_RING,
     /** 自玩家前方起绕玩家快速旋转的半径粒子，前方缺口、后方递减。 */

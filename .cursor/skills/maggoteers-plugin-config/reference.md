@@ -27,7 +27,8 @@
 | `coeff` | 见下表 |
 | `affixes` | 原生词缀 id（`affixes.yml`） |
 | `infernal` | `{ level: 1–100, affixes: [IM技能…] }`；与原生独立、不继承 |
-| `delay` | 秒，步前等待 |
+| `delay` | 秒，相对**同 point**上一刷怪时刻（该点尚无事件则相对本轮起点）；不同 point 并行 |
+| `repeat` | 可选，默认 1：该 step 在同 point 时间轴上按 `delay` 再刷几次（≠ strategy 顶层 `repeat`） |
 | `equipment` / `on_death` / `passengers` | 见下 |
 
 ### coeff

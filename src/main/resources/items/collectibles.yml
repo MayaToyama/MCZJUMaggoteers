@@ -9,6 +9,8 @@ maggoteers:charm_a1b_atk150:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1b_frost_tree:
   material: RABBIT_FOOT
   itemModel: DARK_OAK_SAPLING
@@ -18,6 +20,8 @@ maggoteers:charm_a1b_frost_tree:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1b_hp20:
   material: RABBIT_FOOT
   itemModel: IRON_CHESTPLATE
@@ -27,6 +31,8 @@ maggoteers:charm_a1b_hp20:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1b_kb1:
   material: RABBIT_FOOT
   itemModel: IRON_BLOCK
@@ -36,6 +42,8 @@ maggoteers:charm_a1b_kb1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1b_mag150:
   material: RABBIT_FOOT
   itemModel: ENDER_CHEST
@@ -45,6 +53,8 @@ maggoteers:charm_a1b_mag150:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1b_res1:
   material: RABBIT_FOOT
   itemModel: IRON_GOLEM_SPAWN_EGG
@@ -54,6 +64,8 @@ maggoteers:charm_a1b_res1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1b_spd15:
   material: RABBIT_FOOT
   itemModel: MUSIC_DISC_11
@@ -63,6 +75,8 @@ maggoteers:charm_a1b_spd15:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1b_wave_coin:
   material: RABBIT_FOOT
   itemModel: PEONY
@@ -72,6 +86,8 @@ maggoteers:charm_a1b_wave_coin:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1b_wave_gapple:
   material: RABBIT_FOOT
   itemModel: OAK_SAPLING
@@ -81,6 +97,8 @@ maggoteers:charm_a1b_wave_gapple:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1b_wave_steak:
   material: RABBIT_FOOT
   itemModel: PITCHER_PLANT
@@ -90,6 +108,8 @@ maggoteers:charm_a1b_wave_steak:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1b_wave_tnt:
   material: RABBIT_FOOT
   itemModel: GUNPOWDER
@@ -99,6 +119,8 @@ maggoteers:charm_a1b_wave_tnt:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_ally_invis:
   material: RABBIT_FOOT
   itemModel: LEATHER_HELMET
@@ -108,6 +130,8 @@ maggoteers:charm_a1s_ally_invis:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_atk25:
   material: RABBIT_FOOT
   itemModel: MAGMA_CREAM
@@ -117,6 +141,8 @@ maggoteers:charm_a1s_atk25:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_atk35:
   material: RABBIT_FOOT
   itemModel: DAMAGED_ANVIL
@@ -126,6 +152,8 @@ maggoteers:charm_a1s_atk35:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_fire_res:
   material: RABBIT_FOOT
   itemModel: BLAZE_SPAWN_EGG
@@ -135,6 +163,8 @@ maggoteers:charm_a1s_fire_res:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_hit_slow:
   material: RABBIT_FOOT
   itemModel: SUNFLOWER
@@ -144,6 +174,8 @@ maggoteers:charm_a1s_hit_slow:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_hp4:
   material: RABBIT_FOOT
   itemModel: POTION
@@ -153,6 +185,8 @@ maggoteers:charm_a1s_hp4:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_hp6:
   material: RABBIT_FOOT
   itemModel: POTION
@@ -162,6 +196,8 @@ maggoteers:charm_a1s_hp6:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_lost_key:
   material: RABBIT_FOOT
   itemModel: FILLED_MAP
@@ -171,6 +207,8 @@ maggoteers:charm_a1s_lost_key:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_mag25:
   material: RABBIT_FOOT
   itemModel: SPLASH_POTION
@@ -180,6 +218,8 @@ maggoteers:charm_a1s_mag25:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_mag35:
   material: RABBIT_FOOT
   itemModel: QUARTZ
@@ -189,6 +229,8 @@ maggoteers:charm_a1s_mag35:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_regen1:
   material: RABBIT_FOOT
   itemModel: ALLAY_SPAWN_EGG
@@ -198,6 +240,8 @@ maggoteers:charm_a1s_regen1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_spd5:
   material: RABBIT_FOOT
   itemModel: COBWEB
@@ -207,6 +251,8 @@ maggoteers:charm_a1s_spd5:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_str1:
   material: RABBIT_FOOT
   itemModel: PIGLIN_BRUTE_SPAWN_EGG
@@ -216,6 +262,8 @@ maggoteers:charm_a1s_str1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_taken_str:
   material: RABBIT_FOOT
   itemModel: POPPY
@@ -225,6 +273,8 @@ maggoteers:charm_a1s_taken_str:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_wave_atk5:
   material: RABBIT_FOOT
   itemModel: PAPER
@@ -234,6 +284,8 @@ maggoteers:charm_a1s_wave_atk5:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_wave_atk_mag:
   material: RABBIT_FOOT
   itemModel: ENCHANTING_TABLE
@@ -243,6 +295,8 @@ maggoteers:charm_a1s_wave_atk_mag:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_wave_atk_mag2:
   material: RABBIT_FOOT
   itemModel: ENCHANTING_TABLE
@@ -252,6 +306,8 @@ maggoteers:charm_a1s_wave_atk_mag2:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_wave_full_heal:
   material: RABBIT_FOOT
   itemModel: CAMPFIRE
@@ -261,6 +317,8 @@ maggoteers:charm_a1s_wave_full_heal:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1s_wave_mag5:
   material: RABBIT_FOOT
   itemModel: SOUL_SAND
@@ -270,6 +328,8 @@ maggoteers:charm_a1s_wave_mag5:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_act_revive:
   material: RABBIT_FOOT
   itemModel: VINE
@@ -279,6 +339,8 @@ maggoteers:charm_a1w_act_revive:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_atk15:
   material: RABBIT_FOOT
   itemModel: CHIPPED_ANVIL
@@ -288,6 +350,8 @@ maggoteers:charm_a1w_atk15:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_atk20:
   material: RABBIT_FOOT
   itemModel: COPPER_INGOT
@@ -297,6 +361,8 @@ maggoteers:charm_a1w_atk20:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_atk25:
   material: RABBIT_FOOT
   itemModel: MAGMA_CREAM
@@ -306,6 +372,8 @@ maggoteers:charm_a1w_atk25:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_fangs:
   material: RABBIT_FOOT
   itemModel: EMERALD
@@ -315,6 +383,8 @@ maggoteers:charm_a1w_fangs:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_fire_res:
   material: RABBIT_FOOT
   itemModel: BLAZE_SPAWN_EGG
@@ -324,6 +394,8 @@ maggoteers:charm_a1w_fire_res:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_hit_splash:
   material: RABBIT_FOOT
   itemModel: GOLDEN_AXE
@@ -333,6 +405,8 @@ maggoteers:charm_a1w_hit_splash:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_hp4a:
   material: RABBIT_FOOT
   itemModel: POTION
@@ -342,6 +416,8 @@ maggoteers:charm_a1w_hp4a:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_hp4b:
   material: RABBIT_FOOT
   itemModel: BREAD
@@ -351,6 +427,8 @@ maggoteers:charm_a1w_hp4b:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_hp4c:
   material: RABBIT_FOOT
   itemModel: LEATHER
@@ -360,6 +438,8 @@ maggoteers:charm_a1w_hp4c:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_kill_invis:
   material: RABBIT_FOOT
   itemModel: GHAST_TEAR
@@ -369,6 +449,8 @@ maggoteers:charm_a1w_kill_invis:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_mag15:
   material: RABBIT_FOOT
   itemModel: LAPIS_LAZULI
@@ -378,6 +460,8 @@ maggoteers:charm_a1w_mag15:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_mag20:
   material: RABBIT_FOOT
   itemModel: DEAD_BUSH
@@ -387,6 +471,8 @@ maggoteers:charm_a1w_mag20:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_mag25:
   material: RABBIT_FOOT
   itemModel: SPLASH_POTION
@@ -396,6 +482,8 @@ maggoteers:charm_a1w_mag25:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_mark_glow:
   material: RABBIT_FOOT
   itemModel: FIREWORK_STAR
@@ -405,6 +493,8 @@ maggoteers:charm_a1w_mark_glow:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_parting_gift:
   material: RABBIT_FOOT
   itemModel: TRAPPED_CHEST
@@ -414,6 +504,8 @@ maggoteers:charm_a1w_parting_gift:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_spd4a:
   material: RABBIT_FOOT
   itemModel: COOKED_CHICKEN
@@ -423,6 +515,8 @@ maggoteers:charm_a1w_spd4a:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_spd4b:
   material: RABBIT_FOOT
   itemModel: BREEZE_ROD
@@ -432,6 +526,8 @@ maggoteers:charm_a1w_spd4b:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_str1:
   material: RABBIT_FOOT
   itemModel: PIGLIN_BRUTE_SPAWN_EGG
@@ -441,6 +537,8 @@ maggoteers:charm_a1w_str1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_thorn_arrow:
   material: RABBIT_FOOT
   itemModel: COPPER_HELMET
@@ -450,6 +548,8 @@ maggoteers:charm_a1w_thorn_arrow:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_wave_bone:
   material: RABBIT_FOOT
   itemModel: BOOK
@@ -459,6 +559,8 @@ maggoteers:charm_a1w_wave_bone:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2b_atk225:
   material: RABBIT_FOOT
   itemModel: IRON_DOOR
@@ -468,6 +570,8 @@ maggoteers:charm_a2b_atk225:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2b_frost_aura:
   material: RABBIT_FOOT
   itemModel: POWDER_SNOW_BUCKET
@@ -477,6 +581,8 @@ maggoteers:charm_a2b_frost_aura:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2b_hit_heal:
   material: RABBIT_FOOT
   itemModel: TORCHFLOWER
@@ -486,6 +592,8 @@ maggoteers:charm_a2b_hit_heal:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2b_hit_slow10:
   material: RABBIT_FOOT
   itemModel: GLOWSTONE_DUST
@@ -495,6 +603,8 @@ maggoteers:charm_a2b_hit_slow10:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2b_hp30:
   material: RABBIT_FOOT
   itemModel: NETHERITE_CHESTPLATE
@@ -504,6 +614,8 @@ maggoteers:charm_a2b_hp30:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2b_invis:
   material: RABBIT_FOOT
   itemModel: ELYTRA
@@ -513,6 +625,8 @@ maggoteers:charm_a2b_invis:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2b_mag225:
   material: RABBIT_FOOT
   itemModel: DIAMOND_BLOCK
@@ -522,6 +636,8 @@ maggoteers:charm_a2b_mag225:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2b_reach1:
   material: RABBIT_FOOT
   itemModel: PISTON
@@ -531,6 +647,8 @@ maggoteers:charm_a2b_reach1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2b_spd20:
   material: RABBIT_FOOT
   itemModel: PAINTING
@@ -540,6 +658,8 @@ maggoteers:charm_a2b_spd20:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2b_taken_heal:
   material: RABBIT_FOOT
   itemModel: SALMON
@@ -549,6 +669,8 @@ maggoteers:charm_a2b_taken_heal:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2b_taken_lev:
   material: RABBIT_FOOT
   itemModel: FEATHER
@@ -558,6 +680,8 @@ maggoteers:charm_a2b_taken_lev:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_ally_str:
   material: RABBIT_FOOT
   itemModel: GOAT_HORN
@@ -567,6 +691,8 @@ maggoteers:charm_a2s_ally_str:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_arrogance:
   material: RABBIT_FOOT
   itemModel: TORCHFLOWER
@@ -576,6 +702,8 @@ maggoteers:charm_a2s_arrogance:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_atk40:
   material: RABBIT_FOOT
   itemModel: IRON_SWORD
@@ -585,6 +713,8 @@ maggoteers:charm_a2s_atk40:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_atk45:
   material: RABBIT_FOOT
   itemModel: BLAZE_POWDER
@@ -594,6 +724,8 @@ maggoteers:charm_a2s_atk45:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_enemy_regen:
   material: RABBIT_FOOT
   itemModel: WOODEN_SWORD
@@ -603,6 +735,8 @@ maggoteers:charm_a2s_enemy_regen:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_hp8a:
   material: RABBIT_FOOT
   itemModel: HEAVY_WEIGHTED_PRESSURE_PLATE
@@ -612,6 +746,8 @@ maggoteers:charm_a2s_hp8a:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_hp8b:
   material: RABBIT_FOOT
   itemModel: POTION
@@ -621,6 +757,8 @@ maggoteers:charm_a2s_hp8b:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_mag40:
   material: RABBIT_FOOT
   itemModel: SPRUCE_SAPLING
@@ -630,6 +768,8 @@ maggoteers:charm_a2s_mag40:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_mag45:
   material: RABBIT_FOOT
   itemModel: POTION
@@ -639,6 +779,8 @@ maggoteers:charm_a2s_mag45:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_martyr:
   material: RABBIT_FOOT
   itemModel: RECOVERY_COMPASS
@@ -648,6 +790,8 @@ maggoteers:charm_a2s_martyr:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_reach_a:
   material: RABBIT_FOOT
   itemModel: LEAD
@@ -657,6 +801,8 @@ maggoteers:charm_a2s_reach_a:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_reach_b:
   material: RABBIT_FOOT
   itemModel: GOLDEN_HOE
@@ -666,6 +812,8 @@ maggoteers:charm_a2s_reach_b:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_regen2:
   material: RABBIT_FOOT
   itemModel: ALLAY_SPAWN_EGG
@@ -675,6 +823,8 @@ maggoteers:charm_a2s_regen2:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_spd10:
   material: RABBIT_FOOT
   itemModel: CLOCK
@@ -684,6 +834,8 @@ maggoteers:charm_a2s_spd10:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_spd8:
   material: RABBIT_FOOT
   itemModel: LEATHER_BOOTS
@@ -693,6 +845,8 @@ maggoteers:charm_a2s_spd8:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_str2:
   material: RABBIT_FOOT
   itemModel: PIGLIN_BRUTE_SPAWN_EGG
@@ -702,6 +856,8 @@ maggoteers:charm_a2s_str2:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_taken_splash:
   material: RABBIT_FOOT
   itemModel: DIAMOND_CHESTPLATE
@@ -711,6 +867,8 @@ maggoteers:charm_a2s_taken_splash:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_wave_potion:
   material: RABBIT_FOOT
   itemModel: RED_SHULKER_BOX
@@ -720,6 +878,8 @@ maggoteers:charm_a2s_wave_potion:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2s_wave_splash:
   material: RABBIT_FOOT
   itemModel: DISPENSER
@@ -729,6 +889,8 @@ maggoteers:charm_a2s_wave_splash:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_atk35:
   material: RABBIT_FOOT
   itemModel: DAMAGED_ANVIL
@@ -738,6 +900,8 @@ maggoteers:charm_a2w_atk35:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_atk40:
   material: RABBIT_FOOT
   itemModel: IRON_SWORD
@@ -747,6 +911,8 @@ maggoteers:charm_a2w_atk40:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_atk45:
   material: RABBIT_FOOT
   itemModel: BLAZE_POWDER
@@ -756,6 +922,8 @@ maggoteers:charm_a2w_atk45:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_cursed_blade:
   material: RABBIT_FOOT
   itemModel: STONE_SWORD
@@ -765,6 +933,8 @@ maggoteers:charm_a2w_cursed_blade:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_cursed_blade_mag:
   material: RABBIT_FOOT
   itemModel: STONE_SWORD
@@ -774,6 +944,8 @@ maggoteers:charm_a2w_cursed_blade_mag:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_death_golem:
   material: RABBIT_FOOT
   itemModel: CARVED_PUMPKIN
@@ -783,6 +955,8 @@ maggoteers:charm_a2w_death_golem:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_hit_wither:
   material: RABBIT_FOOT
   itemModel: COAL_BLOCK
@@ -792,6 +966,8 @@ maggoteers:charm_a2w_hit_wither:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_hp6:
   material: RABBIT_FOOT
   itemModel: POTION
@@ -801,6 +977,8 @@ maggoteers:charm_a2w_hp6:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_hp8a:
   material: RABBIT_FOOT
   itemModel: HEAVY_WEIGHTED_PRESSURE_PLATE
@@ -810,6 +988,8 @@ maggoteers:charm_a2w_hp8a:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_hp8b:
   material: RABBIT_FOOT
   itemModel: POTION
@@ -819,6 +999,8 @@ maggoteers:charm_a2w_hp8b:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_kill_boom:
   material: RABBIT_FOOT
   itemModel: CREEPER_HEAD
@@ -828,6 +1010,8 @@ maggoteers:charm_a2w_kill_boom:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_kill_heal:
   material: RABBIT_FOOT
   itemModel: ZOMBIE_HEAD
@@ -837,6 +1021,8 @@ maggoteers:charm_a2w_kill_heal:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_kill_spd:
   material: RABBIT_FOOT
   itemModel: SKELETON_SKULL
@@ -846,6 +1032,8 @@ maggoteers:charm_a2w_kill_spd:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_kill_str:
   material: RABBIT_FOOT
   itemModel: PIGLIN_HEAD
@@ -855,6 +1043,8 @@ maggoteers:charm_a2w_kill_str:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_kill_wither:
   material: RABBIT_FOOT
   itemModel: WITHER_SKELETON_SKULL
@@ -864,6 +1054,8 @@ maggoteers:charm_a2w_kill_wither:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_mag35:
   material: RABBIT_FOOT
   itemModel: QUARTZ
@@ -873,6 +1065,8 @@ maggoteers:charm_a2w_mag35:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_mag40:
   material: RABBIT_FOOT
   itemModel: SPRUCE_SAPLING
@@ -882,6 +1076,8 @@ maggoteers:charm_a2w_mag40:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_mag45:
   material: RABBIT_FOOT
   itemModel: POTION
@@ -891,6 +1087,8 @@ maggoteers:charm_a2w_mag45:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_reach_a:
   material: RABBIT_FOOT
   itemModel: LEAD
@@ -900,6 +1098,8 @@ maggoteers:charm_a2w_reach_a:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_reach_b:
   material: RABBIT_FOOT
   itemModel: GOLDEN_HOE
@@ -909,6 +1109,8 @@ maggoteers:charm_a2w_reach_b:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_regen2:
   material: RABBIT_FOOT
   itemModel: ALLAY_SPAWN_EGG
@@ -918,6 +1120,8 @@ maggoteers:charm_a2w_regen2:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_spd10:
   material: RABBIT_FOOT
   itemModel: CLOCK
@@ -927,6 +1131,8 @@ maggoteers:charm_a2w_spd10:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_spd8a:
   material: RABBIT_FOOT
   itemModel: LEATHER_BOOTS
@@ -936,6 +1142,8 @@ maggoteers:charm_a2w_spd8a:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_spd8b:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -945,6 +1153,8 @@ maggoteers:charm_a2w_spd8b:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_str2:
   material: RABBIT_FOOT
   itemModel: PIGLIN_BRUTE_SPAWN_EGG
@@ -954,6 +1164,8 @@ maggoteers:charm_a2w_str2:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_ally_regen:
   material: RABBIT_FOOT
   itemModel: ROSE_BUSH
@@ -963,6 +1175,8 @@ maggoteers:charm_a3s_ally_regen:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_atk60:
   material: RABBIT_FOOT
   itemModel: ANVIL
@@ -972,6 +1186,8 @@ maggoteers:charm_a3s_atk60:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_atk70:
   material: RABBIT_FOOT
   itemModel: NETHERITE_SWORD
@@ -981,6 +1197,8 @@ maggoteers:charm_a3s_atk70:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_atk80:
   material: RABBIT_FOOT
   itemModel: BLAZE_ROD
@@ -990,6 +1208,8 @@ maggoteers:charm_a3s_atk80:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_hp12:
   material: RABBIT_FOOT
   itemModel: COOKED_BEEF
@@ -999,6 +1219,8 @@ maggoteers:charm_a3s_hp12:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_hp18:
   material: RABBIT_FOOT
   itemModel: CHAINMAIL_CHESTPLATE
@@ -1008,6 +1230,8 @@ maggoteers:charm_a3s_hp18:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_hp30:
   material: RABBIT_FOOT
   itemModel: MILK_BUCKET
@@ -1017,6 +1241,8 @@ maggoteers:charm_a3s_hp30:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_kb1a:
   material: RABBIT_FOOT
   itemModel: IRON_BLOCK
@@ -1026,6 +1252,8 @@ maggoteers:charm_a3s_kb1a:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_kb1b:
   material: RABBIT_FOOT
   itemModel: NETHERITE_BLOCK
@@ -1035,6 +1263,8 @@ maggoteers:charm_a3s_kb1b:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_kill_atk10:
   material: RABBIT_FOOT
   itemModel: GOLDEN_AXE
@@ -1044,6 +1274,8 @@ maggoteers:charm_a3s_kill_atk10:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_kill_mag10:
   material: RABBIT_FOOT
   itemModel: REDSTONE_BLOCK
@@ -1053,6 +1285,8 @@ maggoteers:charm_a3s_kill_mag10:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_lust:
   material: RABBIT_FOOT
   itemModel: LILY_OF_THE_VALLEY
@@ -1062,6 +1296,8 @@ maggoteers:charm_a3s_lust:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_mag60:
   material: RABBIT_FOOT
   itemModel: AMETHYST_CLUSTER
@@ -1071,6 +1307,8 @@ maggoteers:charm_a3s_mag60:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_mag70:
   material: RABBIT_FOOT
   itemModel: PALE_OAK_SAPLING
@@ -1080,6 +1318,8 @@ maggoteers:charm_a3s_mag70:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_mag80:
   material: RABBIT_FOOT
   itemModel: EXPERIENCE_BOTTLE
@@ -1089,6 +1329,8 @@ maggoteers:charm_a3s_mag80:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_reach1a:
   material: RABBIT_FOOT
   itemModel: PISTON
@@ -1098,6 +1340,8 @@ maggoteers:charm_a3s_reach1a:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_reach1b:
   material: RABBIT_FOOT
   itemModel: STRING
@@ -1107,6 +1351,8 @@ maggoteers:charm_a3s_reach1b:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_regen4:
   material: RABBIT_FOOT
   itemModel: ALLAY_SPAWN_EGG
@@ -1116,6 +1362,8 @@ maggoteers:charm_a3s_regen4:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_res3:
   material: RABBIT_FOOT
   itemModel: IRON_GOLEM_SPAWN_EGG
@@ -1125,6 +1373,8 @@ maggoteers:charm_a3s_res3:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_spd10:
   material: RABBIT_FOOT
   itemModel: CLOCK
@@ -1134,6 +1384,8 @@ maggoteers:charm_a3s_spd10:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_spd15:
   material: RABBIT_FOOT
   itemModel: WIND_CHARGE
@@ -1143,6 +1395,8 @@ maggoteers:charm_a3s_spd15:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_spd20:
   material: RABBIT_FOOT
   itemModel: IRON_BOOTS
@@ -1152,6 +1406,8 @@ maggoteers:charm_a3s_spd20:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_str3:
   material: RABBIT_FOOT
   itemModel: PIGLIN_BRUTE_SPAWN_EGG
@@ -1161,6 +1417,8 @@ maggoteers:charm_a3s_str3:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_taken_abs:
   material: RABBIT_FOOT
   itemModel: WAXED_OXIDIZED_COPPER_TRAPDOOR
@@ -1170,6 +1428,8 @@ maggoteers:charm_a3s_taken_abs:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_taken_res:
   material: RABBIT_FOOT
   itemModel: WAXED_OXIDIZED_COPPER
@@ -1179,6 +1439,8 @@ maggoteers:charm_a3s_taken_res:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3w_glass_regen:
   material: RABBIT_FOOT
   itemModel: DIAMOND_HOE
@@ -1188,6 +1450,8 @@ maggoteers:charm_a3w_glass_regen:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3w_imm_poison:
   material: RABBIT_FOOT
   itemModel: CAVE_SPIDER_SPAWN_EGG
@@ -1197,6 +1461,8 @@ maggoteers:charm_a3w_imm_poison:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3w_imm_slow:
   material: RABBIT_FOOT
   itemModel: WARDEN_SPAWN_EGG
@@ -1206,6 +1472,8 @@ maggoteers:charm_a3w_imm_slow:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3w_imm_wither:
   material: RABBIT_FOOT
   itemModel: WITHER_SKELETON_SPAWN_EGG
@@ -1215,6 +1483,8 @@ maggoteers:charm_a3w_imm_wither:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_class_guard:
   material: RABBIT_FOOT
   itemModel: SMITHING_TABLE
@@ -1224,6 +1494,8 @@ maggoteers:charm_class_guard:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_class_heavy:
   material: RABBIT_FOOT
   itemModel: IRON_TRAPDOOR
@@ -1233,6 +1505,8 @@ maggoteers:charm_class_heavy:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_class_mage:
   material: RABBIT_FOOT
   itemModel: EMERALD_BLOCK
@@ -1242,6 +1516,8 @@ maggoteers:charm_class_mage:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_class_sniper:
   material: RABBIT_FOOT
   itemModel: SPYGLASS
@@ -1251,6 +1527,8 @@ maggoteers:charm_class_sniper:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_class_vanguard:
   material: RABBIT_FOOT
   itemModel: RED_BANNER
@@ -1260,6 +1538,8 @@ maggoteers:charm_class_vanguard:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a1w_str1_1:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1268,6 +1548,8 @@ maggoteers:charm_a1w_str1_1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_regen2_1:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1276,6 +1558,8 @@ maggoteers:charm_a2w_regen2_1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_regen2_2:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1284,6 +1568,8 @@ maggoteers:charm_a2w_regen2_2:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_str2_1:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1292,6 +1578,8 @@ maggoteers:charm_a2w_str2_1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a2w_str2_2:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1300,6 +1588,8 @@ maggoteers:charm_a2w_str2_2:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_regen4_1:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1308,6 +1598,8 @@ maggoteers:charm_a3s_regen4_1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_regen4_2:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1316,6 +1608,8 @@ maggoteers:charm_a3s_regen4_2:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_regen4_3:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1324,6 +1618,8 @@ maggoteers:charm_a3s_regen4_3:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_regen4_4:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1332,6 +1628,8 @@ maggoteers:charm_a3s_regen4_4:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_res3_1:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1340,6 +1638,8 @@ maggoteers:charm_a3s_res3_1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_res3_2:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1348,6 +1648,8 @@ maggoteers:charm_a3s_res3_2:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_res3_3:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1356,6 +1658,8 @@ maggoteers:charm_a3s_res3_3:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_str3_1:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1364,6 +1668,8 @@ maggoteers:charm_a3s_str3_1:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_str3_2:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1372,6 +1678,8 @@ maggoteers:charm_a3s_str3_2:
     - "<dark_gray>"
   glint: true
 
+  enchantments:
+    - minecraft:unbreaking: 10
 maggoteers:charm_a3s_str3_3:
   material: RABBIT_FOOT
   itemModel: RABBIT_FOOT
@@ -1379,3 +1687,5 @@ maggoteers:charm_a3s_str3_3:
   lore:
     - "<dark_gray>"
   glint: true
+  enchantments:
+    - minecraft:unbreaking: 10

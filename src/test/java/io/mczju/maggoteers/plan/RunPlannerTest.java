@@ -183,7 +183,7 @@ class RunPlannerTest {
                 List.of(), List.of(), List.of());
         DeathSpawnCfg death = new DeathSpawnCfg(
                 EntityType.SILVERFISH, 1, new CoeffCfg(1, 1, 1), List.of(),
-                new InfernalCfg(2, List.of("berserk")), List.of(), List.of());
+                new InfernalCfg(2, List.of("berserk")), List.of(), List.of(), List.of());
         StepCfg root = new StepCfg(
                 "1", EntityType.ZOMBIE, 1, new CoeffCfg(1, 1, 1), 0, List.of(),
                 new InfernalCfg(3, List.of("sprint")),
@@ -210,5 +210,38 @@ class RunPlannerTest {
         assertEquals(List.of("berserk"), step.onDeath().get(0).infernal().affixes());
         assertNotEquals(step.infernal(), step.passengers().get(0).infernal());
         assertNotEquals(step.infernal(), step.onDeath().get(0).infernal());
+    }
+
+    @Test
+    void deathSpawnCarriesPassengers() {
+        PassengerCfg rider = new PassengerCfg(
+                EntityType.VINDICATOR, 1, new CoeffCfg(1, 1, 1), List.of(),
+                InfernalCfg.NONE, List.of(), List.of(), List.of());
+        DeathSpawnCfg camel = new DeathSpawnCfg(
+                EntityType.CAMEL, 1, new CoeffCfg(1, 1, 1), List.of(),
+                InfernalCfg.NONE, List.of(), List.of(rider), List.of());
+        StepCfg root = new StepCfg(
+                "1", EntityType.SLIME, 1, new CoeffCfg(1, 1, 1), 0, List.of(),
+                InfernalCfg.NONE, List.of(), List.of(camel), List.of());
+        SpawnStrategyCfg strat = new SpawnStrategyCfg("w_rhine", List.of(root), 1, List.of());
+
+        Map<String, SpawnStrategyCfg> strategies = new HashMap<>(simpleDefs().strategies());
+        strategies.put("w_rhine", strat);
+        Map<String, Map<String, List<WavesConfig.PoolEntry>>> pools = new HashMap<>();
+        for (String act : List.of("act1", "act2", "act3")) {
+            pools.put(act, Map.of(
+                    "weak", List.of(new WavesConfig.PoolEntry("w_rhine", 1)),
+                    "strong", List.of(new WavesConfig.PoolEntry("s_strong", 1)),
+                    "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
+        }
+
+        DeathSpawn death = RunPlanner.plan(
+                2L, 1, new WaveDefinitions(strategies, pools),
+                oneMapLib(), scaling(), affixes(), cfg())
+                .get(0).waves().get(0).steps().get(0).onDeath().get(0);
+
+        assertEquals(EntityType.CAMEL, death.type());
+        assertEquals(1, death.passengers().size());
+        assertEquals(EntityType.VINDICATOR, death.passengers().get(0).type());
     }
 }

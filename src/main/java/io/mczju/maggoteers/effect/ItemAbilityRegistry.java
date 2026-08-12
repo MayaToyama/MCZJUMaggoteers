@@ -223,7 +223,7 @@ public final class ItemAbilityRegistry {
                     + " use_fx is deprecated; move under use_ability.fx");
             fxSec = legacyUseFx;
         }
-        MagicUseFx fx = MagicFxConfig.mergedFxForAbility(itemId, fxSec);
+        MagicUseFx fx = MagicFxConfig.mergedFxForAbility(itemId, effect, params, fxSec);
         java.util.List<BuffPotionSpec> selfPotions = abilitySec.contains("self_potions")
                 ? BuffPotionParser.parseList(abilitySec.getList("self_potions"))
                 : java.util.List.of();

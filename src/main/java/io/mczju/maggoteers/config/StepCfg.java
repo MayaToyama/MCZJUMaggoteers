@@ -9,11 +9,20 @@ import java.util.List;
 public record StepCfg(String point, EntityType type, int count, CoeffCfg coeff,
                       int delaySec, List<String> affixes, InfernalCfg infernal,
                       List<MobEquipment> equipment, List<DeathSpawnCfg> onDeath,
-                      List<PassengerCfg> passengers) {
+                      List<PassengerCfg> passengers, int repeat) {
     public StepCfg(String point, EntityType type, int count, CoeffCfg coeff,
                    int delaySec, List<String> affixes) {
         this(point, type, count, coeff, delaySec, affixes, InfernalCfg.NONE,
-                List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), 1);
+    }
+
+    /** 兼容旧调用：无 step 级 repeat 时默认为 1。 */
+    public StepCfg(String point, EntityType type, int count, CoeffCfg coeff,
+                   int delaySec, List<String> affixes, InfernalCfg infernal,
+                   List<MobEquipment> equipment, List<DeathSpawnCfg> onDeath,
+                   List<PassengerCfg> passengers) {
+        this(point, type, count, coeff, delaySec, affixes, infernal,
+                equipment, onDeath, passengers, 1);
     }
 
     public StepCfg {
@@ -22,5 +31,6 @@ public record StepCfg(String point, EntityType type, int count, CoeffCfg coeff,
         equipment = equipment == null ? List.of() : List.copyOf(equipment);
         onDeath = onDeath == null ? List.of() : List.copyOf(onDeath);
         passengers = passengers == null ? List.of() : List.copyOf(passengers);
+        repeat = Math.max(1, repeat);
     }
 }

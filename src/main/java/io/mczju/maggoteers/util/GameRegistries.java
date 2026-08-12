@@ -16,11 +16,12 @@ import java.util.Set;
 /** Paper 26.x Registry 解析（替代 getByName / Attribute.valueOf / EntityType.valueOf）。 */
 public final class GameRegistries {
 
-    private static final Map<String, String> ATTRIBUTE_LEGACY = Map.ofEntries(
-            Map.entry("MAX_HEALTH", "generic.max_health"),
-            Map.entry("ATTACK_DAMAGE", "generic.attack_damage"),
-            Map.entry("MOVEMENT_SPEED", "generic.movement_speed"),
-            Map.entry("ATTACK_SPEED", "generic.attack_speed")
+    /** Paper 1.21.2+ 去掉 generic. 前缀；两套都试。 */
+    private static final Map<String, String[]> ATTRIBUTE_KEYS = Map.ofEntries(
+            Map.entry("MAX_HEALTH", new String[]{"max_health", "generic.max_health"}),
+            Map.entry("ATTACK_DAMAGE", new String[]{"attack_damage", "generic.attack_damage"}),
+            Map.entry("MOVEMENT_SPEED", new String[]{"movement_speed", "generic.movement_speed"}),
+            Map.entry("ATTACK_SPEED", new String[]{"attack_speed", "generic.attack_speed"})
     );
 
     private GameRegistries() {}
@@ -28,13 +29,21 @@ public final class GameRegistries {
     public static PotionEffectType potionEffect(String name) {
         if (name == null || name.isBlank()) return null;
         String u = name.trim().toUpperCase(Locale.ROOT);
-        PotionEffectType t = Registry.POTION_EFFECT_TYPE.get(NamespacedKey.minecraft(u.toLowerCase(Locale.ROOT)));
+        String snake = u.toLowerCase(Locale.ROOT);
+        String dotted = snake.replace('_', '.');
+        for (String key : new String[]{snake, dotted}) {
+            NamespacedKey nk = NamespacedKey.minecraft(key);
+            // Paper 26：优先 EFFECT / MOB_EFFECT；POTION_EFFECT_TYPE 为兼容别名
+            PotionEffectType t = Registry.EFFECT.get(nk);
+            if (t != null) return t;
+            t = Registry.MOB_EFFECT.get(nk);
+            if (t != null) return t;
+            t = Registry.POTION_EFFECT_TYPE.get(nk);
+            if (t != null) return t;
+        }
+        PotionEffectType t = PotionEffectType.getByName(u);
         if (t != null) return t;
-        t = Registry.POTION_EFFECT_TYPE.get(NamespacedKey.minecraft(u.toLowerCase(Locale.ROOT).replace('_', '.')));
-        if (t != null) return t;
-        t = PotionEffectType.getByName(u);
-        if (t != null) return t;
-        return PotionEffectType.getByName(u.toLowerCase(Locale.ROOT));
+        return PotionEffectType.getByName(snake);
     }
 
     public static boolean isVirtualAttribute(String name) {
@@ -45,14 +54,27 @@ public final class GameRegistries {
         if (name == null || name.isBlank()) return null;
         if (isVirtualAttribute(name)) return null;
         String u = name.trim().toUpperCase(Locale.ROOT);
-        // rewards.yml 使用 ATTACK_DAMAGE 等常量名；onEnable 时 Registry.ATTRIBUTE 可能尚未就绪
+        // rewards.yml 使用 ATTACK_DAMAGE 等常量名；优先静态常量 / valueOf
         try {
-            return Attribute.valueOf(u);
+            Attribute byValueOf = Attribute.valueOf(u);
+            if (byValueOf != null) return byValueOf;
         } catch (IllegalArgumentException ignored) {
-            // 非 enum 名，走 Registry
+            // 走 Registry
+        }
+        try {
+            // Paper 26：Attribute.MAX_HEALTH 等为接口静态字段
+            var field = Attribute.class.getField(u);
+            Object v = field.get(null);
+            if (v instanceof Attribute a) return a;
+        } catch (ReflectiveOperationException ignored) {
         }
         Set<String> candidates = new LinkedHashSet<>();
-        if (ATTRIBUTE_LEGACY.containsKey(u)) candidates.add(ATTRIBUTE_LEGACY.get(u));
+        String[] mapped = ATTRIBUTE_KEYS.get(u);
+        if (mapped != null) {
+            candidates.addAll(java.util.Arrays.asList(mapped));
+        }
+        // MAX_HEALTH → max_health（勿用 replace('_','.') 变成 max.health）
+        candidates.add(u.toLowerCase(Locale.ROOT));
         String dotted = u.toLowerCase(Locale.ROOT).replace('_', '.');
         candidates.add(dotted);
         if (dotted.startsWith("generic.")) {

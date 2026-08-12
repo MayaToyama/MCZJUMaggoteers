@@ -90,13 +90,14 @@ public final class WavesConfig {
             int count = num(m.get("count"), 1).intValue();
             CoeffCfg coeff = MobYamlParser.parseCoeff(m);
             int delay = num(m.get("delay"), 0).intValue();
+            int stepRepeat = num(m.get("repeat"), 1).intValue();
             List<String> affixes = MobYamlParser.parseAffixes(m);
             InfernalCfg infernal = MobYamlParser.parseInfernal(m);
             List<PassengerCfg> passengers = MobYamlParser.parsePassengers(m.get("passengers"));
             steps.add(new StepCfg(point, type, count, coeff, delay, affixes, infernal,
                     MobYamlParser.parseEquipment(m.get("equipment")),
                     MobYamlParser.parseOnDeath(m.get("on_death")),
-                    passengers));
+                    passengers, stepRepeat));
         }
         List<RewardItemCfg> rewards = new ArrayList<>();
         for (var m : s.getMapList("clearReward")) {

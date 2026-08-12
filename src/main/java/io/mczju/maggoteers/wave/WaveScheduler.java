@@ -304,8 +304,19 @@ public final class WaveScheduler {
         } else {
             broadcast(game, Component.text("✔ 本波清除！", NamedTextColor.GREEN));
         }
-        io.mczju.maggoteers.effect.EffectService.fireTrigger((MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_WAVE_CLEAR);
-        io.mczju.maggoteers.effect.SummonRegistry.onWaveClear((MaggoteersGame) game);
+        try {
+            io.mczju.maggoteers.effect.EffectService.fireTrigger(
+                    (MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_WAVE_CLEAR);
+        } catch (RuntimeException ex) {
+            MaggoteersPlugin.getInstance().getLogger()
+                    .warning("ON_WAVE_CLEAR failed (continuing to REST): " + ex.getMessage());
+        }
+        try {
+            io.mczju.maggoteers.effect.SummonRegistry.onWaveClear((MaggoteersGame) game);
+        } catch (RuntimeException ex) {
+            MaggoteersPlugin.getInstance().getLogger()
+                    .warning("SummonRegistry.onWaveClear failed: " + ex.getMessage());
+        }
         int restSec = MaggoteersPlugin.getInstance().getConfig().getInt("rest.duration_sec", 30);
         c.restEndTicks = Bukkit.getCurrentTick() + restSec * 20L;
         c.phase = Phase.REST;

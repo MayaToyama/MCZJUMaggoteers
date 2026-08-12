@@ -1,11 +1,17 @@
 package io.mczju.maggoteers.wave;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * 一波：steps 按序（含 delayTicks 时序）执行，整体重复 {@code repeat} 次。
- * <p>展开语义：{@link #expand()} 把 steps 串 repeat 份；每份内每步 spawn {@link SpawnStep#count} 只于其 point。
+ * 一波：steps 按序配置；整体可 strategy-{@code repeat} 轮。
+ * <p>展开语义：每个刷怪点（{@link SpawnStep#point()}）各有独立时间轴；
+ * 同点上的 step（含 {@link SpawnStep#repeat()}）串行累加 {@code delay}；
+ * 不同点并行。strategy-{@code repeat} 每一轮内各点时钟从本轮起点归零，
+ * 下一轮起点 = 上一轮最晚刷怪时刻。
  */
 public record WaveSpec(String strategyId, List<SpawnStep> steps, int repeat, List<RewardItem> clearReward) {
     public WaveSpec {
@@ -20,25 +26,36 @@ public record WaveSpec(String strategyId, List<SpawnStep> steps, int repeat, Lis
         this("", steps, repeat, clearReward);
     }
 
-    /** 展平成有序 spawn 序列（steps × repeat）。
-     * <p>配置里 {@code delay}（秒）表示<strong>该 step 刷怪前</strong>相对上一时间点（上一步刷怪时刻；
-     * 每轮 repeat 首步则相对上一轮末步）的等待，而非距本波开始的绝对时间。
-     * 展开后 {@link SpawnStep#delayTicks()} 为距本波开始的绝对 tick，供调度器使用。
+    /**
+     * 展平成有序 spawn 序列（按绝对 tick 排序，同刻保持配置出现顺序）。
+     * <p>配置里 {@code delay}（秒→tick）表示相对<strong>同刷怪点</strong>上一刷怪时刻的等待
+     *（该点尚无事件时相对本轮起点）。展开后 {@link SpawnStep#delayTicks()} 为距本波开始的绝对 tick；
+     * {@link SpawnStep#repeat()} 为 1。
      */
     public List<SpawnStep> expand() {
-        List<SpawnStep> out = new ArrayList<>(steps.size() * repeat);
-        int timeline = 0;
+        List<SpawnStep> out = new ArrayList<>();
+        int roundStart = 0;
         for (int r = 0; r < repeat; r++) {
+            Map<Vec3, Integer> lastAt = new HashMap<>();
+            int roundEnd = roundStart;
             for (SpawnStep s : steps) {
-                timeline += s.delayTicks();
-                out.add(new SpawnStep(
-                        s.point(), s.type(), s.count(),
-                        s.hpMult(), s.dmgMult(), s.speedMult(), s.dropMult(),
-                        s.scaleMult(), s.followRangeMult(),
-                        timeline, s.affixes(), s.potions(), s.infernal(),
-                        s.equipment(), s.onDeath(), s.passengers()));
+                int stepRepeat = Math.max(1, s.repeat());
+                for (int sr = 0; sr < stepRepeat; sr++) {
+                    int prev = lastAt.getOrDefault(s.point(), roundStart);
+                    int at = prev + s.delayTicks();
+                    lastAt.put(s.point(), at);
+                    if (at > roundEnd) roundEnd = at;
+                    out.add(new SpawnStep(
+                            s.point(), s.type(), s.count(),
+                            s.hpMult(), s.dmgMult(), s.speedMult(), s.dropMult(),
+                            s.scaleMult(), s.followRangeMult(),
+                            at, s.affixes(), s.potions(), s.infernal(),
+                            s.equipment(), s.onDeath(), s.passengers(), 1));
+                }
             }
+            roundStart = roundEnd;
         }
+        out.sort(Comparator.comparingInt(SpawnStep::delayTicks));
         return out;
     }
 }

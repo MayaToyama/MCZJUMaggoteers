@@ -10,11 +10,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Hoglin;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.PiglinAbstract;
 import org.bukkit.entity.Slime;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -96,6 +98,13 @@ public final class MobFactory {
     public static LivingEntity spawnDeathMob(Location loc, DeathSpawn ds) {
         if (loc.getWorld() == null) return null;
         try {
+            if (ds.type() == EntityType.TNT) {
+                var raw = loc.getWorld().spawnEntity(loc, EntityType.TNT);
+                if (raw instanceof TNTPrimed tnt) {
+                    tnt.setFuseTicks(40);
+                }
+                return null;
+            }
             var raw = loc.getWorld().spawnEntity(loc, ds.type());
             if (!(raw instanceof LivingEntity le)) {
                 raw.remove();
@@ -108,12 +117,26 @@ public final class MobFactory {
             applyAffixVisuals(le, ds.affixes());
             InfernalMobsBridge.mechanize(le, ds.infernal());
             applyEquipment(le, ds.equipment());
+            MountPassengerLimits.prepareMount(le);
             if (le instanceof Mob m) m.setAware(true);
             return le;
         } catch (Exception e) {
             LOG.warning("死亡召唤失败 " + ds.type() + "：" + e.getMessage());
             return null;
         }
+    }
+
+    /** 亡语生成物延迟挂载乘客（与 {@link #spawnStepGroup} 同 tick+1 语义）。 */
+    public static void mountPassengersDelayed(LivingEntity mount, List<PassengerSpawn> passengers,
+                                              BiConsumer<LivingEntity, MobSpawnProfile> track) {
+        if (mount == null || passengers == null || passengers.isEmpty()) return;
+        Bukkit.getScheduler().runTaskLater(MaggoteersPlugin.getInstance(), () -> {
+            if (!mount.isValid() || mount.isDead()) return;
+            List<LivingEntity> direct = new ArrayList<>();
+            mountPassengerTree(mount, passengers, track, direct);
+            LivingEntity controller = MountControllerResolver.resolve(mount, direct, passengers);
+            MountedSquadRegistry.register(mount, controller);
+        }, 1L);
     }
 
     private static LivingEntity spawnMount(Location loc, SpawnStep step) {
@@ -311,6 +334,8 @@ public final class MobFactory {
 
     static void applyAffixVisuals(LivingEntity le, List<String> affixIds) {
         if (affixIds == null || !affixIds.contains("invisible")) return;
+        // 实体隐身旗标，避免 INVISIBILITY 药水在苦力怕爆炸时形成超长滞留云
+        le.setInvisible(true);
         EntityEquipment eq = le.getEquipment();
         if (eq == null) return;
         ItemStack bottle = new ItemStack(Material.GLASS_BOTTLE);

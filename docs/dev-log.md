@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-08-12 — 近战触及无限：stripDerived 漏剥 ENTITY_INTERACTION_RANGE
+
+- **做了什么**：根因确认后修复——`EffectService.stripDerived` / `AuraService.stripAuraDerived` 改为经 `DerivedViewAttributes` 剥离完整属性列表（含 `entity_interaction_range`）；`EffectService.resync` 在 `WeaponHeldService.sync` 之后**始终** `resyncDerived`（主手未变时 sync early-return 会跳过派生重算）。
+- **原因**：`resyncDerived` 用唯一 KEY_SEQ 重加 modifier，但 strip 只清 HP/伤害/移速/攻速；触及等属性每次 apply/切武器/到期扫尾都会叠一层，实际上限常表现为实体追踪距离（约 48 格）。
+- **决策**：维护显式 key 列表（可单测、不依赖 RegistryAccess）；新 ADD_ATTRIBUTE 属性必须同步进该列表。
+- **遗留**：需部署新 jar 后局内 `/attribute` 或手测近卫职业触及不再随 resync 膨胀。
+
+---
+
 ## 2026-08-11 — BOUND_EQUIP 保护胸甲内容与 GUI 预览
 
 - **做了什么**：`RewardOptionIcons` STAT 分支对 `BOUND_EQUIP` 走 `BoundEquipParams.previewLevel` + `ItemService.createItem`（不经 collectibles）；`items/maggoteers.yml` 新增 `prot_chest_l1`–`l8`（保护 II–XVI、0 护甲/韧性）；`rewards.yml` `act1_strong` 池加入 `prot_chest` STAT（`UPGRADE_LEVEL` max 8）；reference Effect 表补 `BOUND_EQUIP` 行。

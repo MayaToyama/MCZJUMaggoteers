@@ -21,7 +21,8 @@ public final class PlayerEffect {
     private final int recurringIntervalSec;
     private final PlayerEffect recurringSpawn;
     private final Stack stack;
-    private final int upgradeMax;
+    /** Raised when a higher-cap pool re-applies the same UPGRADE_LEVEL id. */
+    private int upgradeMax;
     private int level;
     private final int cooldownSec;
 
@@ -51,6 +52,7 @@ public final class PlayerEffect {
     // 可变（堆叠/到期用）
     public int level() { return level; }
     public void setLevel(int l) { this.level = l; }
+    public void setUpgradeMax(int max) { this.upgradeMax = Math.max(1, max); }
     public void setExpiryCharges(int c) { this.expiryCharges = c; }
 
     public boolean isPermanent() { return fireTrigger == null; }  // 常驻型

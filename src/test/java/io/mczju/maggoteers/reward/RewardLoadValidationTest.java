@@ -245,6 +245,33 @@ class RewardLoadValidationTest {
                 false, 0, false, 0, java.util.List.of());
     }
 
+    @Test
+    void parsesBoundEquipSlotAndItemsByLevelFromMap() {
+        Map<String, Object> levels = new HashMap<>();
+        for (int i = 1; i <= 8; i++) {
+            levels.put(String.valueOf(i), "maggoteers:prot_chest_l" + i);
+        }
+        Map<String, Object> params = new HashMap<>();
+        params.put("slot", "CHEST");
+        params.put("items_by_level", levels);
+        Map<String, Object> m = new HashMap<>();
+        m.put("id", "prot_chest");
+        m.put("display", "<aqua>保护胸甲");
+        m.put("category", "STAT");
+        m.put("effect", "BOUND_EQUIP");
+        m.put("stack", "UPGRADE_LEVEL");
+        m.put("upgrade_max", 8);
+        m.put("unique", true);
+        m.put("params", params);
+
+        RewardOption opt = RewardOption.fromMap(m);
+        assertEquals(Effect.BOUND_EQUIP, opt.effect());
+        assertEquals("CHEST", opt.params().get(EffectKeys.SLOT));
+        assertEquals("maggoteers:prot_chest_l1",
+                opt.params().get(EffectKeys.ITEMS_BY_LEVEL).get(1));
+        assertTrue(RewardLoadValidator.validateStatOption(opt).isEmpty());
+    }
+
     private static EffectContext boundEquipParams(int max) {
         EffectContext p = new EffectContext();
         p.put(EffectKeys.SLOT, "CHEST");

@@ -81,10 +81,10 @@ public final class EffectService {
         PlayerState st = PlayerStateManager.get(game, p.getUniqueId());
         if (st == null) return;
         if (game != null) {
+            // sync may early-return when main-hand unchanged; still must strip/reapply derived views
             WeaponHeldService.sync(p, game);
-        } else {
-            resyncDerived(p, st);
         }
+        resyncDerived(p, st);
         if (game != null) {
             io.mczju.maggoteers.reward.CollectibleService.resync(p, game);
             BoundEquipService.resync(p, game);
@@ -104,14 +104,28 @@ public final class EffectService {
         try {
             stripDerived(p, st.effects());
             for (PlayerEffect e : new ArrayList<>(st.effects())) {
-                if (e.isPermanent() && e.effect() != Effect.AURA) applyDerived(p, e);
+                if (e.isPermanent() && e.effect() != Effect.AURA) {
+                    try {
+                        applyDerived(p, e);
+                    } catch (RuntimeException ex) {
+                        LOG.warning("resyncDerived apply " + e.id() + ": " + ex.getMessage());
+                    }
+                }
             }
         } finally {
             BULK_RESYNC.set(false);
+            double maxAfter = maxInst != null ? maxInst.getValue() : 20.0;
+            try {
+                p.setHealth(finalizeHealthAfterResync(healthBefore, maxBefore, maxAfter));
+            } catch (IllegalArgumentException ex) {
+                LOG.warning("resyncDerived setHealth: " + ex.getMessage());
+            }
         }
-
-        double maxAfter = maxInst != null ? maxInst.getValue() : 20.0;
-        p.setHealth(finalizeHealthAfterResync(healthBefore, maxBefore, maxAfter));
+        // stripDerived 会按常驻 ADD_POTION 类型清药水，须立刻重刷 AURA 派生，否则光环药水会空窗甚至被低 amp 常驻盖住
+        MaggoteersGame game = currentGame(p);
+        if (game != null) {
+            AuraService.refresh(game);
+        }
     }
 
     /**
@@ -156,16 +170,8 @@ public final class EffectService {
 
     /** 剥除本插件施加的派生视图：插件命名空间下的 AttributeModifier + 常驻 ADD_POTION 药水。 */
     private static void stripDerived(Player p, java.util.List<PlayerEffect> effects) {
-        for (Attribute attr : new Attribute[]{Attribute.MAX_HEALTH, Attribute.ATTACK_DAMAGE,
-                Attribute.MOVEMENT_SPEED, Attribute.ATTACK_SPEED}) {
-            AttributeInstance inst = p.getAttribute(attr);
-            if (inst == null) continue;
-            for (AttributeModifier m : new ArrayList<>(inst.getModifiers())) {
-                if (m.getKey().namespace().equals(MaggoteersPlugin.getInstance().getName().toLowerCase())) {
-                    inst.removeModifier(m);
-                }
-            }
-        }
+        DerivedViewAttributes.stripPluginModifiers(
+                p, MaggoteersPlugin.getInstance().getName().toLowerCase(), null);
         for (PlayerEffect e : effects) {
             if (e.isPermanent() && e.effect() == Effect.ADD_POTION) {
                 PotionEffectType type = e.params().get(EffectKeys.POTION);
@@ -189,26 +195,30 @@ public final class EffectService {
         try {
             for (var pe : game.getPlayers()) {
                 Player p = pe.player();
-                var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
-                if (ps == null || !ps.isAlive()) continue;
-                // 1) 到期扫描
-                List<String> removed = EffectStacker.sweepExpiry(ps.effects(), fired);
-                if (!removed.isEmpty()) {
-                    resyncDerived(p, ps);
-                    for (String removedId : removed) {
-                        io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
-                        BoundEquipService.remove(p, removedId);
+                try {
+                    var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
+                    if (ps == null || !ps.isAlive()) continue;
+                    // 1) 到期扫描
+                    List<String> removed = EffectStacker.sweepExpiry(ps.effects(), fired);
+                    if (!removed.isEmpty()) {
+                        resyncDerived(p, ps);
+                        for (String removedId : removed) {
+                            io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
+                            BoundEquipService.remove(p, removedId);
+                        }
                     }
-                }
-                // 2) 执行触发型（fireTrigger==fired）；REVOKE_GRANTS 先于同 trigger 其它效果
-                dispatchTriggeredEffects(p, ps, game, fired, TriggerContext.empty());
-                for (PlayerEffect e : new ArrayList<>(ps.effects())) {
-                    // 3) recurring（仅 ON_TICK_1S，基于全局 tick 时钟）
-                    if (fired == Trigger.ON_TICK_1S && e.recurringIntervalSec() > 0
-                            && e.recurringSpawn() != null
-                            && (Bukkit.getCurrentTick() / 20L) % e.recurringIntervalSec() == 0) {
-                        apply(p, e.recurringSpawn());
+                    // 2) 执行触发型（fireTrigger==fired）；REVOKE_GRANTS 先于同 trigger 其它效果
+                    dispatchTriggeredEffects(p, ps, game, fired, TriggerContext.empty());
+                    for (PlayerEffect e : new ArrayList<>(ps.effects())) {
+                        // 3) recurring（仅 ON_TICK_1S，基于全局 tick 时钟）
+                        if (fired == Trigger.ON_TICK_1S && e.recurringIntervalSec() > 0
+                                && e.recurringSpawn() != null
+                                && (Bukkit.getCurrentTick() / 20L) % e.recurringIntervalSec() == 0) {
+                            apply(p, e.recurringSpawn());
+                        }
                     }
+                } catch (RuntimeException ex) {
+                    LOG.warning("fireTrigger " + fired + " player=" + p.getName() + ": " + ex.getMessage());
                 }
             }
         } finally {
@@ -228,23 +238,27 @@ public final class EffectService {
 
     public static void fireTriggerPlayer(MaggoteersGame game, Player p, Trigger fired, TriggerContext ctx) {
         if (game == null || p == null) return;
-        var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
-        if (ps == null) return;
-        TriggerContext raw = ctx != null ? ctx : TriggerContext.empty();
-        TriggerContext useCtx = raw.fired() != null ? raw
-                : new TriggerContext(fired, raw.hitTarget(), raw.attacker(), raw.eventLocation());
-        if (fired != Trigger.ON_DEATH && fired != Trigger.ON_REVIVE && !ps.isAlive()) {
-            return;
-        }
-        List<String> removed = EffectStacker.sweepExpiry(ps.effects(), fired);
-        if (!removed.isEmpty()) {
-            resyncDerived(p, ps);
-            for (String removedId : removed) {
-                io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
-                BoundEquipService.remove(p, removedId);
+        try {
+            var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
+            if (ps == null) return;
+            TriggerContext raw = ctx != null ? ctx : TriggerContext.empty();
+            TriggerContext useCtx = raw.fired() != null ? raw
+                    : new TriggerContext(fired, raw.hitTarget(), raw.attacker(), raw.eventLocation());
+            if (fired != Trigger.ON_DEATH && fired != Trigger.ON_REVIVE && !ps.isAlive()) {
+                return;
             }
+            List<String> removed = EffectStacker.sweepExpiry(ps.effects(), fired);
+            if (!removed.isEmpty()) {
+                resyncDerived(p, ps);
+                for (String removedId : removed) {
+                    io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
+                    BoundEquipService.remove(p, removedId);
+                }
+            }
+            dispatchTriggeredEffects(p, ps, game, fired, useCtx);
+        } catch (RuntimeException ex) {
+            LOG.warning("fireTriggerPlayer " + fired + " player=" + p.getName() + ": " + ex.getMessage());
         }
-        dispatchTriggeredEffects(p, ps, game, fired, useCtx);
     }
 
     /** Pass 1: REVOKE_GRANTS; pass 2: all other triggered effects on {@code fired}. */
@@ -672,8 +686,8 @@ public final class EffectService {
                 ? AttributeModifier.Operation.MULTIPLY_SCALAR_1
                 : AttributeModifier.Operation.ADD_NUMBER;
         double maxBefore = attr == Attribute.MAX_HEALTH ? inst.getValue() : 0;
-        // D5：唯一 key = id + level + 自增序号
-        NamespacedKey key = new NamespacedKey(MaggoteersPlugin.getInstance(),
+        // D5：唯一 key = sanitize(id) + level + 自增序号（ability:/held: 等含 ':' 不能直接进 path）
+        NamespacedKey key = AttributeModifierKeys.pluginKey(MaggoteersPlugin.getInstance(),
                 e.id() + "_" + e.level() + "_" + KEY_SEQ.incrementAndGet());
         inst.addModifier(new AttributeModifier(key, value, operation));
         if (attr == Attribute.MAX_HEALTH && !BULK_RESYNC.get()) {

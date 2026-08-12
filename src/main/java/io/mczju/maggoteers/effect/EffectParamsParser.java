@@ -47,7 +47,14 @@ public final class EffectParamsParser {
                 case "attributes" -> ctx.put(EffectKeys.ATTRIBUTES, parseAttributesMap(sec.getConfigurationSection(k)));
                 case "projectile" -> ctx.put(EffectKeys.PROJECTILE, parseProjectileContext(sec.getConfigurationSection(k)));
                 case "grant_pulse_sec" -> ctx.put(EffectKeys.GRANT_PULSE_SEC, sec.getInt(k));
-                case "grant" -> parseGrantBlock(ctx, sec.getConfigurationSection(k));
+                case "grant" -> {
+                    ConfigurationSection gs = sec.getConfigurationSection(k);
+                    if (gs != null) {
+                        parseGrantBlock(ctx, gs);
+                    } else if (v instanceof Map<?, ?> gm) {
+                        parseGrantBlock(ctx, gm);
+                    }
+                }
                 case "attr" -> putAttr(ctx, v);
                 case "op" -> ctx.put(EffectKeys.OP, String.valueOf(v).toUpperCase(Locale.ROOT));
                 case "value" -> ctx.put(EffectKeys.VALUE, sec.getDouble(k));
@@ -65,26 +72,33 @@ public final class EffectParamsParser {
 
     private static void parseGrantBlock(EffectContext auraCtx, ConfigurationSection gm) {
         if (gm == null) return;
-        String effectRaw = gm.getString("effect");
-        if (effectRaw == null || effectRaw.isBlank()) return;
+        parseGrantBlock(auraCtx, gm.getValues(false));
+    }
+
+    private static void parseGrantBlock(EffectContext auraCtx, Map<?, ?> gm) {
+        if (gm == null || gm.isEmpty()) return;
+        Object effectRaw = gm.get("effect");
+        if (effectRaw == null || String.valueOf(effectRaw).isBlank()) return;
         Effect grantEffect;
         try {
-            grantEffect = Effect.valueOf(effectRaw.trim().toUpperCase(Locale.ROOT));
+            grantEffect = Effect.valueOf(String.valueOf(effectRaw).trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             return;
         }
         auraCtx.put(EffectKeys.GRANT_EFFECT, grantEffect);
         EffectContext grant = new EffectContext();
-        for (String k : gm.getKeys(false)) {
+        for (var e : gm.entrySet()) {
+            String k = String.valueOf(e.getKey());
             if ("effect".equals(k)) continue;
-            Object v = gm.get(k);
+            Object v = e.getValue();
             switch (k) {
                 case "attr" -> putAttr(grant, v);
                 case "op" -> grant.put(EffectKeys.OP, String.valueOf(v).toUpperCase(Locale.ROOT));
-                case "value" -> grant.put(EffectKeys.VALUE, gm.getDouble(k));
-                case "amount" -> grant.put(EffectKeys.AMOUNT, gm.getDouble(k));
-                case "amp" -> grant.put(EffectKeys.AMP, gm.getInt(k));
+                case "value" -> grant.put(EffectKeys.VALUE, v instanceof Number n ? n.doubleValue() : 0.0);
+                case "amount" -> grant.put(EffectKeys.AMOUNT, v instanceof Number n ? n.doubleValue() : 0.0);
+                case "amp" -> grant.put(EffectKeys.AMP, v instanceof Number n ? n.intValue() : 0);
                 case "potion" -> putPotion(grant, v);
+                case "potions" -> grant.put(EffectKeys.POTIONS, BuffPotionParser.parseList(v, false));
                 default -> { }
             }
         }
@@ -104,7 +118,9 @@ public final class EffectParamsParser {
     }
 
     private static void putPotion(EffectContext ctx, Object v) {
-        PotionEffectType type = GameRegistries.potionEffect(String.valueOf(v));
+        String name = String.valueOf(v);
+        ctx.put(EffectKeys.POTION_NAME, name);
+        PotionEffectType type = GameRegistries.potionEffect(name);
         if (type != null) {
             ctx.put(EffectKeys.POTION, type);
         }

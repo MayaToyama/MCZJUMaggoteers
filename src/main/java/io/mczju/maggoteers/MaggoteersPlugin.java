@@ -49,8 +49,10 @@ public final class MaggoteersPlugin extends JavaPlugin {
         io.mczju.maggoteers.effect.WeaponHeldRegistry.load(this);
         RewardService.load(this);
         CollectibleRegistry.load(this);
-        // onEnable 瞬间 Registry 可能未就绪；下一 tick 再解析一次 rewards（属性/药水引用）
+        // onEnable 瞬间 Registry 可能未就绪；下一 tick 再解析 rewards / held（药水与属性引用）
         getServer().getScheduler().runTask(this, () -> {
+            io.mczju.maggoteers.effect.WeaponHeldRegistry.load(this);
+            io.mczju.maggoteers.effect.ItemAbilityRegistry.load(this);
             RewardService.load(this);
             CollectibleRegistry.load(this);
         });

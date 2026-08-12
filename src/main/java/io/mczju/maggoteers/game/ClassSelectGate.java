@@ -32,19 +32,19 @@ public final class ClassSelectGate {
 
     public static void clear(AbstractGame game) { CHOSEN.remove(game); }
 
-    /** 超时兜底：为未选玩家随机抽一个职业选项并应用。 */
-    public static void autoPickRemaining(AbstractGame game, List<RewardOption> fallbackPool, Random rng) {
-        if (fallbackPool.isEmpty()) return;
+    /** 超时兜底：为未选玩家各自从 class 池随机抽 1 个职业并应用。 */
+    public static void autoPickRemaining(AbstractGame game, Random rng) {
         for (var pe : game.getPlayers()) {
             UUID id = pe.player().getUniqueId();
             if (hasChosen(game, id)) continue;
             Player p = pe.player();
+            List<RewardOption> drawn = io.mczju.maggoteers.reward.RewardService.draw("class", 1, rng, p);
+            if (drawn.isEmpty()) continue;
             if (!io.mczju.maggoteers.item.ItemService.spendOneKind(p, io.mczju.maggoteers.item.ItemKind.CLASS_TICKET)) {
                 io.mczju.maggoteers.item.ItemService.giveKind(p, io.mczju.maggoteers.item.ItemKind.CLASS_TICKET, 1);
                 io.mczju.maggoteers.item.ItemService.spendOneKind(p, io.mczju.maggoteers.item.ItemKind.CLASS_TICKET);
             }
-            RewardOption opt = fallbackPool.get(rng.nextInt(fallbackPool.size()));
-            io.mczju.maggoteers.reward.RewardService.apply(p, opt, game);
+            io.mczju.maggoteers.reward.RewardService.apply(p, drawn.get(0), game, "class");
             markChosen(game, id);
         }
     }

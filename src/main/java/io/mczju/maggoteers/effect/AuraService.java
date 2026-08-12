@@ -220,11 +220,22 @@ public final class AuraService {
         }
     }
 
+    private static final int AURA_POTION_TICKS = 20 * 40;
+
     private static void applyPotionDerived(LivingEntity le, UUID sourceId, String instanceKey, EffectContext gp) {
+        List<BuffPotionSpec> pots = gp.get(EffectKeys.POTIONS);
+        if (pots != null && !pots.isEmpty()) {
+            for (BuffPotionSpec spec : pots) {
+                if (spec == null || spec.type() == null) continue;
+                // force：避免常驻 ADD_POTION / resync 残留的低 amp 挡住光环
+                le.addPotionEffect(new PotionEffect(spec.type(), AURA_POTION_TICKS, spec.amp(), false, true, true), true);
+            }
+            return;
+        }
         PotionEffectType type = resolvePotion(gp);
         if (type == null) return;
         int amp = gp.getOrDefault(EffectKeys.AMP, 0);
-        le.addPotionEffect(new PotionEffect(type, 20 * 40, amp, false, true, true));
+        le.addPotionEffect(new PotionEffect(type, AURA_POTION_TICKS, amp, false, true, true), true);
     }
 
     private static PotionEffectType resolvePotion(EffectContext gp) {
@@ -279,6 +290,14 @@ public final class AuraService {
                 if (!grant.has(EffectKeys.AMOUNT) && canonGrant.has(EffectKeys.AMOUNT)) {
                     grant.put(EffectKeys.AMOUNT, canonGrant.get(EffectKeys.AMOUNT));
                 }
+                if (!grant.has(EffectKeys.AMP) && canonGrant.has(EffectKeys.AMP)) {
+                    grant.put(EffectKeys.AMP, canonGrant.get(EffectKeys.AMP));
+                }
+                if ((!grant.has(EffectKeys.POTIONS) || grant.get(EffectKeys.POTIONS) == null
+                        || grant.get(EffectKeys.POTIONS).isEmpty())
+                        && canonGrant.get(EffectKeys.POTIONS) != null) {
+                    grant.put(EffectKeys.POTIONS, java.util.List.copyOf(canonGrant.get(EffectKeys.POTIONS)));
+                }
             }
         });
     }
@@ -294,8 +313,8 @@ public final class AuraService {
     }
 
     private static NamespacedKey auraKey(UUID sourceId, String instanceKey, String suffix) {
-        String raw = "aura/" + sourceId + "/" + instanceKey + "/" + suffix;
-        return new NamespacedKey(MaggoteersPlugin.getInstance(), raw.length() > 256 ? raw.substring(0, 256) : raw);
+        return AttributeModifierKeys.pluginKey(MaggoteersPlugin.getInstance(),
+                "aura/" + sourceId + "/" + instanceKey + "/" + suffix);
     }
 
     private static void revertLink(AbstractGame game, String link) {
@@ -314,19 +333,10 @@ public final class AuraService {
         String instancePart = link.substring(link.indexOf("|i:") + 3);
         String instanceKey = instancePart;
         UUID sourceId = UUID.fromString(link.substring(link.indexOf("|s:") + 3, link.indexOf("|i:")));
-        String prefix = "aura/" + sourceId + "/" + instanceKey + "/";
-        for (Attribute attr : new Attribute[]{Attribute.MAX_HEALTH, Attribute.ATTACK_DAMAGE,
-                Attribute.MOVEMENT_SPEED, Attribute.ATTACK_SPEED, Attribute.KNOCKBACK_RESISTANCE,
-                Attribute.ARMOR, Attribute.ARMOR_TOUGHNESS}) {
-            AttributeInstance inst = le.getAttribute(attr);
-            if (inst == null) continue;
-            for (AttributeModifier m : new ArrayList<>(inst.getModifiers())) {
-                if (m.getKey().namespace().equals(MaggoteersPlugin.getInstance().getName().toLowerCase())
-                        && m.getKey().value().startsWith(prefix)) {
-                    inst.removeModifier(m);
-                }
-            }
-        }
+        String prefix = AttributeModifierKeys.sanitizeKeyPath(
+                "aura/" + sourceId + "/" + instanceKey + "/");
+        DerivedViewAttributes.stripPluginModifiers(
+                le, MaggoteersPlugin.getInstance().getName().toLowerCase(), prefix);
         // 药水：按 key 前缀无法精确剥除 amp，用 grant 类型重刷时覆盖；移除常见派生（下次 refresh 不再 add）
         // 可选：link 编码 potion type — v1 依赖实体死亡或 refresh 停止 add，旧 potion 自然过期
     }

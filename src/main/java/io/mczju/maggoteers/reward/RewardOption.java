@@ -183,6 +183,8 @@ public record RewardOption(
                     else ctx.put(EffectKeys.DURATION_TICKS, iv);
                 }
                 case "potion" -> putPotion(ctx, v);
+                case "slot" -> ctx.put(EffectKeys.SLOT, String.valueOf(v).toUpperCase());
+                case "items_by_level" -> ctx.put(EffectKeys.ITEMS_BY_LEVEL, parseItemsByLevel(v));
                 default -> { /* 忽略未知键 */ }
             }
         }
@@ -190,8 +192,31 @@ public record RewardOption(
     }
 
     @SuppressWarnings("unchecked")
+    private static java.util.Map<Integer, String> parseItemsByLevel(Object raw) {
+        if (!(raw instanceof Map<?, ?> m)) return java.util.Map.of();
+        java.util.Map<Integer, String> out = new java.util.HashMap<>();
+        for (var e : m.entrySet()) {
+            try {
+                int level = Integer.parseInt(String.valueOf(e.getKey()));
+                String id = e.getValue() == null ? null : String.valueOf(e.getValue());
+                if (id != null && !id.isBlank()) {
+                    out.put(level, id);
+                }
+            } catch (NumberFormatException ignored) { }
+        }
+        return java.util.Map.copyOf(out);
+    }
+
+    @SuppressWarnings("unchecked")
     private static void parseGrantBlock(EffectContext auraCtx, Object raw) {
-        if (!(raw instanceof Map<?, ?> gm)) return;
+        Map<?, ?> gm;
+        if (raw instanceof Map<?, ?> map) {
+            gm = map;
+        } else if (raw instanceof org.bukkit.configuration.ConfigurationSection sec) {
+            gm = sec.getValues(false);
+        } else {
+            return;
+        }
         Effect grantEffect = safeEnum(Effect.class, gm.get("effect"));
         if (grantEffect == null) return;
         auraCtx.put(EffectKeys.GRANT_EFFECT, grantEffect);
@@ -207,6 +232,8 @@ public record RewardOption(
                 case "amount" -> grant.put(EffectKeys.AMOUNT, v instanceof Number n ? n.doubleValue() : 0.0);
                 case "amp" -> grant.put(EffectKeys.AMP, v instanceof Number n ? n.intValue() : 0);
                 case "potion" -> putPotion(grant, v);
+                case "potions" -> grant.put(EffectKeys.POTIONS,
+                        io.mczju.maggoteers.effect.BuffPotionParser.parseList(v, false));
                 default -> { }
             }
         }

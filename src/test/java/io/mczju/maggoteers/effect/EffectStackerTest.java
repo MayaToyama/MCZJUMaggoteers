@@ -59,6 +59,21 @@ class EffectStackerTest {
     }
 
     @Test
+    void upgradeLevelRaisesCapFromHigherPool() {
+        PlayerEffect base = new PlayerEffect("str", Effect.ADD_POTION,
+                new EffectContext().put(EffectKeys.AMP, 0),
+                null, null, 0, 0, null, Stack.UPGRADE_LEVEL, 1, 0);
+        base.setLevel(1);
+        PlayerEffect higher = new PlayerEffect("str", Effect.ADD_POTION,
+                new EffectContext().put(EffectKeys.AMP, 0),
+                null, null, 0, 0, null, Stack.UPGRADE_LEVEL, 2, 0);
+        List<PlayerEffect> out = EffectStacker.merge(List.of(base), higher);
+        assertEquals(2, out.get(0).upgradeMax());
+        assertEquals(2, out.get(0).level());
+        assertEquals(1, out.get(0).params().get(EffectKeys.AMP));
+    }
+
+    @Test
     void refreshResetsCharges() {
         PlayerEffect t = timed("ls", 3, Trigger.ON_WAVE_CLEAR);
         t.setExpiryCharges(1);

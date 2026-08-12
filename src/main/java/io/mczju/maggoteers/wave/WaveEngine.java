@@ -174,6 +174,10 @@ public final class WaveEngine {
                 LivingEntity le = MobFactory.spawnDeathMob(at, ds);
                 if (le != null) {
                     trackSpawned(rt.game, rt, null, le, MobSpawnProfile.fromDeathSpawn(ds));
+                    if (!ds.passengers().isEmpty()) {
+                        MobFactory.mountPassengersDelayed(le, ds.passengers(),
+                                (passenger, profile) -> trackSpawned(rt.game, rt, null, passenger, profile));
+                    }
                 }
             }
         }

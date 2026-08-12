@@ -105,6 +105,30 @@ magic_fx:
     ripple_rings: 4
     expand_steps: 28
     spiral_ticks: 18
+  # 按 use_ability.effect 自动套用（可被 magic_fx.weapons 与 use_ability.fx 覆盖）
+  templates:
+    heal:
+      preset: RIPPLE_RINGS
+      particle: HAPPY_VILLAGER
+      radius: 5.0
+      ripple_rings: 4
+      sound: ENTITY_EXPERIENCE_ORB_PICKUP
+      sound_volume: 0.75
+      sound_pitch: 1.35
+    beam:
+      preset: NONE
+      particle: END_ROD
+      ray_length: 32.0
+      sound: ENTITY_ILLUSIONER_CAST_SPELL
+      sound_volume: 0.85
+      sound_pitch: 1.15
+      density: 48
+    buff:
+      preset: NONE
+      particle: ENCHANT
+      sound: BLOCK_ENCHANTMENT_TABLE_USE
+      sound_volume: 0.7
+      sound_pitch: 1.25
   weapons:
     maggoteers:test_blade:
       preset: SPIRAL_RADIUS
@@ -115,17 +139,10 @@ magic_fx:
       sound_pitch: 1.1
       density: 48
       spiral_ticks: 44
-    maggoteers:healing_staff:
-      preset: RIPPLE_RINGS
-      radius: 5.0
-      particle: HAPPY_VILLAGER
-      ripple_rings: 4
-      sound: BLOCK_BEACON_POWER_SELECT
-    maggoteers:excalibur:
-      preset: AIM_RAY
+    maggoteers:excalibur_a3:
       particle: END_ROD
       ray_length: 32.0
-      sound: ENTITY_LIGHTNING_BOLT_THUNDER
+      sound: ENTITY_ILLUSIONER_CAST_SPELL
       density: 64
 scaling:
   mob_hp:        [1.0, 2.3, 3.6, 5.0]

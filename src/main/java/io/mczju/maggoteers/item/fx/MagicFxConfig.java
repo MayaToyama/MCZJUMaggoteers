@@ -15,16 +15,24 @@ import java.util.Set;
 
 /**
  * 从 {@code config.yml → magic_fx} 与 {@code items/*.yml → use_fx} 加载魔法释放配置。
- * <p>合并顺序：defaults → config {@code magic_fx.weapons.<id>} → 物品 {@code use_fx}（后者覆盖前者）。
+ * <p>合并顺序：defaults → effect template → {@code magic_fx.weapons} → {@code use_ability.fx}。
  */
 public final class MagicFxConfig {
     private static MagicUseFx defaults = MagicUseFx.defaults();
+    private static final Map<String, MagicUseFx> BY_TEMPLATE = new HashMap<>();
     private static final Map<String, MagicUseFx> BY_WEAPON = new HashMap<>();
 
     private MagicFxConfig() {}
 
     public static void load(MaggoteersPlugin plugin) {
         defaults = parseSection(plugin.getConfig().getConfigurationSection("magic_fx.defaults"), MagicUseFx.defaults());
+        BY_TEMPLATE.clear();
+        ConfigurationSection templates = plugin.getConfig().getConfigurationSection("magic_fx.templates");
+        if (templates != null) {
+            for (String key : templates.getKeys(false)) {
+                BY_TEMPLATE.put(key, merge(defaults, parseSection(templates.getConfigurationSection(key), defaults)));
+            }
+        }
         BY_WEAPON.clear();
         ConfigurationSection weapons = plugin.getConfig().getConfigurationSection("magic_fx.weapons");
         if (weapons != null) {
@@ -69,14 +77,80 @@ public final class MagicFxConfig {
         }
     }
 
-    /** FX merge for weapon abilities: defaults -> config.weapons -> ability fx section. */
-    public static MagicUseFx mergedFxForAbility(String itemId, ConfigurationSection abilityFx) {
-        MagicUseFx base = forWeapon(itemId);
+    /** FX merge: defaults → effect template → config.weapons → use_ability.fx. */
+    public static MagicUseFx mergedFxForAbility(String itemId, io.mczju.maggoteers.effect.Effect effect,
+                                              io.mczju.maggoteers.effect.EffectContext params,
+                                              ConfigurationSection abilityFx) {
+        MagicUseFx base = defaults;
+        String templateKey = templateKeyForEffect(effect, params);
+        if (templateKey != null) {
+            MagicUseFx tpl = BY_TEMPLATE.get(templateKey);
+            if (tpl != null) {
+                base = merge(base, tpl);
+            }
+        }
+        MagicUseFx weaponFx = BY_WEAPON.get(itemId);
+        if (weaponFx != null) {
+            base = merge(base, weaponFx);
+        }
         if (abilityFx == null) {
             return base;
         }
         return merge(base, parseSection(abilityFx, base));
     }
+
+    /** @deprecated use {@link #mergedFxForAbility(String, io.mczju.maggoteers.effect.Effect, io.mczju.maggoteers.effect.EffectContext, ConfigurationSection)} */
+    @Deprecated
+    public static MagicUseFx mergedFxForAbility(String itemId, ConfigurationSection abilityFx) {
+        return mergedFxForAbility(itemId, null, null, abilityFx);
+    }
+
+    static String templateKeyForEffect(io.mczju.maggoteers.effect.Effect effect,
+                                       io.mczju.maggoteers.effect.EffectContext params) {
+        if (effect == null) {
+            return null;
+        }
+        return switch (effect) {
+            case HEAL_AREA -> "heal";
+            case DAMAGE_BEAM -> "beam";
+            case ADD_ATTRIBUTE, ADD_POTION -> "buff";
+            case BUFF_AREA -> {
+                if (params == null) {
+                    yield null;
+                }
+                String targets = params.get(io.mczju.maggoteers.effect.EffectKeys.TARGETS);
+                if (targets == null) {
+                    yield null;
+                }
+                yield switch (targets.toLowerCase(java.util.Locale.ROOT)) {
+                    case "self", "allies" -> "buff";
+                    default -> null;
+                };
+            }
+            default -> null;
+        };
+    }
+
+    /** 右键 cast 时是否允许范围标识环（区域型效果或敌对/友军范围 BUFF/DISABLE_AI）。 */
+    public static boolean shouldPlayCastAreaRing(io.mczju.maggoteers.effect.Effect effect,
+                                                 io.mczju.maggoteers.effect.EffectContext params) {
+        if (effect == null) {
+            return false;
+        }
+        return switch (effect) {
+            case HEAL_AREA, DAMAGE_AREA -> true;
+            case BUFF_AREA, DISABLE_AI -> {
+                if (params == null) {
+                    yield false;
+                }
+                String t = params.getOrDefault(io.mczju.maggoteers.effect.EffectKeys.TARGETS, "")
+                        .toLowerCase(Locale.ROOT);
+                yield "enemies".equals(t) || "allies".equals(t) || "both".equals(t);
+            }
+            default -> false;
+        };
+    }
+
     public static MagicUseFx forWeapon(String itemId) {
         if (itemId == null) return defaults;
         return BY_WEAPON.getOrDefault(itemId, defaults);

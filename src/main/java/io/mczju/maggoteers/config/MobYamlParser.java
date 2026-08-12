@@ -102,8 +102,9 @@ public final class MobYamlParser {
             List<String> affixes = parseAffixes(m);
             InfernalCfg infernal = parseInfernal(m);
             List<MobEquipment> equipment = parseEquipment(m.get("equipment"));
+            List<PassengerCfg> passengers = parsePassengersDepth(m.get("passengers"), depth + 1, type.name());
             List<DeathSpawnCfg> nested = parseOnDeathDepth(m.get("on_death"), depth + 1, type.name());
-            out.add(new DeathSpawnCfg(type, count, coeff, affixes, infernal, equipment, nested));
+            out.add(new DeathSpawnCfg(type, count, coeff, affixes, infernal, equipment, passengers, nested));
         }
         return out;
     }
