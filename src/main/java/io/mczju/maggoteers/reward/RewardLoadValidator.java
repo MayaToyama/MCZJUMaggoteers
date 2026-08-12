@@ -6,6 +6,7 @@ import io.mczju.maggoteers.effect.BuffAreaTargets;
 import io.mczju.maggoteers.effect.Effect;
 import io.mczju.maggoteers.effect.EffectContext;
 import io.mczju.maggoteers.effect.EffectKeys;
+import io.mczju.maggoteers.effect.Fake255Rules;
 import io.mczju.maggoteers.effect.GrantItemParams;
 import io.mczju.maggoteers.effect.MagicEffectParams;
 import io.mczju.maggoteers.effect.Stack;
@@ -15,6 +16,7 @@ import io.mczju.maggoteers.effect.TriggeredGrantAttribute;
 import io.mczju.maggoteers.effect.VirtualStats;
 import io.mczju.maggoteers.item.ItemService;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 import java.util.Locale;
@@ -107,6 +109,14 @@ public final class RewardLoadValidator {
         Optional<String> magic = validateMagicDamagePercent(opt);
         if (magic.isPresent()) {
             return magic;
+        }
+        Optional<String> immunity = validatePotionImmunity(opt);
+        if (immunity.isPresent()) {
+            return immunity;
+        }
+        Optional<String> fake255 = validateNoFake255(opt);
+        if (fake255.isPresent()) {
+            return fake255;
         }
         if (opt.effect() == Effect.HEAL_AREA) {
             return MagicEffectParams.validateHealAreaTargets(opt.params())
@@ -317,6 +327,55 @@ public final class RewardLoadValidator {
         String op = params.getOrDefault(EffectKeys.OP, "FLAT");
         if (!"PERCENT".equalsIgnoreCase(op)) {
             return Optional.of("MAGIC_DAMAGE requires op: PERCENT");
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<String> validatePotionImmunity(RewardOption opt) {
+        if (opt.effect() != Effect.ADD_POTION || opt.params() == null) {
+            return Optional.empty();
+        }
+        if (!Boolean.TRUE.equals(opt.params().get(EffectKeys.IMMUNITY))) {
+            return Optional.empty();
+        }
+        if (opt.trigger() != null) {
+            return Optional.of("immunity ADD_POTION must not have trigger");
+        }
+        if (opt.expiryTrigger() != null) {
+            return Optional.of("immunity ADD_POTION must not have expiry");
+        }
+        PotionEffectType type = opt.params().get(EffectKeys.POTION);
+        if (type == null) {
+            return Optional.of("immunity ADD_POTION missing potion");
+        }
+        if (type.isInstant()) {
+            return Optional.of("immunity forbids instant potion: " + type.getKey());
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<String> validateNoFake255(RewardOption opt) {
+        if (opt.params() == null) {
+            return Optional.empty();
+        }
+        EffectContext p = opt.params();
+        boolean immunity = Boolean.TRUE.equals(p.get(EffectKeys.IMMUNITY));
+        if (opt.effect() == Effect.ADD_POTION && p.get(EffectKeys.POTION) != null) {
+            int amp = p.getOrDefault(EffectKeys.AMP, 0);
+            int dur = p.getOrDefault(EffectKeys.DURATION_TICKS, 0);
+            if (Fake255Rules.isFakeClear(amp, dur, immunity)) {
+                return Optional.of("forbidden fake amp-255 clear/immunity; use immunity: true or clear_potions");
+            }
+        }
+        // Nested potions[] already parsed into BuffPotionSpec — check amp/duration on specs
+        java.util.List<io.mczju.maggoteers.effect.BuffPotionSpec> pots = p.get(EffectKeys.POTIONS);
+        if (pots != null) {
+            for (int i = 0; i < pots.size(); i++) {
+                var spec = pots.get(i);
+                if (Fake255Rules.isFakeClear(spec.amp(), spec.durationTicks(), false)) {
+                    return Optional.of("params.potions[" + i + "] forbidden fake amp-255; use clear_potions");
+                }
+            }
         }
         return Optional.empty();
     }

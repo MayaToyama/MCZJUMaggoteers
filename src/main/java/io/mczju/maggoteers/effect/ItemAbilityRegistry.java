@@ -227,8 +227,56 @@ public final class ItemAbilityRegistry {
         java.util.List<BuffPotionSpec> selfPotions = abilitySec.contains("self_potions")
                 ? BuffPotionParser.parseList(abilitySec.getList("self_potions"))
                 : java.util.List.of();
+
+        Optional<String> fakeSelf = Fake255Rules.findFakeClearInPotionList(
+                abilitySec.getList("self_potions"), itemId + " self_potions");
+        if (fakeSelf.isPresent()) {
+            LOG.severe("items: " + itemId + " forbidden fake amp-255 clear: " + fakeSelf.get()
+                    + " — use self_clear_potions; ability skipped");
+            return;
+        }
+        ConfigurationSection paramsSec = abilitySec.getConfigurationSection("params");
+        if (paramsSec != null) {
+            Optional<String> fakePotions = Fake255Rules.findFakeClearInPotionList(
+                    paramsSec.getList("potions"), itemId + " params.potions");
+            if (fakePotions.isPresent()) {
+                LOG.severe("items: " + itemId + " forbidden fake amp-255 clear: " + fakePotions.get()
+                        + " — use clear_potions; ability skipped");
+                return;
+            }
+            if (paramsSec.contains("clear_potions")) {
+                ClearPotionsParser.ParseResult clearPr = ClearPotionsParser.parse(
+                        paramsSec.getList("clear_potions"), itemId + " params.clear_potions");
+                if (!clearPr.ok()) {
+                    for (String err : clearPr.errors()) {
+                        LOG.severe("items: " + err + " — ability skipped");
+                    }
+                    return;
+                }
+                params.put(EffectKeys.CLEAR_POTIONS, clearPr.types());
+            }
+        }
+
+        java.util.List<org.bukkit.potion.PotionEffectType> selfClear = java.util.List.of();
+        if (abilitySec.contains("self_clear_potions")) {
+            ClearPotionsParser.ParseResult selfClearPr = ClearPotionsParser.parse(
+                    abilitySec.getList("self_clear_potions"), itemId + " self_clear_potions");
+            if (!selfClearPr.ok()) {
+                for (String err : selfClearPr.errors()) {
+                    LOG.severe("items: " + err + " — ability skipped");
+                }
+                return;
+            }
+            selfClear = selfClearPr.types();
+        }
+
+        if (Boolean.TRUE.equals(params.get(EffectKeys.IMMUNITY))) {
+            LOG.warning("items: " + itemId + " immunity: true is STAT-only — ignored on weapons");
+        }
+
         BY_ITEM_ID.put(itemId, new ItemAbility(
-                itemId, cooldownSec, effect, params, fx, consume, expiryTrigger, expiryCharges, stack, selfPotions));
+                itemId, cooldownSec, effect, params, fx, consume, expiryTrigger, expiryCharges, stack,
+                selfPotions, selfClear));
     }
 
     private static String normalizeItemId(String key) {

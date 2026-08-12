@@ -154,6 +154,13 @@ public record RewardOption(
                 case "fx" -> ctx.put(EffectKeys.FX, parseFxContext(v));
                 case "mark_on" -> ctx.put(EffectKeys.MARK_ON, String.valueOf(v).toLowerCase());
                 case "potions" -> ctx.put(EffectKeys.POTIONS, io.mczju.maggoteers.effect.BuffPotionParser.parseList(v));
+                case "clear_potions" -> {
+                    var pr = io.mczju.maggoteers.effect.ClearPotionsParser.parse(v, "params.clear_potions");
+                    if (pr.ok()) {
+                        ctx.put(EffectKeys.CLEAR_POTIONS, pr.types());
+                    }
+                }
+                case "immunity" -> ctx.put(EffectKeys.IMMUNITY, Boolean.parseBoolean(String.valueOf(v)));
                 case "mark_head" -> ctx.put(EffectKeys.MARK_HEAD, Boolean.parseBoolean(String.valueOf(v)));
                 case "item" -> ctx.put(EffectKeys.ITEM_ID, String.valueOf(v));
                 case "entity" -> ctx.put(EffectKeys.ENTITY, String.valueOf(v));

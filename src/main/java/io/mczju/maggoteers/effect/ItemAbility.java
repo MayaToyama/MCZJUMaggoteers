@@ -1,6 +1,7 @@
 package io.mczju.maggoteers.effect;
 
 import io.mczju.maggoteers.item.fx.MagicUseFx;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 
@@ -15,16 +16,24 @@ public record ItemAbility(
         Trigger expiryTrigger,
         int expiryCharges,
         Stack stack,
-        List<BuffPotionSpec> selfPotions
+        List<BuffPotionSpec> selfPotions,
+        List<PotionEffectType> selfClearPotions
 ) {
     public ItemAbility(String itemId, int cooldownSec, Effect effect, EffectContext params,
                        MagicUseFx fx, boolean consume) {
-        this(itemId, cooldownSec, effect, params, fx, consume, null, 0, null, List.of());
+        this(itemId, cooldownSec, effect, params, fx, consume, null, 0, null, List.of(), List.of());
     }
 
     public ItemAbility(String itemId, int cooldownSec, Effect effect, EffectContext params,
                        MagicUseFx fx, boolean consume, Trigger expiryTrigger, int expiryCharges,
                        Stack stack) {
-        this(itemId, cooldownSec, effect, params, fx, consume, expiryTrigger, expiryCharges, stack, List.of());
+        this(itemId, cooldownSec, effect, params, fx, consume, expiryTrigger, expiryCharges, stack, List.of(), List.of());
+    }
+
+    public ItemAbility(String itemId, int cooldownSec, Effect effect, EffectContext params,
+                       MagicUseFx fx, boolean consume, Trigger expiryTrigger, int expiryCharges,
+                       Stack stack, List<BuffPotionSpec> selfPotions) {
+        this(itemId, cooldownSec, effect, params, fx, consume, expiryTrigger, expiryCharges, stack,
+                selfPotions == null ? List.of() : selfPotions, List.of());
     }
 }

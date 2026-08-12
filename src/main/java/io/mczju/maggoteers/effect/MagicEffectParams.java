@@ -100,8 +100,11 @@ public final class MagicEffectParams {
         }
         EffectContext p = withDefaults(Effect.BUFF_AREA, params);
         java.util.List<BuffPotionSpec> potions = p.get(EffectKeys.POTIONS);
-        if (potions == null || potions.isEmpty()) {
-            return Optional.of("missing potions");
+        java.util.List<org.bukkit.potion.PotionEffectType> clears = p.get(EffectKeys.CLEAR_POTIONS);
+        boolean hasPotions = potions != null && !potions.isEmpty();
+        boolean hasClear = clears != null && !clears.isEmpty();
+        if (!hasPotions && !hasClear) {
+            return Optional.of("missing potions or clear_potions");
         }
         String targets = p.get(EffectKeys.TARGETS);
         if (targets != null && !targets.isBlank()) {

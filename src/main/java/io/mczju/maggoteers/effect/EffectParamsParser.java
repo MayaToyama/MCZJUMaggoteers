@@ -30,6 +30,18 @@ public final class EffectParamsParser {
                 case "enemy_scope" -> ctx.put(EffectKeys.ENEMY_SCOPE, String.valueOf(v).toLowerCase(Locale.ROOT));
                 case "include_self" -> ctx.put(EffectKeys.INCLUDE_SELF, sec.getBoolean(k));
                 case "potions" -> ctx.put(EffectKeys.POTIONS, BuffPotionParser.parseList(sec.getList(k)));
+                case "clear_potions" -> {
+                    ClearPotionsParser.ParseResult pr = ClearPotionsParser.parse(sec.getList(k), "params.clear_potions");
+                    if (!pr.ok()) {
+                        // leave empty; callers/validators treat missing clear as absent; errors logged by registry
+                        for (String err : pr.errors()) {
+                            java.util.logging.Logger.getLogger("Maggoteers").warning(err);
+                        }
+                    } else {
+                        ctx.put(EffectKeys.CLEAR_POTIONS, pr.types());
+                    }
+                }
+                case "immunity" -> ctx.put(EffectKeys.IMMUNITY, sec.getBoolean(k));
                 case "mark_fx" -> ctx.put(EffectKeys.MARK_FX, parseFxContext(sec.getConfigurationSection(k)));
                 case "mark_duration_sec" -> ctx.put(EffectKeys.MARK_DURATION_SEC, sec.getInt(k));
                 case "fx" -> ctx.put(EffectKeys.FX, parseFxContext(sec.getConfigurationSection(k)));
