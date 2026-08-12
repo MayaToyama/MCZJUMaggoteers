@@ -42,6 +42,11 @@ public final class EffectKeys {
     public static final EffectKey<EffectContext> FX = new EffectKey<>("fx");
     public static final EffectKey<String> MARK_ON = new EffectKey<>("mark_on");
     public static final EffectKey<java.util.List<BuffPotionSpec>> POTIONS = new EffectKey<>("potions");
+    /** One-shot strip list for DAMAGE_AREA / BUFF_AREA ({@code clear_potions}). */
+    public static final EffectKey<java.util.List<PotionEffectType>> CLEAR_POTIONS =
+            new EffectKey<>("clear_potions");
+    /** Run-long potion immunity for ADD_POTION ({@code immunity: true}). */
+    public static final EffectKey<Boolean> IMMUNITY = new EffectKey<>("immunity");
     /** GRANT_ITEM: ItemCreator item id (YAML key {@code item}). */
     public static final EffectKey<String> ITEM_ID = new EffectKey<>("item_id");
     public static final EffectKey<String> ENTITY = new EffectKey<>("entity");
