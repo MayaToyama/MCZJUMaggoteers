@@ -109,7 +109,7 @@ public class MaggoteersGame extends AbstractGame {
 
     private void startInWorld() {
         World w = WorldService.create(this);
-        if (w == null) { sender().error("世界创建失败，对局终止。"); return; }
+        if (w == null) { sender().error("世界创建失败，对局终止。"); fail(); return; }
 
         int lives = MaggoteersPlugin.getInstance().getConfig().getInt("lives.default", 2);
         ClassSelectGate.reset(this);
@@ -137,7 +137,7 @@ public class MaggoteersGame extends AbstractGame {
             int ticks = 0;
             @Override public void run() {
                 if (planReady) { cancel(); beginClassSelect(); }
-                else if (++ticks > 20 * 30) { cancel(); sender().warn("剧本生成超时(30s)，终止。"); }
+                else if (++ticks > 20 * 30) { cancel(); sender().warn("剧本生成超时(30s)，终止。"); fail(); }
             }
         }.runTaskTimer(MaggoteersPlugin.getInstance(), 1L, 1L);
     }
@@ -236,13 +236,14 @@ public class MaggoteersGame extends AbstractGame {
             var pl = pe.player();
             pl.getInventory().clear();
             EffectService.removeAll(pl);
+            io.mczju.maggoteers.item.CooldownService.clear(pl.getUniqueId());
             pe.switchProfile(null);
             pl.setGameMode(GameMode.SURVIVAL);
             resetLobbyVitality(pl);
         }
 
         io.mczju.maggoteers.effect.SummonRegistry.clearAll(this);
-        io.mczju.maggoteers.effect.MobAiLockRegistry.restoreAll();
+        io.mczju.maggoteers.effect.MobAiLockRegistry.restoreAll(this);
         io.mczju.maggoteers.effect.EffectListener.stopTick();
         WaveScheduler.stop(this);
         RunScoreboard.stop(this);

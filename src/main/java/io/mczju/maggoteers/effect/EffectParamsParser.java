@@ -123,18 +123,26 @@ public final class EffectParamsParser {
         if (GameRegistries.isVirtualAttribute(name)) {
             return;
         }
-        var a = GameRegistries.attribute(name);
-        if (a != null) {
-            ctx.put(EffectKeys.ATTR, a);
+        try {
+            var a = GameRegistries.attribute(name);
+            if (a != null) {
+                ctx.put(EffectKeys.ATTR, a);
+            }
+        } catch (Throwable ignored) {
+            // ATTR_NAME is enough for load-time validation without Bukkit registries
         }
     }
 
     private static void putPotion(EffectContext ctx, Object v) {
         String name = String.valueOf(v);
         ctx.put(EffectKeys.POTION_NAME, name);
-        PotionEffectType type = GameRegistries.potionEffect(name);
-        if (type != null) {
-            ctx.put(EffectKeys.POTION, type);
+        try {
+            PotionEffectType type = GameRegistries.potionEffect(name);
+            if (type != null) {
+                ctx.put(EffectKeys.POTION, type);
+            }
+        } catch (Throwable ignored) {
+            // POTION_NAME is enough for load-time validation without Bukkit registries
         }
     }
 

@@ -19,17 +19,27 @@ public final class RewardDrawVisibility {
         return switch (opt.category()) {
             case SUPPLY -> true;
             case WEAPON -> acquiredIds == null || !acquiredIds.contains(opt.id());
-            case STAT, BUNDLE -> isVisibleStat(opt, ps, pool);
+            case STAT, BUNDLE -> isVisibleStat(opt, ps, acquiredIds, pool);
         };
     }
 
-    private static boolean isVisibleStat(RewardOption opt, PlayerState ps, RewardPool pool) {
+    private static boolean isVisibleStat(RewardOption opt, PlayerState ps, Set<String> acquiredIds,
+                                         RewardPool pool) {
         if (opt.isBundle()) {
-            return opt.grants().stream().allMatch(g -> isVisibleStat(g, ps, pool));
+            return opt.grants().stream().allMatch(g -> isVisibleStat(g, ps, acquiredIds, pool));
         }
         if (ps == null) return true;
         PlayerEffect pe = ps.effects().stream().filter(e -> e.id().equals(opt.id())).findFirst().orElse(null);
-        if (pe == null) return true;
+        if (pe == null) {
+            // One-shot STATs that never leave an effect (legacy instant GRANT_REVIVE) still
+            // mark acquiredUnique; UPGRADE_LEVEL first acquire has empty acquired → visible.
+            if (opt.stack() != Stack.UPGRADE_LEVEL
+                    && acquiredIds != null
+                    && acquiredIds.contains(opt.id())) {
+                return false;
+            }
+            return true;
+        }
         if (opt.stack() == Stack.UPGRADE_LEVEL) {
             int cap = UpgradeLevelCaps.resolve(pool, opt);
             return pe.level() < cap;

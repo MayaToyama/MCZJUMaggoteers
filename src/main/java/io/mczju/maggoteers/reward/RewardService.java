@@ -227,7 +227,9 @@ public final class RewardService {
                 return true;
             }
             case STAT -> {
-                if (opt.effect() == Effect.GRANT_REVIVE) {
+                // Instant GRANT_REVIVE (no fireTrigger) does not leave a PlayerEffect; triggered
+                // GRANT_REVIVE (e.g. ON_ACT_ENTER 增生藤甲) must go through applyStat so visibility works.
+                if (opt.effect() == Effect.GRANT_REVIVE && opt.trigger() == null) {
                     int count = opt.params() == null ? 1
                             : opt.params().getOrDefault(EffectKeys.COUNT, 1);
                     PlayerStateManager.addReviveCount(game, player.getUniqueId(), count);

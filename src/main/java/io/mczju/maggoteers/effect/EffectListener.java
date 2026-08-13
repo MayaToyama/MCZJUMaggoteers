@@ -68,6 +68,8 @@ public final class EffectListener implements Listener {
         if (!(e.getEntity() instanceof Player p)) return;
         MaggoteersGame g = gameOf(p);
         if (g == null) return;
+        // Guardian spike reflect + thorns DAMAGE_AREA would recurse without this.
+        if (MagicDamageContext.shouldSuppressOnDamageTaken(g, p.getUniqueId())) return;
         var attacker = EnemyAttackResolver.resolveAttacker(e, g);
         if (attacker.isEmpty()) return;
         TriggerContext ctx = new TriggerContext(Trigger.ON_DAMAGE_TAKEN, null, attacker.get());

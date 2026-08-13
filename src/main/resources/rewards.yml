@@ -36,6 +36,17 @@ reward_pools:
             unique: true
             stack: ADD
           -
+            id: class_vanguard_token_reach
+            display: "<red>先锋信物"
+            category: STAT
+            effect: ADD_ATTRIBUTE
+            params:
+              attr: ENTITY_INTERACTION_RANGE
+              op: FLAT
+              value: 1.0
+            unique: true
+            stack: ADD
+          -
             id: class_vanguard_token_wave_heal
             display: "<red>先锋信物"
             category: STAT
@@ -89,6 +100,17 @@ reward_pools:
             unique: true
             stack: ADD
           -
+            id: class_mage_token_reach
+            display: "<green>术师信物"
+            category: STAT
+            effect: ADD_ATTRIBUTE
+            params:
+              attr: ENTITY_INTERACTION_RANGE
+              op: FLAT
+              value: 1.0
+            unique: true
+            stack: ADD
+          -
             id: class_mage_token_wave_heal
             display: "<green>术师信物"
             category: STAT
@@ -128,6 +150,17 @@ reward_pools:
               attr: MAX_HEALTH
               op: FLAT
               value: 28.0
+            unique: true
+            stack: ADD
+          -
+            id: class_heavy_token_reach
+            display: "<gray>重装信物"
+            category: STAT
+            effect: ADD_ATTRIBUTE
+            params:
+              attr: ENTITY_INTERACTION_RANGE
+              op: FLAT
+              value: 1.0
             unique: true
             stack: ADD
           -
@@ -184,6 +217,17 @@ reward_pools:
             unique: true
             stack: ADD
           -
+            id: class_sniper_token_reach
+            display: "<aqua>狙击信物"
+            category: STAT
+            effect: ADD_ATTRIBUTE
+            params:
+              attr: ENTITY_INTERACTION_RANGE
+              op: FLAT
+              value: 1.0
+            unique: true
+            stack: ADD
+          -
             id: class_sniper_token_wave_heal
             display: "<aqua>狙击信物"
             category: STAT
@@ -211,7 +255,7 @@ reward_pools:
             params:
               attr: ENTITY_INTERACTION_RANGE
               op: FLAT
-              value: 0.5
+              value: 2.0
             unique: true
             stack: ADD
           -

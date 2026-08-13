@@ -7,6 +7,7 @@ import io.mczju.maggoteers.item.fx.MagicFxBuilder;
 import io.mczju.maggoteers.item.fx.MagicFxConfig;
 import io.mczju.maggoteers.item.fx.MagicFxPreset;
 import io.mczju.maggoteers.item.fx.MagicFxPresets;
+import io.mczju.maggoteers.item.fx.MagicFxService;
 import io.mczju.maggoteers.item.fx.MagicUseFx;
 import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 /**
@@ -183,7 +185,7 @@ public final class EffectService {
     private static final Set<String> FIRING = new HashSet<>();
 
     /**
-     * 对局内某 trigger 触发：对每个冒险模式玩家扫到期 + 执行 fireTrigger==fired 的触发型效果。
+     * 对局内某 trigger 触发：对每个冒险模式玩家先分发 fireTrigger==fired，再扫到期。
      * @param game        当前对局
      * @param fired       触发的 trigger
      * @param tickSeconds 仅 ON_TICK_1S 传>0（用于 recurring 累计）；其余传 0
@@ -198,19 +200,9 @@ public final class EffectService {
                 try {
                     var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
                     if (ps == null || !ps.isAlive()) continue;
-                    // 1) 到期扫描
-                    List<String> removed = EffectStacker.sweepExpiry(ps.effects(), fired);
-                    if (!removed.isEmpty()) {
-                        resyncDerived(p, ps);
-                        for (String removedId : removed) {
-                            io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
-                            BoundEquipService.remove(p, removedId);
-                        }
-                    }
-                    // 2) 执行触发型（fireTrigger==fired）；REVOKE_GRANTS 先于同 trigger 其它效果
-                    dispatchTriggeredEffects(p, ps, game, fired, TriggerContext.empty());
+                    processTriggerEffects(ps, p, game, fired, TriggerContext.empty());
                     for (PlayerEffect e : new ArrayList<>(ps.effects())) {
-                        // 3) recurring（仅 ON_TICK_1S，基于全局 tick 时钟）
+                        // recurring（仅 ON_TICK_1S，基于全局 tick 时钟）— after dispatch+sweep
                         if (fired == Trigger.ON_TICK_1S && e.recurringIntervalSec() > 0
                                 && e.recurringSpawn() != null
                                 && (Bukkit.getCurrentTick() / 20L) % e.recurringIntervalSec() == 0) {
@@ -242,40 +234,92 @@ public final class EffectService {
             var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
             if (ps == null) return;
             TriggerContext raw = ctx != null ? ctx : TriggerContext.empty();
-            TriggerContext useCtx = raw.fired() != null ? raw
-                    : new TriggerContext(fired, raw.hitTarget(), raw.attacker(), raw.eventLocation());
+            TriggerContext useCtx = raw.fired() != null ? raw : raw.withFired(fired);
             if (fired != Trigger.ON_DEATH && fired != Trigger.ON_REVIVE && !ps.isAlive()) {
                 return;
             }
-            List<String> removed = EffectStacker.sweepExpiry(ps.effects(), fired);
-            if (!removed.isEmpty()) {
-                resyncDerived(p, ps);
-                for (String removedId : removed) {
-                    io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
-                    BoundEquipService.remove(p, removedId);
-                }
-            }
-            dispatchTriggeredEffects(p, ps, game, fired, useCtx);
+            processTriggerEffects(ps, p, game, fired, useCtx);
         } catch (RuntimeException ex) {
             LOG.warning("fireTriggerPlayer " + fired + " player=" + p.getName() + ": " + ex.getMessage());
+        }
+    }
+
+    /**
+     * Spec 4.0 + 4.4: dispatch fireTrigger==T, then sweepExpiry; empower FX once per pack itemId on victim.
+     */
+    static void processTriggerEffects(PlayerState ps, Player p, MaggoteersGame game,
+                                      Trigger fired, TriggerContext useCtx) {
+        Set<String> touched = new HashSet<>();
+        List<String> removed = TriggerFireOrder.run(
+                () -> touched.addAll(dispatchTriggeredEffectsCollecting(p, ps, game, fired, useCtx)),
+                () -> {
+                    List<String> r = EffectStacker.sweepExpiry(ps.effects(), fired);
+                    for (String id : r) {
+                        if (id != null && id.startsWith(WeaponAbilityIds.PREFIX)) {
+                            touched.add(id);
+                        }
+                    }
+                    return r;
+                });
+        if (!removed.isEmpty()) {
+            resyncDerived(p, ps);
+            for (String removedId : removed) {
+                io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
+                BoundEquipService.remove(p, removedId);
+            }
+        }
+        playEmpowerFxIfNeeded(useCtx, touched);
+    }
+
+    private static void playEmpowerFxIfNeeded(TriggerContext useCtx, Set<String> touched) {
+        LivingEntity victim = useCtx != null ? useCtx.hitTarget() : null;
+        if (victim == null || touched == null || touched.isEmpty()) {
+            return;
+        }
+        for (String itemId : EmpowerFxCoalesce.itemIdsTouched(touched)) {
+            ItemAbility ab = ItemAbilityRegistry.get(itemId).orElse(null);
+            if (ab == null) {
+                continue;
+            }
+            MagicUseFx empower = MagicFxConfig.resolveEmpowerFx(ab);
+            if (empower == null) {
+                continue;
+            }
+            MagicFxService.playOnEntity(victim, empower);
         }
     }
 
     /** Pass 1: REVOKE_GRANTS; pass 2: all other triggered effects on {@code fired}. */
     private static void dispatchTriggeredEffects(Player p, PlayerState ps, MaggoteersGame game,
                                                  Trigger fired, TriggerContext ctx) {
+        dispatchTriggeredEffectsCollecting(p, ps, game, fired, ctx);
+    }
+
+    /** Same as {@link #dispatchTriggeredEffects} but returns executed {@code ability:*} effect ids. */
+    private static Set<String> dispatchTriggeredEffectsCollecting(Player p, PlayerState ps, MaggoteersGame game,
+                                                                  Trigger fired, TriggerContext ctx) {
         TriggerContext useCtx = ctx != null ? ctx : TriggerContext.empty();
+        Set<String> executed = new HashSet<>();
         var snapshot = new ArrayList<>(ps.effects());
         for (PlayerEffect e : snapshot) {
             if (e.fireTrigger() != fired) continue;
             if (e.effect() == Effect.ADD_ATTRIBUTE && TriggeredGrantAttribute.isRevoke(e.params())) {
                 executeTriggeredAddAttribute(p, e, game, useCtx);
+                noteAbilityTouched(executed, e.id());
             }
         }
         for (PlayerEffect e : snapshot) {
             if (e.fireTrigger() != fired) continue;
             if (e.effect() == Effect.ADD_ATTRIBUTE && TriggeredGrantAttribute.isRevoke(e.params())) continue;
             executeEffect(p, e, game, useCtx);
+            noteAbilityTouched(executed, e.id());
+        }
+        return executed;
+    }
+
+    private static void noteAbilityTouched(Set<String> out, String effectId) {
+        if (out != null && effectId != null && effectId.startsWith(WeaponAbilityIds.PREFIX)) {
+            out.add(effectId);
         }
     }
 
@@ -312,27 +356,66 @@ public final class EffectService {
             applySelfPotions(p, selfPots);
             didSide = true;
         }
-        boolean main;
-        if (ability.effect() == Effect.ADD_ATTRIBUTE) {
-            main = applyWeaponTempEffect(p, game, ability);
-        } else if (ability.effect() == Effect.ADD_POTION) {
-            if (ability.expiryTrigger() != null) {
-                main = applyWeaponTempEffect(p, game, ability);
+
+        TriggerContext ctx = TriggerContext.empty();
+        AtomicReference<LivingEntity> beamHit = new AtomicReference<>();
+        boolean anyStep = false;
+        List<AbilityStep> steps = ability.steps();
+        for (int i = 0; i < steps.size(); i++) {
+            AbilityStep step = steps.get(i);
+            if (step.isDeferred()) {
+                if (writeDeferredStep(p, game, ability, step, i)) {
+                    anyStep = true;
+                }
+                continue;
+            }
+            boolean ok;
+            if (step.effect() == Effect.ADD_ATTRIBUTE) {
+                LOG.warning("use_ability " + ability.itemId() + " immediate ADD_ATTRIBUTE unsupported");
+                ok = false;
+            } else if (step.effect() == Effect.ADD_POTION) {
+                int dur = step.params().getOrDefault(EffectKeys.DURATION_TICKS, 0);
+                ok = dur > 0 && applyInstantPotion(p, step.params());
             } else {
-                int dur = ability.params().getOrDefault(EffectKeys.DURATION_TICKS, 0);
-                if (dur > 0) {
-                    main = applyInstantPotion(p, ability.params());
-                } else {
-                    main = false;
+                ok = executeMagicEffect(p, game, step.effect(), step.params(),
+                        ability.fx(), ctx, true, beamHit);
+                if (beamHit.get() != null) {
+                    ctx = ctx.withHitTarget(beamHit.get());
+                    beamHit.set(null);
                 }
             }
-        } else {
-            main = executeMagicEffect(p, game, ability.effect(), ability.params(), ability.fx(),
-                    TriggerContext.empty(), true);
+            if (ok) {
+                anyStep = true;
+            }
         }
         boolean sideConfigured = (selfClear != null && !selfClear.isEmpty())
                 || (selfPots != null && !selfPots.isEmpty());
-        return main || (sideConfigured && didSide);
+        return anyStep || (sideConfigured && didSide);
+    }
+
+    /** Deferred step → PlayerEffect (ADD_* fireTrigger=null; magic fireTrigger=expiryTrigger). */
+    private static boolean writeDeferredStep(Player p, MaggoteersGame game, ItemAbility ability,
+                                             AbilityStep step, int stepIndex) {
+        Optional<String> err = WeaponTempEffect.validate(
+                step.effect(), step.params(), step.expiryTrigger(), step.expiryCharges());
+        if (err.isPresent()) {
+            LOG.warning("use_ability deferred " + ability.itemId() + " step " + stepIndex + ": " + err.get());
+            return false;
+        }
+        Stack stack = step.stack() != null ? step.stack() : Stack.REPLACE;
+        boolean addFamily = step.effect() == Effect.ADD_ATTRIBUTE || step.effect() == Effect.ADD_POTION;
+        boolean legacySingleAdd = addFamily && ability.steps().size() == 1;
+        String id = legacySingleAdd
+                ? WeaponAbilityIds.effectId(ability.itemId())
+                : WeaponAbilityIds.effectId(ability.itemId(), stepIndex);
+        Trigger fire = addFamily ? null : step.expiryTrigger();
+        EffectContext params = step.params() != null ? step.params().copy() : new EffectContext();
+        PlayerEffect pe = new PlayerEffect(
+                id, step.effect(), params, fire,
+                step.expiryTrigger(), step.expiryCharges(),
+                0, null, stack, 0, 0);
+        apply(p, pe, game);
+        return true;
     }
 
     private static void applySelfPotions(Player p, java.util.List<BuffPotionSpec> potions) {
@@ -351,31 +434,6 @@ public final class EffectService {
         int dur = params.getOrDefault(EffectKeys.DURATION_TICKS, 0);
         if (dur <= 0) return false;
         p.addPotionEffect(new PotionEffect(type, dur, amp, false, true));
-        return true;
-    }
-
-    private static boolean applyWeaponTempEffect(Player p, MaggoteersGame game, ItemAbility ability) {
-        Optional<String> err = WeaponTempEffect.validate(
-                ability.effect(), ability.params(), ability.expiryTrigger(), ability.expiryCharges());
-        if (err.isPresent()) {
-            LOG.warning("use_ability " + ability.effect() + " " + ability.itemId() + ": " + err.get());
-            return false;
-        }
-        Stack stack = ability.stack() != null ? ability.stack() : Stack.REPLACE;
-        EffectContext params = ability.params() != null ? ability.params().copy() : new EffectContext();
-        PlayerEffect pe = new PlayerEffect(
-                WeaponTempEffect.effectId(ability.itemId()),
-                ability.effect(),
-                params,
-                null,
-                ability.expiryTrigger(),
-                ability.expiryCharges(),
-                0,
-                null,
-                stack,
-                0,
-                0);
-        apply(p, pe, game);
         return true;
     }
 
@@ -403,8 +461,16 @@ public final class EffectService {
                 int dur = e.params().getOrDefault(EffectKeys.DURATION_TICKS, 0);
                 if (dur > 0) p.addPotionEffect(new PotionEffect(type, dur, amp, false, true));
             }
-            case DAMAGE_AREA, DAMAGE_BEAM, HEAL_AREA, BUFF_AREA, DISABLE_AI ->
-                    executeMagicEffect(p, game, e.effect(), e.params(), null, ctx);
+            case DAMAGE_AREA, DAMAGE_BEAM, HEAL_AREA, BUFF_AREA, DISABLE_AI -> {
+                boolean weaponPack = e.id() != null && e.id().startsWith(WeaponAbilityIds.PREFIX);
+                MagicUseFx weaponFx = null;
+                if (weaponPack) {
+                    String itemId = WeaponAbilityIds.itemIdOf(e.id()).orElse(null);
+                    ItemAbility ab = itemId == null ? null : ItemAbilityRegistry.get(itemId).orElse(null);
+                    weaponFx = ab != null ? ab.fx() : null;
+                }
+                executeMagicEffect(p, game, e.effect(), e.params(), weaponFx, ctx, weaponPack);
+            }
             case GRANT_REVIVE -> {
                 int count = e.params().getOrDefault(EffectKeys.COUNT, 1);
                 PlayerStateManager.addReviveCount(game, p.getUniqueId(), count);
@@ -419,12 +485,19 @@ public final class EffectService {
     private static boolean executeMagicEffect(Player p, MaggoteersGame game, Effect effect,
                                            EffectContext rawParams, MagicUseFx weaponFx,
                                            TriggerContext ctx) {
-        return executeMagicEffect(p, game, effect, rawParams, weaponFx, ctx, weaponFx != null);
+        return executeMagicEffect(p, game, effect, rawParams, weaponFx, ctx, weaponFx != null, null);
     }
 
     private static boolean executeMagicEffect(Player p, MaggoteersGame game, Effect effect,
                                            EffectContext rawParams, MagicUseFx weaponFx,
                                            TriggerContext ctx, boolean weaponPath) {
+        return executeMagicEffect(p, game, effect, rawParams, weaponFx, ctx, weaponPath, null);
+    }
+
+    private static boolean executeMagicEffect(Player p, MaggoteersGame game, Effect effect,
+                                           EffectContext rawParams, MagicUseFx weaponFx,
+                                           TriggerContext ctx, boolean weaponPath,
+                                           AtomicReference<LivingEntity> hitTargetOut) {
         EffectContext params = MagicEffectParams.withDefaults(effect, rawParams);
         TriggerContext useCtx = ctx != null ? ctx : TriggerContext.empty();
         switch (effect) {
@@ -458,6 +531,7 @@ public final class EffectService {
                         }
                     }
                 };
+                // Spec 4.3.1: wrap when shouldWrapMagicDamage — not when weaponFx != null alone
                 if (shouldWrapMagicDamage(useCtx)) {
                     MagicDamageContext.run(game, p.getUniqueId(), action);
                 } else {
@@ -466,7 +540,10 @@ public final class EffectService {
                 return true;
             }
             case DAMAGE_BEAM -> {
-                executeDamageBeam(p, game, params, weaponFx);
+                LivingEntity beamHit = executeDamageBeam(p, game, params, weaponFx);
+                if (beamHit != null && hitTargetOut != null) {
+                    hitTargetOut.set(beamHit);
+                }
                 return true;
             }
             case HEAL_AREA -> {
@@ -482,11 +559,11 @@ public final class EffectService {
                 return true;
             }
             case BUFF_AREA -> {
-                executeBuffArea(p, game, params, weaponFx, useCtx);
+                executeBuffArea(p, game, params, weaponFx, useCtx, weaponPath);
                 return true;
             }
             case DISABLE_AI -> {
-                executeDisableAi(p, game, params, weaponFx, useCtx);
+                executeDisableAi(p, game, params, weaponFx, useCtx, weaponPath);
                 return true;
             }
             default -> {
@@ -527,7 +604,7 @@ public final class EffectService {
         return shouldWrapMagicDamage(ctx);
     }
 
-    /** Suppress owner ON_DAMAGE_DEALT from magic/summon damage in the same tick. */
+    /** Wrap magic/summon damage so same-tick owner DEALT/TAKEN combat triggers are suppressed. */
     private static boolean shouldWrapMagicDamage(TriggerContext ctx) {
         if (ctx == null || ctx.fired() == null) return false;
         return switch (ctx.fired()) {
@@ -537,8 +614,7 @@ public final class EffectService {
     }
 
     private static void executeDisableAi(Player p, MaggoteersGame game, EffectContext params,
-                                         MagicUseFx weaponFx, TriggerContext ctx) {
-        boolean weaponPath = weaponFx != null;
+                                         MagicUseFx weaponFx, TriggerContext ctx, boolean weaponPath) {
         if (!weaponPath) {
             EffectContext fxCtx = params.get(EffectKeys.FX);
             if (fxCtx != null) {
@@ -556,7 +632,7 @@ public final class EffectService {
                 : MagicFxBuilder.fromContext(markFxCtx, MagicUseFx.defaults());
 
         for (LivingEntity le : targets) {
-            MobAiLockRegistry.lock(le, duration);
+            MobAiLockRegistry.lock(le, duration, game);
             if (weaponPath && markFx != null) {
                 playMarkFx(le, markFx);
             }
@@ -570,8 +646,7 @@ public final class EffectService {
     }
 
     private static void executeBuffArea(Player p, MaggoteersGame game, EffectContext params,
-                                        MagicUseFx weaponFx, TriggerContext ctx) {
-        boolean weaponPath = weaponFx != null;
+                                        MagicUseFx weaponFx, TriggerContext ctx, boolean weaponPath) {
         if (!weaponPath) {
             EffectContext fxCtx = params.get(EffectKeys.FX);
             if (fxCtx != null) {
@@ -633,7 +708,9 @@ public final class EffectService {
         }
     }
 
-    private static void executeDamageBeam(Player p, MaggoteersGame game, EffectContext params, MagicUseFx weaponFx) {
+    /** @return first damaged LivingEntity (for shared TriggerContext hitTarget), or null */
+    private static LivingEntity executeDamageBeam(Player p, MaggoteersGame game, EffectContext params,
+                                                  MagicUseFx weaponFx) {
         double maxRange = params.getOrDefault(EffectKeys.RAY_LENGTH, 32.0);
         double beamRadius = params.getOrDefault(EffectKeys.BEAM_RADIUS, 1.25);
         double baseDmg = params.getOrDefault(EffectKeys.DAMAGE, 0.0);
@@ -657,6 +734,7 @@ public final class EffectService {
         MagicFxPresets.playBeamAlong(eye, dir, length, fx);
 
         Set<UUID> hit = new HashSet<>();
+        AtomicReference<LivingEntity> first = new AtomicReference<>();
         int steps = Math.max(16, (int) (length * 2));
         MagicDamageContext.run(game, p.getUniqueId(), () -> {
             for (int i = 0; i <= steps; i++) {
@@ -665,10 +743,12 @@ public final class EffectService {
                     if (!(en instanceof LivingEntity le)) continue;
                     if (!TargetResolver.isTarget(game, p, le, params)) continue;
                     if (!hit.add(le.getUniqueId())) continue;
+                    first.compareAndSet(null, le);
                     le.damage(dmg, p);
                 }
             }
         });
+        return first.get();
     }
 
     /** 触发型 AURA：交互后写入 fireTrigger=null 的携带条目（保留 expiry）。 */

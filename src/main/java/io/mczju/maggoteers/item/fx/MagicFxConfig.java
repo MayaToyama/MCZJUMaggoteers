@@ -1,6 +1,8 @@
 package io.mczju.maggoteers.item.fx;
 
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.effect.AbilityStep;
+import io.mczju.maggoteers.effect.ItemAbility;
 import io.mczju.maggoteers.util.GameRegistries;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -99,6 +101,73 @@ public final class MagicFxConfig {
         return merge(base, parseSection(abilityFx, base));
     }
 
+    /**
+     * Multi packs: weapons + use_ability.fx only — no effect-template.
+     * Legacy single may pass {@code legacyStepOrNull} to keep template merge.
+     * If nothing configured, returns null (no magic_fx.defaults spam).
+     */
+    public static MagicUseFx mergedFxForAbilityMulti(
+            String itemId, ConfigurationSection abilityFx, ConfigurationSection legacyUseFx,
+            AbilityStep legacyStepOrNull) {
+        if (legacyStepOrNull != null) {
+            ConfigurationSection sec = abilityFx != null ? abilityFx : legacyUseFx;
+            return mergedFxForAbility(itemId, legacyStepOrNull.effect(), legacyStepOrNull.params(), sec);
+        }
+        MagicUseFx base = null;
+        MagicUseFx weapon = BY_WEAPON.get(itemId);
+        if (weapon != null) {
+            base = weapon;
+        }
+        ConfigurationSection overlay = abilityFx != null ? abilityFx : legacyUseFx;
+        if (overlay != null) {
+            MagicUseFx parsed = parseSection(overlay, base);
+            base = base == null ? parsed : merge(base, parsed);
+        }
+        return base;
+    }
+
+    /** Parse empower_fx without merging magic_fx.defaults. Null section → null. */
+    public static MagicUseFx parseOptionalFx(ConfigurationSection sec) {
+        if (sec == null) {
+            return null;
+        }
+        return parseSection(sec, null);
+    }
+
+    /**
+     * Built-in next-hit strike flash (victim {@code DOT_ABOVE} + crit sound).
+     * Used when a deferred-only pack has no {@code empower_fx} and no visible cast fx.
+     */
+    public static MagicUseFx deferredStrikeFx() {
+        return new MagicUseFx(
+                Sound.ENTITY_PLAYER_ATTACK_CRIT, 0.95f, 1.2f,
+                MagicFxPreset.DOT_ABOVE, Particle.CRIT,
+                1.0, 10.0, 36,
+                4, 28, 18);
+    }
+
+    static boolean isVisibleCastFx(MagicUseFx fx) {
+        return fx != null && fx.preset() != null && fx.preset() != MagicFxPreset.NONE;
+    }
+
+    /**
+     * Empower resolve: empower_fx → visible cast fx → deferred-only strike flash → null.
+     * Never falls through to {@code magic_fx.defaults}.
+     */
+    public static MagicUseFx resolveEmpowerFx(ItemAbility ab) {
+        if (ab == null) {
+            return null;
+        }
+        var choice = io.mczju.maggoteers.effect.EmpowerFxCoalesce.choose(
+                ab.empowerFx() != null, ab.isDeferredOnly(), isVisibleCastFx(ab.fx()));
+        return switch (choice) {
+            case EMPOWER -> ab.empowerFx();
+            case CAST -> ab.fx();
+            case STRIKE -> deferredStrikeFx();
+            case NONE -> null;
+        };
+    }
+
     /** @deprecated use {@link #mergedFxForAbility(String, io.mczju.maggoteers.effect.Effect, io.mczju.maggoteers.effect.EffectContext, ConfigurationSection)} */
     @Deprecated
     public static MagicUseFx mergedFxForAbility(String itemId, ConfigurationSection abilityFx) {
@@ -166,6 +235,12 @@ public final class MagicFxConfig {
     }
 
     private static MagicUseFx merge(MagicUseFx base, MagicUseFx over) {
+        if (base == null) {
+            return over;
+        }
+        if (over == null) {
+            return base;
+        }
         return new MagicUseFx(
                 over.sound() != null ? over.sound() : base.sound(),
                 over.soundVolume() > 0 ? over.soundVolume() : base.soundVolume(),
@@ -182,37 +257,50 @@ public final class MagicFxConfig {
     }
 
     private static MagicUseFx parseSection(ConfigurationSection sec, MagicUseFx fallback) {
-        if (sec == null) return fallback;
-        Sound sound = fallback.sound();
+        if (sec == null) {
+            return fallback;
+        }
+        Sound sound = fallback != null ? fallback.sound() : null;
         String soundRaw = sec.getString("sound");
         if (soundRaw != null && !soundRaw.isBlank()) {
             Sound parsed = GameRegistries.sound(soundRaw);
-            if (parsed != null) sound = parsed;
+            if (parsed != null) {
+                sound = parsed;
+            }
         }
-        MagicFxPreset preset = fallback.preset();
+        MagicFxPreset preset = fallback != null ? fallback.preset() : null;
         String presetRaw = sec.getString("preset");
         if (presetRaw != null && !presetRaw.isBlank()) {
             try {
                 preset = MagicFxPreset.valueOf(presetRaw.trim().toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException ignored) {
-                MaggoteersPlugin.getInstance().getLogger().warning("未知 magic_fx preset: " + presetRaw);
+                MaggoteersPlugin plug = MaggoteersPlugin.getInstance();
+                if (plug != null) {
+                    plug.getLogger().warning("未知 magic_fx preset: " + presetRaw);
+                }
             }
         }
-        Particle particle = fallback.particle();
+        Particle particle = fallback != null ? fallback.particle() : null;
         String particleRaw = sec.getString("particle");
         if (particleRaw != null && !particleRaw.isBlank()) {
             Particle p = GameRegistries.particle(particleRaw);
-            if (p != null) particle = p;
-            else MaggoteersPlugin.getInstance().getLogger().warning("无法解析 particle: " + particleRaw);
+            if (p != null) {
+                particle = p;
+            } else {
+                MaggoteersPlugin plug = MaggoteersPlugin.getInstance();
+                if (plug != null) {
+                    plug.getLogger().warning("无法解析 particle: " + particleRaw);
+                }
+            }
         }
-        float vol = (float) sec.getDouble("sound_volume", fallback.soundVolume());
-        float pitch = (float) sec.getDouble("sound_pitch", fallback.soundPitch());
-        double radius = sec.getDouble("radius", fallback.radius());
-        double ray = sec.getDouble("ray_length", fallback.rayLength());
-        int density = sec.getInt("density", fallback.density());
-        int ripple = sec.getInt("ripple_rings", fallback.rippleRings());
-        int expand = sec.getInt("expand_steps", fallback.expandSteps());
-        int spiral = sec.getInt("spiral_ticks", fallback.spiralTicks());
+        float vol = (float) sec.getDouble("sound_volume", fallback != null ? fallback.soundVolume() : 0.0);
+        float pitch = (float) sec.getDouble("sound_pitch", fallback != null ? fallback.soundPitch() : 0.0);
+        double radius = sec.getDouble("radius", fallback != null ? fallback.radius() : 0.0);
+        double ray = sec.getDouble("ray_length", fallback != null ? fallback.rayLength() : 0.0);
+        int density = sec.getInt("density", fallback != null ? fallback.density() : 0);
+        int ripple = sec.getInt("ripple_rings", fallback != null ? fallback.rippleRings() : 0);
+        int expand = sec.getInt("expand_steps", fallback != null ? fallback.expandSteps() : 0);
+        int spiral = sec.getInt("spiral_ticks", fallback != null ? fallback.spiralTicks() : 0);
         return new MagicUseFx(sound, vol, pitch, preset, particle, radius, ray, density, ripple, expand, spiral);
     }
 }

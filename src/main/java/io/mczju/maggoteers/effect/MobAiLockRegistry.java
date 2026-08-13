@@ -16,17 +16,28 @@ import java.util.concurrent.ConcurrentHashMap;
  * Tracks temporary setAI(false) locks on hostile mobs.
  * Longer remaining duration wins; first restoreAi is kept.
  * Unload path restores AI while entity is still valid before drop.
+ *
+ * <p>Per-game scoping (I4): {@link #lock(LivingEntity, int, Object)} records the owning
+ * game token; {@link #restoreAll(Object)} only restores locks belonging to that game.
+ * The no-arg {@link #restoreAll()} clears everything (for shutdown).</p>
  */
 public final class MobAiLockRegistry {
 
     public record Entry(int expireAtTick, boolean restoreAi) {}
 
     private static final Map<UUID, Entry> LOCKS = new ConcurrentHashMap<>();
+    /** Per-entity game ownership for scoped restore (I4). */
+    private static final Map<UUID, Object> ENTITY_GAME = new ConcurrentHashMap<>();
     private static BukkitTask scanTask;
 
     private MobAiLockRegistry() {}
 
     public static void lock(LivingEntity entity, int durationTicks) {
+        lock(entity, durationTicks, null);
+    }
+
+    /** Lock with game ownership for per-game restore (I4). */
+    public static void lock(LivingEntity entity, int durationTicks, Object game) {
         if (entity == null || !entity.isValid() || entity.isDead() || durationTicks <= 0) {
             return;
         }
@@ -42,13 +53,19 @@ public final class MobAiLockRegistry {
             if (newExpire > existing.expireAtTick()) {
                 LOCKS.put(id, new Entry(newExpire, existing.restoreAi()));
             }
-            // already locked — ensure AI stays off
             entity.setAI(false);
+        }
+        if (game != null) {
+            ENTITY_GAME.put(id, game);
         }
     }
 
     /** Package/test: record lock without touching Bukkit entity. */
     static void noteLock(UUID id, int nowTick, int durationTicks, boolean restoreAi) {
+        noteLock(id, nowTick, durationTicks, restoreAi, null);
+    }
+
+    static void noteLock(UUID id, int nowTick, int durationTicks, boolean restoreAi, Object game) {
         if (id == null || durationTicks <= 0) return;
         Entry existing = LOCKS.get(id);
         int newExpire = nowTick + durationTicks;
@@ -56,6 +73,9 @@ public final class MobAiLockRegistry {
             LOCKS.put(id, new Entry(newExpire, restoreAi));
         } else if (newExpire > existing.expireAtTick()) {
             LOCKS.put(id, new Entry(newExpire, existing.restoreAi()));
+        }
+        if (game != null) {
+            ENTITY_GAME.put(id, game);
         }
     }
 
@@ -65,6 +85,7 @@ public final class MobAiLockRegistry {
         if (e == null) return Optional.empty();
         if (nowTick < e.expireAtTick()) return Optional.empty();
         LOCKS.remove(id);
+        ENTITY_GAME.remove(id);
         return Optional.of(e);
     }
 
@@ -75,6 +96,7 @@ public final class MobAiLockRegistry {
      */
     static Optional<Boolean> takeForUnloadRestore(UUID id, boolean entityStillValid) {
         Entry e = LOCKS.remove(id);
+        ENTITY_GAME.remove(id);
         if (e == null) return Optional.empty();
         if (!entityStillValid) return Optional.empty();
         return Optional.of(e.restoreAi());
@@ -86,6 +108,7 @@ public final class MobAiLockRegistry {
 
     static void clearForTests() {
         LOCKS.clear();
+        ENTITY_GAME.clear();
         stop();
     }
 
@@ -99,11 +122,13 @@ public final class MobAiLockRegistry {
             Entity entity = Bukkit.getEntity(id);
             if (!(entity instanceof LivingEntity le) || !le.isValid() || le.isDead()) {
                 it.remove();
+                ENTITY_GAME.remove(id);
                 continue;
             }
             if (now >= e.expireAtTick()) {
                 le.setAI(e.restoreAi());
                 it.remove();
+                ENTITY_GAME.remove(id);
             }
         }
     }
@@ -119,6 +144,7 @@ public final class MobAiLockRegistry {
         }
     }
 
+    /** Restore AI for all locked entities (shutdown). */
     public static void restoreAll() {
         for (Map.Entry<UUID, Entry> mapEntry : LOCKS.entrySet()) {
             Entity entity = Bukkit.getEntity(mapEntry.getKey());
@@ -127,6 +153,24 @@ public final class MobAiLockRegistry {
             }
         }
         LOCKS.clear();
+        ENTITY_GAME.clear();
+    }
+
+    /** Restore AI only for entities locked by the given game (I4). */
+    public static void restoreAll(Object game) {
+        if (game == null) { restoreAll(); return; }
+        Iterator<Map.Entry<UUID, Entry>> it = LOCKS.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<UUID, Entry> mapEntry = it.next();
+            UUID id = mapEntry.getKey();
+            if (!game.equals(ENTITY_GAME.get(id))) continue;
+            Entity entity = Bukkit.getEntity(id);
+            if (entity instanceof LivingEntity le && le.isValid()) {
+                le.setAI(mapEntry.getValue().restoreAi());
+            }
+            it.remove();
+            ENTITY_GAME.remove(id);
+        }
     }
 
     public static void start(Plugin plugin) {

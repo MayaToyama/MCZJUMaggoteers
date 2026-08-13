@@ -531,6 +531,8 @@ held_effects:   # 主手持有期间生效；禁止 expiry
 
 **下次近战加成**（纯配置）：`effect: ADD_ATTRIBUTE` + 必填 `expiry`（如 `{ trigger: ON_DAMAGE_DEALT, charges: 1 }`）+ `params: { attr, op, value }`；可选 `stack: REPLACE`（默认）。右键写入临时 `PlayerEffect`（id=`ability:<itemId>`），**仅玩家近战** `ON_DAMAGE_DEALT` 消耗；弓箭不触发。样例：`maggoteers:power_strike`。
 
+**多步 `use_ability.effects[]`**（2026-08-13）：一次右键可挂多段即时/延期效果；延期魔法（`BUFF_AREA`/`DISABLE_AI`/…）与 ADD_* 同用 `expiry`；触发顺序为先 `fireTrigger` 再 `sweepExpiry`。Cast FX 右键一次，empower FX（`empower_fx` 或回落 `fx`）在命中 victim 播一次。详见 `docs/superpowers/specs/2026-08-13-multi-use-ability-design.md`。
+
 路由顺序：ItemKind → `registerHandler`（可选覆盖）→ `ItemAbilityRegistry` → 无则 vanilla 交互。
 
 **Escape hatch**：仅当 Effect 系统表达不了的多段/投射物技能时，才写 `ItemUseHandler` 并 `registerHandler`。

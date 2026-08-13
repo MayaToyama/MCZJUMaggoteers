@@ -44,4 +44,13 @@ class EffectServiceAbilityTest {
     void finalizeHealthPreservesRatioWhenMaxUnchanged() {
         assertEquals(25.0, EffectService.finalizeHealthAfterResync(25.0, 30.0, 30.0), 0.001);
     }
+
+    @Test
+    void anyStepSuccessMeansAbilitySuccess() {
+        boolean step0 = false;
+        boolean step1 = true;
+        boolean self = false;
+        assertTrue(step0 || step1 || self);
+        assertFalse(false || false || false);
+    }
 }

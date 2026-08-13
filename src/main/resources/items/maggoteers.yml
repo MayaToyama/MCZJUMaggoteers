@@ -159,7 +159,6 @@ maggoteers:blast_unit:
       radius: 5.0
       targets: allies
       include_self: true
-
   useCooldown:
     cooldownGroup: "maggoteers:blast_unit"
     seconds: 20
@@ -314,7 +313,7 @@ maggoteers:class_guard_spear:
   material: IRON_SPEAR
   customName: "<yellow>初心者长矛"
   lore:
-    - "<dark_gray>"
+    - "<dark_gray>简单易用的长柄武器"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -334,7 +333,7 @@ maggoteers:class_guard_spear:
     -
       id: maggoteers:class_guard_spear_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: 1.0
+      amount: -3.0
       operation: ADD_NUMBER
       slot: mainhand
     -
@@ -348,8 +347,8 @@ maggoteers:class_heavy_sword:
   material: IRON_SWORD
   customName: "<blue>初心者圣剑"
   lore:
-    - "<gray>6伤害，右键治疗范围内玩家10点生命值，冷却20s"
-    - "<dark_gray>"
+    - "<gray>右键治疗范围内玩家10点生命值，冷却20s"
+    - "<dark_gray>内置医疗施术单元的重剑"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -382,8 +381,8 @@ maggoteers:class_mage_sword:
   material: GOLDEN_SWORD
   customName: "<green>初心者魔剑"
   lore:
-    - "<gray>5伤害，右键对半径4格内敌人造成4点范围伤害，冷却12s"
-    - "<dark_gray>"
+    - "<gray>右键对半径4格内敌人造成5点范围伤害，冷却12s"
+    - "<dark_gray>能够点燃周围敌人的剑型施术单元"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -416,8 +415,8 @@ maggoteers:class_sniper_bow:
   material: BOW
   customName: "<aqua>初心者之弓"
   lore:
-    - "<gray>右键释放伤害光束，造成6点伤害，冷却3s"
-    - "<dark_gray>"
+    - "<gray>右键射出穿透箭矢，造成6点伤害，冷却3s"
+    - "<dark_gray>消耗能量的新一代远程武器"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -444,8 +443,8 @@ maggoteers:class_vanguard_axe:
   material: IRON_AXE
   customName: "<gold>初心者战斧"
   lore:
-    - "<gray>10伤害，右键强化自身，直到下次攻击前获得100攻击力，冷却20s"
-    - "<dark_gray>"
+    - "<gray>右键强化自身，下次攻击造成相当于200%攻击力的伤害，冷却20s"
+    - "<dark_gray>能够短暂强化斧刃的能量战斧"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -482,8 +481,8 @@ maggoteers:eighty_hammer:
   itemModel: MACE
   customName: "<red>八十！"
   lore:
-    - "<gray>28伤害，0.5攻击速度，右键下次攻击会眩晕敌人5s，冷却10s"
-    - "<dark_gray>"
+    - "<gray>右键强化自身，下次攻击会眩晕敌人5s，冷却10s"
+    - "<dark_gray>唏，可以换40的吗"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -524,8 +523,8 @@ maggoteers:emp:
   material: COPPER_BLOCK
   customName: "<blue>E.M.P"
   lore:
-    - "<gray>右键使8格半径内所有敌人沉默且眩晕10s，冷却时间40s"
-    - "<dark_gray>"
+    - "<gray>右键使12格半径内所有敌人沉默且眩晕10s，冷却时间40s"
+    - "<dark_gray>熄灯了"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -539,7 +538,7 @@ maggoteers:emp:
     cooldown_sec: 40
     effect: BUFF_AREA
     params:
-      radius: 8.0
+      radius: 12.0
       targets: enemies
       enemy_scope: tracked
       clear_potions: [STRENGTH, SPEED, INVISIBILITY, FIRE_RESISTANCE, RESISTANCE, REGENERATION]
@@ -553,11 +552,11 @@ maggoteers:emp:
     cooldownGroup: "maggoteers:emp"
     seconds: 40
 maggoteers:excalibur_a3:
-  material: GOLDEN_SWORD
+  material: NETHERITE_SWORD
   customName: "<gold>Excalibur"
   lore:
-    - "<gray>12伤害，右键释放伤害光束，基础伤害30，冷却25s"
-    - "<dark_gray>"
+    - "<gray>右键射出贯穿敌人的能量光束，基础伤害30，冷却25s"
+    - "<dark_gray>有人知道石中剑什么时候开始和发射激光绑定的吗"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -590,8 +589,8 @@ maggoteers:famed_name:
   material: DIAMOND_SWORD
   customName: "<aqua>显赫声名"
   lore:
-    - "<gray>5伤害，右键对4格半径内所有敌人造成6点伤害，冷却9s"
-    - "<dark_gray>"
+    - "<gray>右键对4格半径内所有敌人造成6点伤害，冷却9s"
+    - "<dark_gray>并不只是一把礼器"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -624,8 +623,8 @@ maggoteers:frostmourne:
   material: DIAMOND_SWORD
   customName: "<blue>霜之哀伤"
   lore:
-    - "<gray>18伤害，手持时获得凋零效果，攻击时恢复1点生命值，并使敌人获得5s缓慢I，右键对4格半径内所有敌人造成2点伤害"
-    - "<dark_gray>"
+    - "<gray>手持时获得凋零效果，攻击时恢复1点生命值，并使敌人获得5s缓慢I，右键对4格半径内所有敌人造成2点伤害，冷却时间8s"
+    - "<dark_gray>冰封的怨魂会将你推上那个王座"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -657,7 +656,6 @@ maggoteers:frostmourne:
       radius: 4.0
       targets: enemies
       enemy_scope: tracked
-
   useCooldown:
     cooldownGroup: "maggoteers:frostmourne"
     seconds: 8
@@ -692,8 +690,7 @@ maggoteers:glass_blade:
   material: DIAMOND_HOE
   customName: "<aqua>玻璃刀"
   lore:
-    - "<gray>耐久剩余1点，锋利100"
-    - "<dark_gray>"
+    - "<dark_gray>接下来的一击将会很疯狂"
   maxStackSize: 1
   enchantments:
     - minecraft:unbreaking: 10
@@ -708,8 +705,7 @@ maggoteers:griffon_claw:
   material: NETHERITE_HOE
   customName: "<white>骏鹰之爪"
   lore:
-    - "<gray>10伤害，横扫攻击X，生物触及距离+0.5"
-    - "<dark_gray>"
+    - "<dark_gray>横扫炒鸡，做回自己"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -738,8 +734,7 @@ maggoteers:heal_potion_item:
   material: POTION
   customName: "<red>瞬间治疗药水"
   lore:
-    - "<gray>瞬间治疗药水，右键消耗，恢复10点生命值"
-    - "<dark_gray>"
+    - "<dark_gray>它真的只是瞬间治疗药水"
   maxStackSize: 8
   enchantments:
     - minecraft:unbreaking: 10
@@ -765,8 +760,8 @@ maggoteers:heat_cutter_a1:
   material: GOLDEN_SWORD
   customName: "<red>热熔切割器"
   lore:
-    - "<gray>5伤害，右键对4格半径内所有敌人造成4点伤害，冷却10s"
-    - "<dark_gray>"
+    - "<gray>右键对4格半径内所有敌人造成4点伤害，冷却10s"
+    - "<dark_gray>北进重工用于切割矿石的链锯……剑？"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -800,7 +795,7 @@ maggoteers:herafinger:
   itemModel: DIAMOND_SWORD
   customName: "<gold>赫拉芬格"
   lore:
-    - "<gray>18伤害，1.0攻击速度，攻击会使敌人获得1s缓慢X，右键强化自身，直到下次攻击前获得200攻击力，并对使3格半径内的敌人获得3s缓慢X，冷却10s"
+    - "<gray>攻击会使敌人获得1s缓慢X，右键强化自身，下次攻击造成相当于攻击力200%的伤害，并使3格半径内的敌人获得3s缓慢X，冷却10s"
     - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
@@ -816,7 +811,7 @@ maggoteers:herafinger:
     -
       id: maggoteers:herafinger_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: 0.0
+      amount: -3.0
       operation: ADD_NUMBER
       slot: mainhand
   pdc:
@@ -835,7 +830,6 @@ maggoteers:herafinger:
       trigger: ON_DAMAGE_DEALT
       charges: 1
     stack: REPLACE
-
   useCooldown:
     cooldownGroup: "maggoteers:herafinger"
     seconds: 10
@@ -895,7 +889,7 @@ maggoteers:jet_a1:
     -
       id: maggoteers:jet_a1_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: 0.1
+      amount: -2.8
       operation: ADD_NUMBER
       slot: mainhand
     -
@@ -936,7 +930,7 @@ maggoteers:knight_greatsword:
     -
       id: maggoteers:knight_greatsword_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: 0.2
+      amount: -3.2
       operation: ADD_NUMBER
       slot: mainhand
     -
@@ -1056,7 +1050,7 @@ maggoteers:mission_sure:
     -
       id: maggoteers:mission_sure_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: 2.0
+      amount: -2.0
       operation: ADD_NUMBER
       slot: mainhand
   pdc:
@@ -1450,7 +1444,7 @@ maggoteers:spike_wall:
     -
       id: maggoteers:spike_wall_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: -0.2
+      amount: -2.0
       operation: ADD_NUMBER
       slot: mainhand
   pdc:
@@ -1526,7 +1520,7 @@ maggoteers:supreme_art:
     -
       id: maggoteers:supreme_art_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: 2.0
+      amount: -2.0
       operation: ADD_NUMBER
       slot: mainhand
     -
@@ -1674,7 +1668,7 @@ maggoteers:valor:
     -
       id: maggoteers:valor_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: 0.1
+      amount: -2.7
       operation: ADD_NUMBER
       slot: mainhand
     -
@@ -1825,7 +1819,7 @@ maggoteers:shimingzi:
     -
       id: maggoteers:shimingzi_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: -0.9
+      amount: -3.3
       operation: ADD_NUMBER
       slot: mainhand
   pdc:
@@ -1864,7 +1858,7 @@ maggoteers:miaooneal:
     -
       id: maggoteers:miaooneal_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: 0.4
+      amount: -3.0
       operation: ADD_NUMBER
       slot: mainhand
   pdc:
@@ -1905,7 +1899,7 @@ maggoteers:solar_spear:
     -
       id: maggoteers:solar_spear_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: 0.1
+      amount: -2.9
       operation: ADD_NUMBER
       slot: mainhand
     -
@@ -1940,7 +1934,7 @@ maggoteers:red_blessing:
     -
       id: maggoteers:red_blessing_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: 0.1
+      amount: -2.6
       operation: ADD_NUMBER
       slot: mainhand
     -
@@ -2008,7 +2002,7 @@ maggoteers:paragon:
     -
       id: maggoteers:paragon_attack_speed
       attribute: "minecraft:attack_speed"
-      amount: 0.2
+      amount: -2.4
       operation: ADD_NUMBER
       slot: mainhand
   pdc:

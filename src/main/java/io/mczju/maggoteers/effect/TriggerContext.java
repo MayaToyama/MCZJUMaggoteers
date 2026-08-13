@@ -30,4 +30,16 @@ public record TriggerContext(
         }
         return player != null ? player.getLocation() : null;
     }
+
+    public TriggerContext withHitTarget(LivingEntity hitTarget) {
+        return new TriggerContext(fired, hitTarget, attacker, eventLocation);
+    }
+
+    public TriggerContext withFired(Trigger fired) {
+        return new TriggerContext(fired, hitTarget, attacker, eventLocation);
+    }
+
+    public TriggerContext withAttacker(LivingEntity attacker) {
+        return new TriggerContext(fired, hitTarget, attacker, eventLocation);
+    }
 }

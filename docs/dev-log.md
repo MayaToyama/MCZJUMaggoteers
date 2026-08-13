@@ -5,6 +5,72 @@
 
 ---
 
+## 2026-08-13 — 下次攻击强化类 empower 打击特效
+
+- **做了什么**：纯延期 `use_ability`（下次攻击消耗）在无 `empower_fx`、cast 仅为 `preset: NONE`/缺省时，命中 victim 播内置 `deferredStrikeFx`（CRIT + DOT_ABOVE + 暴击音）；`playOnEntity` 对非玩家补播 sound 并尊重 NONE。
+- **原因**：战斧/八十等「右键蓄力 → 下次出手」与多步包 empower 路径应对齐，否则 buff 模板只有施法音、出手无感。
+- **决策**：不强制改 YAML；显式 `empower_fx` / 可见 cast fx 仍优先。即时-only 包仍无默认打击闪。
+- **遗留**：作者仍需手写 emp/herafinger 等多步内容；测试服手测战斧/八十出手闪。
+
+---
+
+## 2026-08-13 — Multi use_ability + deferred next-hit FX
+
+- **做了什么**：use_ability.effects[] 多步包 + legacy 单 effect:；ireTrigger 先于 sweepExpiry；延期魔法 ireTrigger=expiryTrigger 且命中时走 weaponPath；即时步共享 TriggerContext（DAMAGE_BEAM 写 hitTarget）；cast / empower FX（victim coalesce）；WeaponAbilityIds 分隔符规则；延期默认 stack: REPLACE。
+- **原因**：EMP/赫拉芬格/雷霆之杖等 lore 需要一次右键多段或下次攻击多段；旧 sweep-first 使同 trigger 延期魔法永远执行不到。
+- **决策**：内容 YAML 本 PR 不改（作者后改）；eighty_hammer 为唯一静默行为变化（无需改 YAML 即下次近战眩晕）；empower：无可见 fx 时纯延期包播内置打击闪（不吃 defaults）。
+- **遗留**：作者待改 emp / herafinger（含 held 普攻缓慢）/ 	hunder_rod / mission_sure / rostmourne held；测试服手测多步与 empower。
+
+---
+
+## 2026-08-12 — 测试服上线前 Critical + Important 修复（批次 A/B）
+
+- **做了什么**：按审阅文档批次 A（C1–C5）+ 批次 B（I4–I7 + I14 YAML 同步）修复：
+  - **C1**：`PlayerCombatStats.magicDamagePercentContribution` 跳过 `fireTrigger != null` 的模板层，仅常驻 grant 计入法伤倍率。
+  - **C2**：`MagicDamageContext` 从 `HashSet` 改为 `HashMap<String,Integer>` 引用计数，嵌套 `run()` 不再提前清除标记。新增单测 `nestedRunPreservesOuterMark`。
+  - **C3**：`MaggoteersGame.startInWorld` 世界创建失败（`w==null`）和剧本超时（30s）两处加 `fail()`，确保 `endGame()` → `cleanupRun()` 不被跳过。
+  - **C4**：`RestMenu.openPick` 不再预扣货币；`PickMenu` 接收 `currencyKind` + `cost`，在 `RewardService.apply` 成功后才 `spendOneKind` 扣费。
+  - **C5**：`WaveScheduler.onWaveCleared` 重构——终局波先发 `clearReward` + `ON_WAVE_CLEAR` + `SummonRegistry.onWaveClear`，再 `win()`。
+  - **I4**：`MobAiLockRegistry` 新增 `ENTITY_GAME` 映射 + `restoreAll(Object game)` 按局恢复；`MaggoteersGame.cleanupRun` 改为 `restoreAll(this)`；`onDisable` 保留无参 `restoreAll()` 全清。
+  - **I5**：`WaveEngine.stop` 中 MountedSquad 清理改为遍历本局 `ourMobs` 快照（`removeByRoot`），不再清全局 `snapshot().keySet()`。
+  - **I6**：`ItemInteractRouter` 的 `SHOP_EMERALD` handler 加 `WaveScheduler.isRestPhase` 门控，战斗期右键提示"仅休整期可使用"。
+  - **I7**：`MaggoteersGame.cleanupRun` 循环中加 `CooldownService.clear(uuid)`，防同 UUID 连开两局继承 CD。
+  - **I14**：源码 `rewards.yml` / `items/maggoteers.yml` / `waves.yml` / `affixes.yml` / `config.yml` / `collectibles.yml` / `items/collectibles.yml` 同步到测试服 `E:\MCpaper\plugins\Maggoteers\`。
+- **原因**：审阅 `docs/review/2026-08-12-测试服上线前审阅.md` 建议修复完再开多人测；批次 A 阻塞稳定与经济正确，批次 B 防多局干扰与配置漂移。
+- **决策**：C2 用引用计数（非栈式）保持同 tick 同 key 语义；C4 扣费放 PickMenu（非 RewardService）保持 RewardService 无副作用；I4 用 `ENTITY_GAME` map 而非改造 LOCKS 结构以最小侵入。
+- **遗留**：批次 C 剩余（I10 解锁商品、扩充 act3_boss）+ 批次 D（集成测/版本号）未修；手测清单 P0–P3 需在测试服实机验证。
+
+---
+
+## 2026-08-12 — Boss 池粘滞 + 休整跳过全员投票（I1/I2）
+
+- **做了什么**：
+  - **I1 Boss 池粘滞**：`WaveScheduler.Cursor` 加 `lastBossKillAct`；`onWaveCleared` 在 `lastTier == "boss"` 时更新粘滞层；新增 `bossPoolActIndex(game)`；`RestMenu` Boss 池查询改用该值替代当前层。
+  - **I2 休整跳过全员投票**：`Cursor` 加 `skipVotes`（每休整期进入时清空）；`skipRest` 改为 `voteSkip(game, uuid)`（仅冒险模式玩家可投、全员同意才 `advance`）；新增 `skipVoteCount` / `skipVoteTotal`；`RestMenu` 跳过按钮 lore 显示 `投票进度 x/y`，未通过时重开菜单刷新。
+- **原因**：对齐 CLAUDE §9.2（Boss 池=最近击杀 Boss 所在层）与 §9.3（跳过需全员同意）；补玩法完整性。
+- **决策**：不做延长按钮（需求方裁减）；投票人数仅显示在现有跳过按钮 lore，不动 UI 布局；投票仅统计冒险模式玩家，观战者不计。
+- **遗留**：`mvn test` 262 通过；Boss 池粘滞与投票需测试服多人手测（P1）。
+
+---
+
+## 2026-08-12 — 测试服上线前全仓审阅文档
+
+- **做了什么**：产出 `docs/review/2026-08-12-测试服上线前审阅.md`（英文别名 `2026-08-12-preflight-review.md`）；交叉核验生命周期/效果/配置/部署；`mvn test` 261 通过 / 5 跳过。
+- **原因**：内容基本完成后准备开测服，需统一风险清单与准入门槛。
+- **决策**：Critical 五项（魔攻模板泄漏、MagicDamageContext 嵌套、开局失败不 fail、3 选 1 扣费非原子、终局跳过 clearReward）建议修完再多人测；测服 `rewards.yml`/`items/maggoteers.yml` 与源码哈希不一致须显式同步。
+- **遗留**：按审阅文档批次 A→D 排期修复；手测清单未关。
+
+---
+
+## 2026-08-12 — Guardian 尖刺反弹 + 刺猬胸甲 StackOverflow
+
+- **做了什么**：`MagicDamageContext` 同 tick 守卫扩展到 `ON_DAMAGE_TAKEN`（`EffectListener`）；单测覆盖 mark 生命周期。已部署测试服 jar。
+- **原因**：crash 栈是 `DAMAGE_AREA`→`Guardian.hurtServer` 尖刺反伤→再触发 `ON_DAMAGE_TAKEN` 无限递归；`waves.yml` 远古守卫者上的 IM `swap` 只是同怪巧合，栈内无 InfernalMobs 帧。
+- **决策**：不禁用 `swap`；补齐本就应覆盖 TAKEN 的 re-entry 抑制（原先只拦 `ON_DAMAGE_DEALT`）。
+- **遗留**：重启 Paper 后手测近战带刺 Guardians / 刺猬胸甲不再崩服。
+
+---
+
 ## 2026-08-12 — 药水清除 / 局内免疫（退役假 amp-255）
 
 - **做了什么**：实现真实 `clear_potions` / `self_clear_potions`（`removePotionEffect`）与奖励 `ADD_POTION` + `immunity: true`（事件拦 ADDED/CHANGED + PurifyListener 伤）；加载硬失败假 255；迁移 `cataclysm`/`emp`/`holy_water`/`phantasm` 与 `a3w_imm_*`；部署默认同步 `items/*.yml`。

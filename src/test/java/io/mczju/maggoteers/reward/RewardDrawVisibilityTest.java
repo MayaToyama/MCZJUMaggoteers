@@ -97,4 +97,27 @@ class RewardDrawVisibilityTest {
         assertFalse(RewardDrawVisibility.isVisible(up, ps, Set.of(), poolWithCap(1)));
         assertTrue(RewardDrawVisibility.isVisible(up, ps, Set.of(), poolWithCap(2)));
     }
+
+    @Test
+    void grantReviveHiddenViaAcquiredUniqueWhenNoEffect() {
+        // Legacy / instant GRANT_REVIVE path left no PlayerEffect; must still hide after pick.
+        RewardOption opt = new RewardOption("a1w_act_revive", "", "", RewardOption.Category.STAT, null, 1,
+                io.mczju.maggoteers.effect.Trigger.ON_ACT_ENTER, Effect.GRANT_REVIVE, new EffectContext(),
+                Stack.IGNORE, null, 0, false, 0, true, 0, List.of());
+        PlayerState ps = emptyState();
+        ps.acquiredUnique().add("a1w_act_revive");
+        assertFalse(RewardDrawVisibility.isVisible(opt, ps, ps.acquiredUnique(), poolWithCap(0)));
+    }
+
+    @Test
+    void grantReviveHiddenWhenEffectOwned() {
+        RewardOption opt = new RewardOption("a1w_act_revive", "", "", RewardOption.Category.STAT, null, 1,
+                io.mczju.maggoteers.effect.Trigger.ON_ACT_ENTER, Effect.GRANT_REVIVE, new EffectContext(),
+                Stack.IGNORE, null, 0, false, 0, true, 0, List.of());
+        PlayerState ps = emptyState();
+        PlayerEffect pe = new PlayerEffect("a1w_act_revive", Effect.GRANT_REVIVE, new EffectContext(),
+                io.mczju.maggoteers.effect.Trigger.ON_ACT_ENTER, null, 0, 0, null, Stack.IGNORE, 0, 0);
+        ps.effects().add(pe);
+        assertFalse(RewardDrawVisibility.isVisible(opt, ps, Set.of(), poolWithCap(0)));
+    }
 }

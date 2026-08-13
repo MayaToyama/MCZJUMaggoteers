@@ -40,9 +40,20 @@ public final class MagicFxService {
     }
 
     public static void playOnEntity(Entity entity, MagicUseFx fx) {
-        if (entity instanceof Player p) play(p, fx);
-        else if (entity != null && fx != null) {
-            MagicFxPresets.dotAbove(entity.getLocation(), fx);
+        if (fx == null || entity == null) {
+            return;
         }
+        if (entity instanceof Player p) {
+            play(p, fx);
+            return;
+        }
+        Location at = entity.getLocation();
+        if (fx.sound() != null && at.getWorld() != null) {
+            at.getWorld().playSound(at, fx.sound(), fx.soundVolume(), fx.soundPitch());
+        }
+        if (fx.preset() == MagicFxPreset.NONE) {
+            return;
+        }
+        MagicFxPresets.dotAbove(at, fx);
     }
 }

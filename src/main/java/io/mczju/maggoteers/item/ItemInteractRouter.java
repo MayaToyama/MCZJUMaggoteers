@@ -62,8 +62,15 @@ public final class ItemInteractRouter implements Listener {
         HANDLERS.put(ItemKind.CLASS_TICKET, new OpenClassMenuHandler());
         HANDLERS.put(ItemKind.REVIVE_COIN, (player, game, stack) ->
                 MenuFacade.open("maggoteers-revive", player, game));
-        HANDLERS.put(ItemKind.SHOP_EMERALD, (player, game, stack) ->
-                MenuFacade.open("maggoteers-rest", player, game));
+        HANDLERS.put(ItemKind.SHOP_EMERALD, (player, game, stack) -> {
+            // I6: 仅休整期可开升级菜单（与货币一致的门控）
+            if (!io.mczju.maggoteers.wave.WaveScheduler.isRestPhase(game)) {
+                player.sendMessage(net.kyori.adventure.text.Component.text(
+                        "仅休整期可使用。", net.kyori.adventure.text.format.NamedTextColor.GRAY));
+                return;
+            }
+            MenuFacade.open("maggoteers-rest", player, game);
+        });
         HANDLERS.put(ItemKind.SUPPLY_HEALING, (player, game, stack) -> {
             double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null
                     ? player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue() : 20.0;

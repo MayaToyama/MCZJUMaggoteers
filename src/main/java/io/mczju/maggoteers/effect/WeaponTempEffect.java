@@ -3,15 +3,15 @@ package io.mczju.maggoteers.effect;
 import java.util.Locale;
 import java.util.Optional;
 
-/** Validation for weapon use_ability temporary ADD_ATTRIBUTE / ADD_POTION (PlayerState + expiry). */
+/** Validation for weapon use_ability temporary / deferred steps (PlayerState + expiry). */
 public final class WeaponTempEffect {
 
-    public static final String EFFECT_ID_PREFIX = "ability:";
+    public static final String EFFECT_ID_PREFIX = WeaponAbilityIds.PREFIX;
 
     private WeaponTempEffect() {}
 
     public static String effectId(String itemId) {
-        return EFFECT_ID_PREFIX + itemId;
+        return WeaponAbilityIds.effectId(itemId);
     }
 
     /**
@@ -34,7 +34,12 @@ public final class WeaponTempEffect {
         if (effect == Effect.ADD_POTION) {
             return validateExpiryPotion(params);
         }
-        return Optional.of("unsupported effect for expiry path");
+        if (effect == Effect.AURA || effect == Effect.BOUND_EQUIP) {
+            return Optional.of("unsupported effect for weapon ability");
+        }
+        // Deferred magic (BUFF_AREA, DISABLE_AI, DAMAGE_*, HEAL_AREA, ...):
+        // combat expiry whitelist enforced in ItemAbilityRegistry.
+        return Optional.empty();
     }
 
     private static Optional<String> validateAddAttribute(EffectContext params) {

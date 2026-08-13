@@ -26,6 +26,8 @@ public final class PlayerCombatStats {
     }
 
     static double magicDamagePercentContribution(PlayerEffect e) {
+        // 仅常驻 grant（fireTrigger==null）计入法伤倍率；触发型模板在 fire 时 spawn grant 子层
+        if (e.fireTrigger() != null) return 0.0;
         if (e.effect() != Effect.ADD_ATTRIBUTE) return 0.0;
         String attrName = e.params().get(EffectKeys.ATTR_NAME);
         if (attrName == null || !VirtualStats.isMagicDamage(attrName)) return 0.0;

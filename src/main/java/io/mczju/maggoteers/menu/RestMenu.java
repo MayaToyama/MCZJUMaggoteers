@@ -38,7 +38,8 @@ public class RestMenu extends Menu {
         var snap = WaveScheduler.snapshot(game);
         String normalTier = snap == null ? "weak" : ("weak".equals(snap.lastTier()) ? "weak" : "strong");
         String poolNormal = snap == null ? "act1_weak" : RewardService.poolForWave(snap.actIndex(), normalTier);
-        String poolBoss = snap == null ? "act1_boss" : RewardService.poolForWave(snap.actIndex(), "boss");
+        // Boss 池粘滞（§9.2）：用最近击杀 Boss 所在层，而非当前层
+        String poolBoss = snap == null ? "act1_boss" : RewardService.poolForWave(WaveScheduler.bossPoolActIndex(game), "boss");
 
         setSlot(11, btn(Material.GOLD_NUGGET, "<yellow>普通奖励",
                         "消耗 1 普通卫戍币 · 3 选 1", ItemService.countKind(p, ItemKind.CURRENCY_NORMAL)),
@@ -46,10 +47,19 @@ public class RestMenu extends Menu {
         setSlot(13, btn(Material.NETHER_STAR, "<light_purple>Boss 奖励",
                         "消耗 1 Boss 币 · 3 选 1", ItemService.countKind(p, ItemKind.CURRENCY_BOSS)),
                 (c, e) -> openPick(p, poolBoss, ItemKind.CURRENCY_BOSS));
-        setSlot(15, btn(Material.LIME_DYE, "<green>跳过休整", "立即进入下一波", -1),
+
+        // 跳过休整：全员投票（§9.3），按钮显示投票进度
+        int skipVoted = WaveScheduler.skipVoteCount(game);
+        int skipTotal = WaveScheduler.skipVoteTotal(game);
+        String skipLore = "投票进度 " + skipVoted + "/" + skipTotal + " · 全员同意立即进入下一波";
+        setSlot(15, btn(Material.LIME_DYE, "<green>跳过休整", skipLore, -1),
                 (c, e) -> {
+                    boolean skipped = WaveScheduler.voteSkip(game, p.getUniqueId());
                     p.closeInventory();
-                    WaveScheduler.skipRest(game);
+                    if (!skipped) {
+                        // 未全员通过：重开菜单刷新投票进度
+                        MenuFacade.open("maggoteers-rest", p, game);
+                    }
                 });
     }
 
@@ -68,12 +78,8 @@ public class RestMenu extends Menu {
             p.sendMessage(Component.text("货币不足！", NamedTextColor.RED));
             return;
         }
-        if (!ItemService.spendOneKind(p, currencyKind)) {
-            p.sendMessage(Component.text("扣费失败。", NamedTextColor.RED));
-            return;
-        }
         p.closeInventory();
-        MenuFacade.open("maggoteers-pick", p, game, offers, poolId);
+        MenuFacade.open("maggoteers-pick", p, game, offers, poolId, currencyKind.name(), pool.cost());
     }
 
     private static ItemStack btn(Material mat, String name, String loreLine, int countHint) {

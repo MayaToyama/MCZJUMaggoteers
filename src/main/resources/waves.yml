@@ -20,7 +20,6 @@ pools:
       - { strategy: w1_herd, weight: 2 }
     strong:
       - { strategy: s1_resort_ghosts, weight: 2 }
-      - { strategy: s1_low_altitude, weight: 2 }
       - { strategy: s1_vent_breeze, weight: 2 }
     boss:
       - { strategy: b1_colossus, weight: 2 }

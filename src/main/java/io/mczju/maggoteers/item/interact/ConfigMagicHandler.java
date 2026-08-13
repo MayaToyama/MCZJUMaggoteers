@@ -1,6 +1,7 @@
 package io.mczju.maggoteers.item.interact;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
+import io.mczju.maggoteers.effect.AbilityStep;
 import io.mczju.maggoteers.effect.Effect;
 import io.mczju.maggoteers.effect.EffectKeys;
 import io.mczju.maggoteers.effect.EffectService;
@@ -42,8 +43,15 @@ public final class ConfigMagicHandler implements ItemUseHandler {
             return;
         }
         CooldownService.tryUse(player, stack, itemId, ability.cooldownSec());
-        MagicFxService.play(player, resolveCastFx(ability),
-                MagicFxConfig.shouldPlayCastAreaRing(ability.effect(), ability.params()));
+        boolean areaRing = false;
+        for (AbilityStep step : ability.steps()) {
+            if (!step.isDeferred()
+                    && MagicFxConfig.shouldPlayCastAreaRing(step.effect(), step.params())) {
+                areaRing = true;
+                break;
+            }
+        }
+        MagicFxService.play(player, resolveCastFx(ability), areaRing);
         if (ability.consume()) {
             spendOneFromMainHand(player);
         }
@@ -51,16 +59,22 @@ public final class ConfigMagicHandler implements ItemUseHandler {
 
     private static MagicUseFx resolveCastFx(ItemAbility ability) {
         MagicUseFx fx = ability.fx();
-        if (ability.effect() != Effect.HEAL_AREA || ability.params() == null) {
-            return fx;
+        if (fx == null) {
+            return null;
         }
-        double radius = ability.params().getOrDefault(EffectKeys.RADIUS, fx.radius());
-        if (radius <= 0 || radius == fx.radius()) {
-            return fx;
+        for (AbilityStep step : ability.steps()) {
+            if (step.isDeferred() || step.effect() != Effect.HEAL_AREA || step.params() == null) {
+                continue;
+            }
+            double radius = step.params().getOrDefault(EffectKeys.RADIUS, fx.radius());
+            if (radius > 0 && radius != fx.radius()) {
+                return new MagicUseFx(
+                        fx.sound(), fx.soundVolume(), fx.soundPitch(), fx.preset(), fx.particle(),
+                        radius, fx.rayLength(), fx.density(), fx.rippleRings(), fx.expandSteps(),
+                        fx.spiralTicks());
+            }
         }
-        return new MagicUseFx(
-                fx.sound(), fx.soundVolume(), fx.soundPitch(), fx.preset(), fx.particle(),
-                radius, fx.rayLength(), fx.density(), fx.rippleRings(), fx.expandSteps(), fx.spiralTicks());
+        return fx;
     }
 
     private static void spendOneFromMainHand(Player player) {

@@ -127,20 +127,19 @@ public final class WaveEngine {
     public static void stop(AbstractGame game) {
         WaveRuntime rt = RUNTIMES.remove(game);
         if (rt == null) return;
-        for (UUID uuid : new HashSet<>(rt.livingMobs)) {
+        var ourMobs = new HashSet<>(rt.livingMobs);
+        for (UUID uuid : ourMobs) {
             var e = Bukkit.getEntity(uuid);
             if (e != null) e.remove();
             InfernalMobsBridge.unregisterManaged(uuid);
             BY_ENTITY.remove(uuid);
+            MountedSquadRegistry.removeByRoot(uuid);
         }
         rt.livingMobs.clear();
         rt.mobSteps.clear();
         rt.mobProfiles.clear();
         rt.bossBars.values().forEach(BossBar::removeAll);
         rt.bossBars.clear();
-        for (UUID uuid : MountedSquadRegistry.snapshot().keySet()) {
-            MountedSquadRegistry.removeByRoot(uuid);
-        }
     }
 
     /** 死亡处理：移除追踪；死亡召唤计入本波 livingMobs。返回 true 表示是我们的怪。 */

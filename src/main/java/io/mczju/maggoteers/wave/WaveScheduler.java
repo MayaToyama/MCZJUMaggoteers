@@ -56,6 +56,10 @@ public final class WaveScheduler {
         WaveRuntime runtime;
         BukkitTask task;
         String lastTier = "weak";
+        /** 最近击杀 Boss 所在层（Boss 池粘滞，§9.2）。 */
+        int lastBossKillAct = 0;
+        /** 本休整期已投跳过票的玩家（全员同意才跳过）。 */
+        final Set<UUID> skipVotes = new HashSet<>();
 
         Cursor(List<ActPlan> acts, RunConfig runCfg) {
             this.acts = acts;
@@ -108,9 +112,52 @@ public final class WaveScheduler {
                 c.phase, c.lastTier, restLeft);
     }
 
-    public static void skipRest(AbstractGame game) {
+    /** 已投跳过票人数。 */
+    public static int skipVoteCount(AbstractGame game) {
         Cursor c = CURSORS.get(game);
-        if (c != null && c.phase == Phase.REST) advance(game, c);
+        return c == null ? 0 : c.skipVotes.size();
+    }
+
+    /** 休整期可投票的玩家总数（冒险模式玩家）。 */
+    public static int skipVoteTotal(AbstractGame game) {
+        int total = 0;
+        for (UUID uuid : io.mczju.maggoteers.state.PlayerStateManager.uuidsInGame(game)) {
+            Player pl = Bukkit.getPlayer(uuid);
+            if (pl != null && io.mczju.maggoteers.state.PlayerStateManager.isRunParticipant(game, pl)) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    /**
+     * 休整跳过投票（§9.3）：记录该玩家赞成票；全员同意才 advance。
+     * @return true 表示本票促成跳过（已 advance），false 表示仍需更多票。
+     */
+    public static boolean voteSkip(AbstractGame game, UUID uuid) {
+        Cursor c = CURSORS.get(game);
+        if (c == null || c.phase != Phase.REST || uuid == null) return false;
+        Player voter = Bukkit.getPlayer(uuid);
+        if (voter == null || !io.mczju.maggoteers.state.PlayerStateManager.isRunParticipant(game, voter)) return false;
+        if (c.skipVotes.contains(uuid)) return false;
+        c.skipVotes.add(uuid);
+        int total = skipVoteTotal(game);
+        int voted = c.skipVotes.size();
+        String voterName = voter.getName();
+        broadcast(game, Component.text("⏭ 跳过休整投票 " + voted + "/" + total
+                + "（" + voterName + " 已投）", NamedTextColor.YELLOW));
+        if (voted >= total) {
+            broadcast(game, Component.text("⏭ 全员同意，跳过休整！", NamedTextColor.GREEN));
+            advance(game, c);
+            return true;
+        }
+        return false;
+    }
+
+    /** Boss 池粘滞层索引（最近击杀 Boss 所在层，§9.2）。 */
+    public static int bossPoolActIndex(AbstractGame game) {
+        Cursor c = CURSORS.get(game);
+        return c == null ? 0 : c.lastBossKillAct;
     }
 
     /** 返回当前层的 playerSpawn 绝对坐标（已叠 act_origins），供死亡复活等场景传送。null 表示无 cursor / 无世界。 */
@@ -285,16 +332,7 @@ public final class WaveScheduler {
     }
 
     private static void onWaveCleared(AbstractGame game, Cursor c) {
-        boolean isFinalWave = c.actIndex == c.acts.size() - 1
-                && c.waveIndex == c.acts.get(c.actIndex).waves().size() - 1;
-        if (isFinalWave) {
-            c.phase = Phase.DONE;
-            if (c.task != null) c.task.cancel();
-            WaveEngine.stop(game);
-            broadcast(game, Component.text("🏆 通关 卫戍协议！", NamedTextColor.GOLD));
-            ((MaggoteersGame) game).win();
-            return;
-        }
+        // 发放通关奖励 + 触发 ON_WAVE_CLEAR + 清理召唤物（终局波也需要，C5）
         WaveSpec spec = c.acts.get(c.actIndex).waves().get(c.waveIndex);
         List<io.mczju.maggoteers.wave.RewardItem> rewards = spec.clearReward();
         if (!rewards.isEmpty()) {
@@ -309,7 +347,7 @@ public final class WaveScheduler {
                     (MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_WAVE_CLEAR);
         } catch (RuntimeException ex) {
             MaggoteersPlugin.getInstance().getLogger()
-                    .warning("ON_WAVE_CLEAR failed (continuing to REST): " + ex.getMessage());
+                    .warning("ON_WAVE_CLEAR failed: " + ex.getMessage());
         }
         try {
             io.mczju.maggoteers.effect.SummonRegistry.onWaveClear((MaggoteersGame) game);
@@ -317,9 +355,25 @@ public final class WaveScheduler {
             MaggoteersPlugin.getInstance().getLogger()
                     .warning("SummonRegistry.onWaveClear failed: " + ex.getMessage());
         }
+
+        // Boss 池粘滞（§9.2）：击杀本层 Boss 后更新粘滞层
+        if ("boss".equals(c.lastTier)) c.lastBossKillAct = c.actIndex;
+
+        boolean isFinalWave = c.actIndex == c.acts.size() - 1
+                && c.waveIndex == c.acts.get(c.actIndex).waves().size() - 1;
+        if (isFinalWave) {
+            c.phase = Phase.DONE;
+            if (c.task != null) c.task.cancel();
+            WaveEngine.stop(game);
+            broadcast(game, Component.text("🏆 通关 卫戍协议！", NamedTextColor.GOLD));
+            ((MaggoteersGame) game).win();
+            return;
+        }
+
         int restSec = MaggoteersPlugin.getInstance().getConfig().getInt("rest.duration_sec", 30);
         c.restEndTicks = Bukkit.getCurrentTick() + restSec * 20L;
         c.phase = Phase.REST;
+        c.skipVotes.clear();
         for (UUID uuid : io.mczju.maggoteers.state.PlayerStateManager.uuidsInGame(game)) {
             Player pl = Bukkit.getPlayer(uuid);
             if (pl != null && io.mczju.maggoteers.state.PlayerStateManager.isRunParticipant(game, pl)) {

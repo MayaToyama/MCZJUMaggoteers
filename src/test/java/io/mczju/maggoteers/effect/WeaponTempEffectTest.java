@@ -94,6 +94,18 @@ class WeaponTempEffectTest {
     }
 
     @Test
+    void validateAllowsDeferredDisableAi() {
+        assertTrue(WeaponTempEffect.validate(
+                Effect.DISABLE_AI, new EffectContext(), Trigger.ON_DAMAGE_DEALT, 1).isEmpty());
+    }
+
+    @Test
+    void validateRejectsAura() {
+        assertTrue(WeaponTempEffect.validate(
+                Effect.AURA, new EffectContext(), Trigger.ON_DAMAGE_DEALT, 1).isPresent());
+    }
+
+    @Test
     void replaceKeepsSingleTempBuff() {
         PlayerEffect a = new PlayerEffect(
                 "ability:x", Effect.ADD_ATTRIBUTE, dmgPercent(0.3),
@@ -104,5 +116,33 @@ class WeaponTempEffectTest {
         List<PlayerEffect> out = EffectStacker.merge(List.of(a), b);
         assertEquals(1, out.size());
         assertEquals(0.5, out.get(0).params().get(EffectKeys.VALUE));
+    }
+
+    @Test
+    void deferredMagicPlayerEffectUsesSameFireAndExpiry() {
+        AbilityStep step = new AbilityStep(
+                Effect.DISABLE_AI, new EffectContext(), Trigger.ON_DAMAGE_DEALT, 1, Stack.REPLACE);
+        String id = WeaponAbilityIds.effectId("maggoteers:eighty_hammer", 0);
+        PlayerEffect pe = new PlayerEffect(
+                id, step.effect(), step.params(), step.expiryTrigger(),
+                step.expiryTrigger(), step.expiryCharges(),
+                0, null, Stack.REPLACE, 0, 0);
+        assertEquals(Trigger.ON_DAMAGE_DEALT, pe.fireTrigger());
+        assertEquals(Trigger.ON_DAMAGE_DEALT, pe.expiryTrigger());
+        assertEquals(Stack.REPLACE, pe.stack());
+    }
+
+    @Test
+    void deferredAddAttributeKeepsNullFireTrigger() {
+        PlayerEffect pe = new PlayerEffect(
+                WeaponAbilityIds.effectId("maggoteers:power_strike"),
+                Effect.ADD_ATTRIBUTE, new EffectContext(), null,
+                Trigger.ON_DAMAGE_DEALT, 1, 0, null, Stack.REPLACE, 0, 0);
+        assertNull(pe.fireTrigger());
+    }
+
+    @Test
+    void secondWriteReplaceDefaultStack() {
+        assertEquals(Stack.REPLACE, ItemAbilityRegistry.defaultStackForStep(null, true));
     }
 }

@@ -229,28 +229,46 @@ ItemCreator 格式；PDC `maggoteers:id`（STRING）。
 
 ### use_ability
 
+单步（legacy，仍合法）或 `effects[]` 多步包。整次技能共用一个 `cooldown_sec`；任一步成功（含仅 `self_*`）进 CD。
+
 ```yaml
 use_ability:
   cooldown_sec: 15          # 必填 >0（权威 CD；勿靠 Material cooldown）
-  effect: ADD_ATTRIBUTE     # 见下支持列表
-  params: { ... }           # 可含 clear_potions[]（DAMAGE_AREA/BUFF_AREA）
-  self_clear_potions: [WITHER, POISON, ...]  # 可选：施法者一次性清效果
-  self_potions: [ ... ]     # 可选：施法者真实药水（勿用假 amp-255）
-  fx: { preset: DOT_ABOVE, particle: CRIT }   # 优先于 legacy use_fx
-  consume: false            # 可选
-  expiry: { trigger: ON_DAMAGE_DEALT, charges: 1 }  # 仅 ADD_ATTRIBUTE / ADD_POTION 临时路径
-  stack: REPLACE
+  fx: { preset: DOT_ABOVE, particle: CRIT }   # Cast FX（右键一次）；优先于 legacy use_fx
+  empower_fx: { preset: DOT_ABOVE, particle: CRIT }  # 可选：延期包消耗时在 victim 播一次
+  self_clear_potions: [WITHER, POISON, ...]
+  self_potions: [ ... ]
+  consume: false
+  # 二选一：effects[] 或多用单字段 effect:/params:/expiry:
+  effects:
+    - effect: ADD_ATTRIBUTE
+      params: { attr: ATTACK_DAMAGE, op: PERCENT, value: 1.0 }
+      expiry: { trigger: ON_DAMAGE_DEALT, charges: 1 }
+      stack: REPLACE          # 延期步省略时默认 REPLACE（非 D7 IGNORE）
+    - effect: BUFF_AREA
+      params: { radius: 3.0, targets: enemies, enemy_scope: tracked, potions: [...] }
+      expiry: { trigger: ON_DAMAGE_DEALT, charges: 1 }
 ```
+
+禁止同时写顶层 `effect:` 与 `effects:`。拒 `AURA` / `BOUND_EQUIP`。
 
 支持 effect：`DAMAGE_AREA` | `DAMAGE_BEAM` | `HEAL_AREA` | `BUFF_AREA` | `DISABLE_AI` | `GRANT_ITEM` | `SUMMON` | `ADD_ATTRIBUTE`（须 expiry）| `ADD_POTION`（即时或 expiry 双路径）。
 
-**ADD_POTION**：无 expiry + `duration_ticks>0` = 右键即时；有 expiry → `duration_ticks` 须 0/省略（写入 `ability:<itemId>`）。武器勿用 `immunity: true`（局内免疫只走奖励 STAT）。
+**即时 vs 延期**：步无 `expiry` → 右键立刻执行（共享可变 `TriggerContext`；`DAMAGE_BEAM` 会写入 `hitTarget` 供后续 `hit_target`）。步有 `expiry` → 写入 `PlayerState`：ADD_* 为常驻临时层；魔法为 `fireTrigger=expiryTrigger`（命中时先执行再 sweep）。战斗 expiry 白名单：`ON_DAMAGE_DEALT` | `ON_DAMAGE_TAKEN` | `ON_KILL`。
 
-**清除**：`params.clear_potions` 或 `self_clear_potions`；CD 仅在 `executeAbility` **成功**后计入（含「仅 self_clear」成功）。
+**Id**：单步 ADD_* 兼容 `ability:<itemId>`；多步/延期魔法 `ability:<itemId>:<i>`。包成员匹配须 `equals(ability:id)` 或 `startsWith(ability:id:)`（禁止裸前缀，防 `herafinger`/`herafinger_x` 误伤）。
 
-**下次近战加成**：`ADD_ATTRIBUTE` + expiry `ON_DAMAGE_DEALT` charges 1；仅近战消耗（见 `power_strike`）。
+**FX**：Cast = 顶层 `fx`（多步包不用某步 effect-template）。Empower = `empower_fx` → 可见 cast fx（preset≠NONE）→ **纯延期包**内置 `deferredStrikeFx`（CRIT + DOT_ABOVE）→ 否则不播（**不**吃 `magic_fx.defaults`）；播在 victim。同包同触发 coalesce 一次。
 
-样例：`cataclysm`/`emp`（沉默 clear）、`holy_water`/`phantasm`（净化 clear）、`power_strike`、`healing_staff`。
+**ADD_POTION**：无 expiry + `duration_ticks>0` = 右键即时；有 expiry → `duration_ticks` 须 0/省略。武器勿用 `immunity: true`。
+
+**清除**：`params.clear_potions` 或 `self_clear_potions`；CD 仅在 `executeAbility` **成功**后计入。
+
+**静默行为**：`eighty_hammer`（单 `DISABLE_AI`+`expiry`）合入后无需改 YAML 即变为下次近战眩晕。
+
+**作者待改内容**（框架已就绪）：`emp`（沉默+DISABLE_AI）、`herafinger`（两步延期+held 普攻缓慢）、`thunder_rod`（BEAM+hit_target 眩晕）、`mission_sure`（治疗+速度）。
+
+完整设计：`docs/superpowers/specs/2026-08-13-multi-use-ability-design.md`。
 
 ### held_effects
 
@@ -286,7 +304,7 @@ held_effects:
 
 Preset：`THICK_RING`, `SPIRAL_RADIUS`, `RIPPLE_RINGS`, `AIM_RAY`, `SMOOTH_EXPAND_RING`, `DOT_ABOVE`
 
-合并：`magic_fx.defaults` → `magic_fx.weapons.<id>` → `use_ability.fx`。
+合并：Cast 多步包 = `magic_fx.weapons.<id>` → `use_ability.fx`（无 step template）；legacy 单步仍可带 effect template。Empower = `empower_fx` → 可见顶层 `fx` → 纯延期包内置打击闪 → 否则不播。
 
 字段：`preset`, `particle`, `sound`, `sound_volume`, `sound_pitch`, `radius`, `ray_length`, `density`, `ripple_rings`, `expand_steps`, `spiral_ticks`
 
