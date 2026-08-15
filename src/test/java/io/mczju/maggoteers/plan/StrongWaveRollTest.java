@@ -82,10 +82,11 @@ class StrongWaveRollTest {
         o.put("act1", new Vec3(0, 64, 0));
         o.put("act2", new Vec3(1024, 64, 0));
         o.put("act3", new Vec3(2048, 64, 0));
+        // Match src/main/resources/config.yml waves_per_act (2026-08-15)
         Map<String, int[]> wpa = new HashMap<>();
         wpa.put("act1", new int[]{3, 3});
-        wpa.put("act2", new int[]{4, 4});
-        wpa.put("act3", new int[]{0, 4});
+        wpa.put("act2", new int[]{3, 3});
+        wpa.put("act3", new int[]{1, 4});
         return new RunConfig(o, wpa);
     }
 
@@ -93,9 +94,17 @@ class StrongWaveRollTest {
         MapPoints pts = new MapPoints(new Vec3(0.5, 65, 0.5),
                 Map.of("1", new Vec3(4, 65, 4), "2", new Vec3(-4, 65, 4),
                         "boss", new Vec3(0, 65, 0)));
-        MapEntry entry = new MapEntry("test", pts, false, null, Map.of());
+        // Act1 strong global has only 2 ids; production maps add specials so need=3 is feasible.
+        MapEntry act1 = new MapEntry("desert", pts, false, null, Map.of(
+                "strong", List.of(
+                        new WavesConfig.PoolEntry("s1_desert_four_camels", 2),
+                        new WavesConfig.PoolEntry("s1_desert_prisoners", 2),
+                        new WavesConfig.PoolEntry("s1_desert_plague", 2))));
+        MapEntry plain = new MapEntry("test", pts, false, null, Map.of());
         Map<String, List<MapEntry>> byAct = new HashMap<>();
-        for (String act : List.of("act1", "act2", "act3")) byAct.put(act, List.of(entry));
+        byAct.put("act1", List.of(act1));
+        byAct.put("act2", List.of(plain));
+        byAct.put("act3", List.of(plain));
         return new MapLibrary(byAct);
     }
 

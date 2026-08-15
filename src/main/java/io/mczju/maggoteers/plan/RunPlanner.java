@@ -52,24 +52,41 @@ public final class RunPlanner {
         Vec3 origin = cfg.origin(act);
 
         List<WaveSpec> waves = new ArrayList<>();
+        Set<String> usedWeak = new HashSet<>();
         for (int i = 0; i < cfg.weak(act); i++)
-            waves.add(rollWave(root.derive(wavePickSalt(actIndex, "weak", i)), act, "weak", map, origin, defs, snap, affixes));
+            waves.add(rollWave(root.derive(wavePickSalt(actIndex, "weak", i)), act, "weak",
+                    map, origin, defs, snap, affixes, usedWeak, cfg.weak(act)));
+        Set<String> usedStrong = new HashSet<>();
         for (int i = 0; i < cfg.strong(act); i++)
-            waves.add(rollWave(root.derive(wavePickSalt(actIndex, "strong", i)), act, "strong", map, origin, defs, snap, affixes));
-        waves.add(rollWave(root.derive(wavePickSalt(actIndex, "boss", 0)), act, "boss", map, origin, defs, snap, affixes));
+            waves.add(rollWave(root.derive(wavePickSalt(actIndex, "strong", i)), act, "strong",
+                    map, origin, defs, snap, affixes, usedStrong, cfg.strong(act)));
+        Set<String> usedBoss = new HashSet<>();
+        waves.add(rollWave(root.derive(wavePickSalt(actIndex, "boss", 0)), act, "boss",
+                map, origin, defs, snap, affixes, usedBoss, 1));
 
         return new ActPlan(map.mapId(), Coords.resolve(origin, map.points().playerSpawn()), waves);
     }
 
     private static WaveSpec rollWave(SeededRng rng, String act, String tier, MapEntry map, Vec3 origin,
-                                     WaveDefinitions defs, ScalingConfig.Scaling snap, AffixService affixes) {
+                                     WaveDefinitions defs, ScalingConfig.Scaling snap, AffixService affixes,
+                                     Set<String> used, int need) {
         List<WavesConfig.PoolEntry> base = new ArrayList<>(defs.pool(act, tier));
         base.addAll(map.specialWaves().getOrDefault(tier, List.of()));
         if (base.isEmpty()) throw new IllegalStateException(act + "/" + tier + " 池为空");
 
-        double[] weights = base.stream().mapToDouble(WavesConfig.PoolEntry::weight).toArray();
+        List<WavesConfig.PoolEntry> candidates = new ArrayList<>();
+        for (WavesConfig.PoolEntry e : base) {
+            if (!used.contains(e.strategy())) candidates.add(e);
+        }
+        if (candidates.isEmpty()) {
+            throw new IllegalStateException(
+                    act + "/" + tier + " 池在去重后为空（已用=" + used + "，需求=" + need + "）");
+        }
+
+        double[] weights = candidates.stream().mapToDouble(WavesConfig.PoolEntry::weight).toArray();
         int picked = rng.weightedIndex(weights);
-        String pickedId = base.get(picked).strategy();
+        String pickedId = candidates.get(picked).strategy();
+        used.add(pickedId);
         SpawnStrategyCfg strat = defs.strategy(pickedId);
         if (strat == null) throw new IllegalStateException("strategy 未定义: " + pickedId);
 
@@ -100,7 +117,9 @@ public final class RunPlanner {
                     sc.equipment(),
                     onDeath,
                     passengerSpawns,
-                    sc.repeat()));
+                    sc.repeat(),
+                    sc.name(),
+                    sc.bossBar()));
         }
         List<RewardItem> rewards = strat.clearReward().stream()
                 .map(r -> new RewardItem(r.item(), r.amount())).toList();
@@ -139,7 +158,9 @@ public final class RunPlanner {
                         pc.infernal(),
                         pc.equipment(),
                         onDeath,
-                        nested));
+                        nested,
+                        pc.name(),
+                        pc.bossBar()));
             }
         }
         return out;
@@ -167,7 +188,9 @@ public final class RunPlanner {
                         dc.infernal(),
                         dc.equipment(),
                         passengers,
-                        nested));
+                        nested,
+                        dc.name(),
+                        dc.bossBar()));
             }
         }
         return out;

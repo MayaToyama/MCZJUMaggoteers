@@ -14,23 +14,30 @@ import static org.junit.jupiter.api.Assertions.*;
 class RunPlannerTest {
 
     private WaveDefinitions simpleDefs() {
-        SpawnStrategyCfg swarm = new SpawnStrategyCfg("w_swarm",
-                List.of(new StepCfg("1", EntityType.ZOMBIE, 5, new CoeffCfg(1, 1, 1), 0, List.of())), 1,
-                List.of(new RewardItemCfg("cur", 2)));
-        SpawnStrategyCfg boss = new SpawnStrategyCfg("b_boss",
-                List.of(new StepCfg("boss", EntityType.IRON_GOLEM, 1, new CoeffCfg(8, 1.5, 1), 0, List.of("armored"))),
-                1, List.of(new RewardItemCfg("cur", 1)));
         Map<String, SpawnStrategyCfg> strat = new HashMap<>();
-        strat.put("w_swarm", swarm);
-        strat.put("s_strong", swarm);
-        strat.put("b_boss", boss);
+        for (String id : List.of("w_a", "w_b", "w_c", "s_a", "s_b", "b_boss")) {
+            boolean boss = id.startsWith("b_");
+            List<StepCfg> steps = List.of(new StepCfg(
+                    boss ? "boss" : "1",
+                    boss ? EntityType.IRON_GOLEM : EntityType.ZOMBIE,
+                    boss ? 1 : 5,
+                    new CoeffCfg(boss ? 8 : 1, boss ? 1.5 : 1, 1),
+                    0,
+                    boss ? List.of("armored") : List.of()));
+            strat.put(id, new SpawnStrategyCfg(id, steps, 1,
+                    List.of(new RewardItemCfg("cur", boss ? 1 : 2))));
+        }
         Map<String, Map<String, List<WavesConfig.PoolEntry>>> pools = new HashMap<>();
         for (String act : List.of("act1", "act2", "act3")) {
-            Map<String, List<WavesConfig.PoolEntry>> t = new HashMap<>();
-            t.put("weak", List.of(new WavesConfig.PoolEntry("w_swarm", 3)));
-            t.put("strong", List.of(new WavesConfig.PoolEntry("s_strong", 2)));
-            t.put("boss", List.of(new WavesConfig.PoolEntry("b_boss", 1)));
-            pools.put(act, t);
+            pools.put(act, Map.of(
+                    "weak", List.of(
+                            new WavesConfig.PoolEntry("w_a", 1),
+                            new WavesConfig.PoolEntry("w_b", 1),
+                            new WavesConfig.PoolEntry("w_c", 1)),
+                    "strong", List.of(
+                            new WavesConfig.PoolEntry("s_a", 1),
+                            new WavesConfig.PoolEntry("s_b", 1)),
+                    "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
         }
         return new WaveDefinitions(strat, pools);
     }
@@ -45,12 +52,16 @@ class RunPlannerTest {
     }
 
     private RunConfig cfg() {
+        return cfg(3, 2);
+    }
+
+    private RunConfig cfg(int weak, int strong) {
         Map<String, Vec3> o = new HashMap<>();
         o.put("act1", new Vec3(0, 64, 0));
         o.put("act2", new Vec3(1024, 64, 0));
         o.put("act3", new Vec3(2048, 64, 0));
         Map<String, int[]> w = new HashMap<>();
-        for (String act : List.of("act1", "act2", "act3")) w.put(act, new int[]{3, 2});
+        for (String act : List.of("act1", "act2", "act3")) w.put(act, new int[]{weak, strong});
         return new RunConfig(o, w);
     }
 
@@ -65,6 +76,13 @@ class RunPlannerTest {
         return AffixService.forTesting(Map.of("armored", armored));
     }
 
+    private static void assertDistinct(List<WaveSpec> slice) {
+        Set<String> ids = new HashSet<>();
+        for (WaveSpec w : slice) {
+            assertTrue(ids.add(w.strategyId()), "duplicate strategy in tier: " + w.strategyId());
+        }
+    }
+
     @Test
     void sameSeedProducesSamePlan() {
         List<ActPlan> a = RunPlanner.plan(999L, 2, simpleDefs(), oneMapLib(), scaling(), affixes(), cfg());
@@ -73,6 +91,7 @@ class RunPlannerTest {
         for (int i = 0; i < a.size(); i++) {
             assertEquals(a.get(i).waves().size(), b.get(i).waves().size());
             for (int w = 0; w < a.get(i).waves().size(); w++) {
+                assertEquals(a.get(i).waves().get(w).strategyId(), b.get(i).waves().get(w).strategyId());
                 var wa = a.get(i).waves().get(w).expand();
                 var wb = b.get(i).waves().get(w).expand();
                 assertEquals(wa.size(), wb.size());
@@ -90,6 +109,37 @@ class RunPlannerTest {
         List<ActPlan> acts = RunPlanner.plan(1L, 1, simpleDefs(), oneMapLib(), scaling(), affixes(), cfg());
         acts.forEach(a -> assertEquals(6, a.waves().size()));
         assertEquals(3, acts.size());
+    }
+
+    @Test
+    void sameTierStrategiesAreUniqueWithinAct() {
+        List<ActPlan> acts = RunPlanner.plan(42L, 1, simpleDefs(), oneMapLib(), scaling(), affixes(), cfg());
+        for (ActPlan act : acts) {
+            List<WaveSpec> waves = act.waves();
+            assertEquals(6, waves.size());
+            assertDistinct(waves.subList(0, 3));
+            assertDistinct(waves.subList(3, 5));
+        }
+    }
+
+    @Test
+    void poolTooFewDistinctIdsHardFails() {
+        Map<String, SpawnStrategyCfg> strat = new HashMap<>(simpleDefs().strategies());
+        Map<String, Map<String, List<WavesConfig.PoolEntry>>> pools = new HashMap<>();
+        for (String act : List.of("act1", "act2", "act3")) {
+            pools.put(act, Map.of(
+                    "weak", List.of(new WavesConfig.PoolEntry("w_a", 1)),
+                    "strong", List.of(
+                            new WavesConfig.PoolEntry("s_a", 1),
+                            new WavesConfig.PoolEntry("s_b", 1)),
+                    "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
+        }
+        WaveDefinitions defs = new WaveDefinitions(strat, pools);
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> RunPlanner.plan(1L, 1, defs, oneMapLib(), scaling(), affixes(), cfg()));
+        String msg = ex.getMessage();
+        assertTrue(msg.contains("weak") || msg.contains("act1"), msg);
+        assertTrue(msg.contains("w_a") || msg.contains("已用") || msg.contains("空"), msg);
     }
 
     @Test
@@ -115,12 +165,12 @@ class RunPlannerTest {
         strat.put("bad", bad);
         Map<String, Map<String, List<WavesConfig.PoolEntry>>> pools = new HashMap<>();
         for (String act : List.of("act1", "act2", "act3"))
-            pools.put(act, Map.of("weak", List.of(new WavesConfig.PoolEntry("bad", 99)),
-                    "strong", List.of(new WavesConfig.PoolEntry("s_strong", 1)),
+            pools.put(act, Map.of(
+                    "weak", List.of(new WavesConfig.PoolEntry("bad", 99)),
+                    "strong", List.of(new WavesConfig.PoolEntry("s_a", 1)),
                     "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
         WaveDefinitions defs = new WaveDefinitions(strat, pools);
-        List<ActPlan> acts = RunPlanner.plan(1L, 1, defs, oneMapLib(), scaling(), affixes(), cfg());
-        // oneMapLib: 仅 "1"+boss → 点 "9" 回退 boss 相对 (0,65,0) + act1 原点 (0,64,0)
+        List<ActPlan> acts = RunPlanner.plan(1L, 1, defs, oneMapLib(), scaling(), affixes(), cfg(1, 1));
         var step = acts.get(0).waves().get(0).expand().get(0);
         assertEquals(0.0, step.point().x(), 1e-9);
         assertEquals(129.0, step.point().y(), 1e-9);
@@ -143,12 +193,13 @@ class RunPlannerTest {
         strat.put("bad", bad);
         Map<String, Map<String, List<WavesConfig.PoolEntry>>> pools = new HashMap<>();
         for (String act : List.of("act1", "act2", "act3"))
-            pools.put(act, Map.of("weak", List.of(new WavesConfig.PoolEntry("bad", 99)),
-                    "strong", List.of(new WavesConfig.PoolEntry("s_strong", 1)),
+            pools.put(act, Map.of(
+                    "weak", List.of(new WavesConfig.PoolEntry("bad", 99)),
+                    "strong", List.of(new WavesConfig.PoolEntry("s_a", 1)),
                     "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
         WaveDefinitions defs = new WaveDefinitions(strat, pools);
         assertThrows(IllegalStateException.class,
-                () -> RunPlanner.plan(1L, 1, defs, new MapLibrary(byAct), scaling(), affixes(), cfg()));
+                () -> RunPlanner.plan(1L, 1, defs, new MapLibrary(byAct), scaling(), affixes(), cfg(1, 1)));
     }
 
     @Test
@@ -170,7 +221,8 @@ class RunPlannerTest {
         int specialHits = 0;
         for (int s = 0; s < 50; s++) {
             List<ActPlan> acts = RunPlanner.plan(s, 1, defs, new MapLibrary(byAct), scaling(), affixes(), cfg());
-            if (acts.get(0).waves().get(3).expand().get(0).type() == EntityType.SKELETON) specialHits++;
+            List<WaveSpec> strong = acts.get(0).waves().subList(3, 5);
+            if (strong.stream().anyMatch(w -> "s_special".equals(w.strategyId()))) specialHits++;
         }
         assertTrue(specialHits > 45, "specialHits=" + specialHits);
     }
@@ -196,13 +248,13 @@ class RunPlannerTest {
         for (String act : List.of("act1", "act2", "act3")) {
             pools.put(act, Map.of(
                     "weak", List.of(new WavesConfig.PoolEntry("w_im", 1)),
-                    "strong", List.of(new WavesConfig.PoolEntry("s_strong", 1)),
+                    "strong", List.of(new WavesConfig.PoolEntry("s_a", 1)),
                     "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
         }
 
         SpawnStep step = RunPlanner.plan(
                 1L, 1, new WaveDefinitions(strategies, pools),
-                oneMapLib(), scaling(), affixes(), cfg())
+                oneMapLib(), scaling(), affixes(), cfg(1, 1))
                 .get(0).waves().get(0).steps().get(0);
 
         assertEquals(List.of("sprint"), step.infernal().affixes());
@@ -231,13 +283,13 @@ class RunPlannerTest {
         for (String act : List.of("act1", "act2", "act3")) {
             pools.put(act, Map.of(
                     "weak", List.of(new WavesConfig.PoolEntry("w_rhine", 1)),
-                    "strong", List.of(new WavesConfig.PoolEntry("s_strong", 1)),
+                    "strong", List.of(new WavesConfig.PoolEntry("s_a", 1)),
                     "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
         }
 
         DeathSpawn death = RunPlanner.plan(
                 2L, 1, new WaveDefinitions(strategies, pools),
-                oneMapLib(), scaling(), affixes(), cfg())
+                oneMapLib(), scaling(), affixes(), cfg(1, 1))
                 .get(0).waves().get(0).steps().get(0).onDeath().get(0);
 
         assertEquals(EntityType.CAMEL, death.type());
