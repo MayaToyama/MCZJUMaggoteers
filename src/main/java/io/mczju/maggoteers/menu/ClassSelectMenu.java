@@ -2,6 +2,7 @@ package io.mczju.maggoteers.menu;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.menu.Menu;
+import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.game.ClassSelectGate;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.item.ItemKind;
@@ -9,13 +10,11 @@ import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.reward.RewardOption;
 import io.mczju.maggoteers.reward.RewardOptionIcons;
 import io.mczju.maggoteers.reward.RewardService;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /** 开局职业 3 选 1（复用 reward_pools.class）。 */
@@ -32,7 +31,9 @@ public class ClassSelectMenu extends Menu {
         this.offers = new ArrayList<>(RewardService.draw("class", SLOTS.length, new Random(), player));
     }
 
-    @Override protected String getTitle() { return "选择职业"; }
+    @Override protected String getTitle() {
+        return MessageService.raw("menu.class.title", Map.of());
+    }
     @Override protected int getRows() { return 3; }
     @Override protected String getPermission() { return "maggoteers.play"; }
 
@@ -47,13 +48,13 @@ public class ClassSelectMenu extends Menu {
                 Player p = clicker.player();
                 if (ClassSelectGate.hasChosen(game, p.getUniqueId())) return;
                 if (!ItemService.spendOneKind(p, ItemKind.CLASS_TICKET)) {
-                    p.sendMessage(Component.text("需要手持职业选择券才能确认！", NamedTextColor.RED));
+                    p.sendMessage(MessageService.component("menu.class.need_ticket", Map.of()));
                     return;
                 }
                 RewardService.apply(p, opt, game, "class");
                 ClassSelectGate.markChosen(game, p.getUniqueId());
                 p.closeInventory();
-                p.sendMessage(Component.text("职业已选定！", NamedTextColor.GREEN));
+                p.sendMessage(MessageService.component("menu.class.chosen", Map.of()));
                 if (mg != null) {
                     org.bukkit.Bukkit.getScheduler().runTask(
                             io.mczju.maggoteers.MaggoteersPlugin.getInstance(),

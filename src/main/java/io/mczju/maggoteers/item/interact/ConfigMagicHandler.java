@@ -13,10 +13,11 @@ import io.mczju.maggoteers.item.CooldownService;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.item.fx.MagicFxConfig;
 import io.mczju.maggoteers.item.fx.MagicFxService;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import io.mczju.maggoteers.config.MessageService;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.Map;
 
 /** Config-driven magic weapon right-click ({@code use_ability} on items YAML). */
 public final class ConfigMagicHandler implements ItemUseHandler {
@@ -32,7 +33,7 @@ public final class ConfigMagicHandler implements ItemUseHandler {
             return;
         }
         if (CooldownService.onCooldown(player.getUniqueId(), itemId)) {
-            player.sendMessage(Component.text("技能冷却中…", NamedTextColor.GRAY));
+            player.sendMessage(MessageService.component("item.ability_cooldown", Map.of()));
             return;
         }
         if (!(game instanceof MaggoteersGame mg)) {

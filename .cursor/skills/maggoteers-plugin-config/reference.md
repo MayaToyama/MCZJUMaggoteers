@@ -4,6 +4,12 @@
 
 ## config.yml
 
+### messages
+
+玩家可见系统提示（聊天/记分板/GUI/命令壳/排行榜/GameMeta）。格式：MiniMessage + `{snake_case}`；占位值经 `escapeTags`。嵌套片段（`prep_clause` / `strategy_clause` / `phase_*`）**不得**含 MM 颜色标签。记分板休整用 `scoreboard.line_wave_resting`。缺 key 显示字面量 `messages.<key>`；load 时对照清单 warn。详见 `docs/superpowers/specs/2026-08-15-config-messages-design.md`。
+
+加载顺序：`saveDefaultConfig` → `MessageService.load` → `registerGame` / `registerLeaderboard`。
+
 | 键 | 说明 |
 |----|------|
 | `mob_attributes.scale` / `.follow_range` | 全局体型/索敌倍率（再乘 waves/affix） |
@@ -24,12 +30,14 @@
 |------|------|
 | `point` | `"1"`…`"9"` 或 `boss` |
 | `type` / `count` | EntityType + 数量 |
+| `name` | 可选 MiniMessage 头顶名；省略/空白=无自定义名（本插件刷怪会清掉 IM 名） |
+| `boss_bar` | 可选布尔，默认 false；**仅 `true` 挂 Maggoteers Adventure BossBar**（废除旧 hp≥6 启发式） |
 | `coeff` | 见下表 |
 | `affixes` | 原生词缀 id（`affixes.yml`） |
 | `infernal` | `{ level: 1–100, affixes: [IM技能…] }`；与原生独立、不继承 |
 | `delay` | 秒，相对**同 point**上一刷怪时刻（该点尚无事件则相对本轮起点）；不同 point 并行 |
 | `repeat` | 可选，默认 1：该 step 在同 point 时间轴上按 `delay` 再刷几次（≠ strategy 顶层 `repeat`） |
-| `equipment` / `on_death` / `passengers` | 见下 |
+| `equipment` / `on_death` / `passengers` | 见下；`name`/`boss_bar` 也可写在 passenger / on_death 节点 |
 
 ### coeff
 

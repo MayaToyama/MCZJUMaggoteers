@@ -1,11 +1,19 @@
 wait:
-  min_players: 1
+  min_players: 1   # 内部测试可 1 人开局；正式服可改 2–4
 lives:
   default: 2
+
+# 内部测试版开关（正式发布前请改 enabled: false）
+# enabled=true：有 maggoteers.play 即可用 /maggoteers debug（无需 OP）
+# enabled=false：仅 maggoteers.admin（默认 OP）可用 debug
+debug:
+  enabled: true
+  announce: true
+
 # 全局怪物属性倍率（再叠 waves.yml coeff / affixes）
 mob_attributes:
   scale: 1.0
-  follow_range: 5.0
+  follow_range: 10.0
 initial_equipment: []   # 职业选择后由 reward 发放；如需全员基础装可在此列出 item_id
 class_select:
   timeout_sec: 45
@@ -23,8 +31,7 @@ items:
     material: GOLD_NUGGET
     name: "<yellow>金币"
     lore:
-      - "<gray>普通波次奖励货币"
-      - "<dark_gray>休整期右键打开升级菜单"
+      - "<gray>可用于在商店购买技能和物品"
     glint: true
   currency_boss:
     item_id: maggoteers:currency_boss
@@ -32,8 +39,7 @@ items:
     material: NETHER_STAR
     name: "<light_purple>星石"
     lore:
-      - "<gray>Boss 波次奖励货币"
-      - "<dark_gray>休整期右键打开升级菜单"
+      - "<gray>可用于在Boss商店购买物品"
     glint: true
   class_ticket:
     item_id: maggoteers:class_ticket
@@ -41,9 +47,8 @@ items:
     material: WRITABLE_BOOK
     name: "<gold>职业选择券"
     lore:
-      - "<gray>开局选职业专用"
+      - "<gray>开局选择职业专用"
       - "<dark_gray>右键重新打开职业菜单"
-      - "<dark_gray>选定职业后消耗"
     glint: true
   shop_emerald:
     item_id: maggoteers:shop_emerald
@@ -51,8 +56,8 @@ items:
     material: EMERALD
     name: "<green>休整菜单"
     lore:
-      - "<gray>右键打开升级菜单"
-      - "<dark_gray>波间休整与奖励兑换"
+      - "<gray>右键打开休整期菜单"
+      - "<dark_gray>商店与投票跳过休整功能"
     glint: true
 
 # 局内奖励物品丢弃/放入容器保护（false = 允许丢弃）
@@ -65,8 +70,8 @@ act_origins:
   act3: [2048, 64, 0]
 waves_per_act:
   act1: { weak: 3, strong: 3 }
-  act2: { weak: 4, strong: 4 }
-  act3: { weak: 1, strong: 4 }
+  act2: { weak: 3, strong: 3 }
+  act3: { weak: 1, strong: 4 }  
 rest:
   duration_sec: 60
   extend_sec: 15
@@ -146,10 +151,118 @@ magic_fx:
       density: 64
 scaling:
   mob_hp:        [1.0, 2.3, 3.6, 5.0]
-  mob_damage:    [1.0, 1.15, 1.3, 1.5]
+  mob_damage:    [1.0, 1.4, 1.8, 2.2]
   mob_count:     [1.0, 1.0, 1.2, 1.5]
   currency_drop: [1.0, 1.4, 1.8, 2.2]
 settlement:
   win_flat: 100
   fail_per_act: 25
   fail_per_wave: 5
+
+messages:
+  game:
+    meta_name: "<gold>卫戍协议"
+    meta_author: "<green>MCZJU"
+    meta_description:
+      - "<aqua>4人合作 PvE · 波数防守 + Roguelike"
+    world_create_failed: "<red>世界创建失败，对局终止。"
+    plan_generating: "<gray>正在生成剧本…"
+    plan_timeout: "<yellow>剧本生成超时(30s)，终止。"
+    plan_failed: "<red>剧本生成失败{detail}，对局终止。"
+    enter_class_select: "<yellow>已进入游戏 · 请选择职业（右键职业选择券可重新打开菜单）"
+    prep_clause: " 地图准备 {prep} 秒后开战。"
+    ready: "<green>卫戍协议 已就绪！{prep_clause} 三层共 {waves} 波。每人复活 {lives} 次。"
+    settlement_grant: "<yellow>{player} 结算获得 {grant} 点数。"
+  wave:
+    skip_vote: "<yellow>⏭ 跳过休整投票 {voted}/{total}（{player} 已投）"
+    skip_passed: "<green>⏭ 全员同意，跳过休整！"
+    enter_act: "<gold>▶ 进入第 {act} 层 · {map}"
+    prep: "<yellow>⏳ 地图准备 {prep} 秒…"
+    begin: "<red>▶ 第 {wave} / {wave_count} 波 · {tier}{strategy_clause}"
+    strategy_clause: " · {strategy}"
+    cleared: "<green>✔ 本波清除！"
+    cleared_rewarded: "<green>✔ 本波清除！奖励已发放。"
+    final_rest: "<gold>🏆 终局 Boss 已清除 · 通关前休整"
+    victory: "<gold>🏆 通关 卫戍协议！"
+    phase_prep: "正在准备"
+    phase_spawning: "正在生成怪物"
+    phase_active: "正在战斗"
+    phase_cleared: "怪物已全部生成"
+    phase_rest: "休整期"
+    phase_done: "游戏结束"
+  death:
+    missing_state: "<red>{player} 死亡时无 PlayerState（已强制复活）。请回报此日志。"
+    auto_revive: "<yellow>{player} 力竭了！（剩余 {remaining} 复活次数）"
+    to_spectator: "<red>{player} 力竭了！（可用复活币救援）。"
+  menu:
+    rest:
+      title: "休整 · 升级"
+      normal_name: "<yellow>普通奖励"
+      normal_lore: "消耗 1 金币 · 3 选 1"
+      boss_name: "<light_purple>Boss 奖励"
+      boss_lore: "消耗 1 星石 · 3 选 1"
+      skip_name: "<green>跳过休整"
+      skip_lore: "投票进度 {voted}/{total} · 全员同意立即进入下一波"
+      held: "持有：{count}"
+      click: "<yellow>▶ 点击"
+      pool_missing: "<red>奖励池未配置：{pool}"
+      no_offers: "<red>当前没有可选奖励。"
+      not_enough_currency: "<red>货币不足！"
+    pick:
+      title: "3 选 1"
+      charge_error: "<yellow>扣费异常，请联系管理员。"
+      apply_failed: "<gray>应用失败，货币未扣除。请重试或联系管理员。"
+    class:
+      title: "选择职业"
+      need_ticket: "<red>需要手持职业选择券才能确认！"
+      chosen: "<green>职业已选定！"
+    revive:
+      title: "复活币 · 选择目标"
+      no_coin: "<red>没有复活币了！"
+      not_needed: "<gray>该玩家无需复活。"
+      revived: "<green>{actor} 用复活币救回了 {target}！"
+      add_life: "<green>{actor} 用复活币给 {target} +1 复活次数。"
+      head_down: "<red>{name}（倒下）"
+      head_alive: "<green>{name}（存活）"
+    shop:
+      title: "<gold>卫戍商店 · 解锁"
+      already_owned: "<gray>已拥有：{display}"
+      not_enough: "<red>点数不足（需 {cost}）"
+      unlocked: "<green>已解锁：{display}"
+      lore_owned: "已解锁"
+      lore_cost: "花费 {cost} 点数"
+  item:
+    rest_only: "<gray>仅在波次休整期可打开升级菜单。"
+    shop_emerald_rest_only: "<gray>仅休整期可使用。"
+    class_unavailable: "<gray>当前无法使用职业选择券。"
+    class_already: "<yellow>你已选定职业。"
+    ability_cooldown: "<gray>技能冷却中…"
+    heal_full: "<gray>生命值已满"
+    heal_amount: "<red>♥ +{hearts} 心"
+  reward:
+    gained: "<green>获得：{display}"
+    apply_no_state: "<red>奖励未能应用（本局状态异常）"
+    apply_bad_bundle: "<red>奖励未能应用（组合配置无效）"
+    apply_failed: "<red>奖励未能应用"
+    apply_error: "<red>奖励应用失败：{id}"
+    click_choose: "<yellow>▶ 点击选择"
+  scoreboard:
+    title: "<gold>卫戍协议"
+    line_act: "<yellow>层 {act} · <white>{map}"
+    line_wave: "<aqua>波 {wave}/{wave_count} · {phase}"
+    line_wave_resting: "<aqua>波 {wave}/{wave_count} · {phase} <gray>({rest}s)"
+    line_mobs: "<red>剩余怪物: {mobs}"
+    separator: "<dark_gray>────────"
+    status_fight: "<green>[战]"
+    status_spec: "<gray>[观]"
+    player_line: "{status} <white>{name} <yellow>♥{revives}"
+    class_header: "<yellow>选职业 · 开局休整"
+    class_hint: "<gray>右键职业选择券"
+    class_chosen: "<green>[已选]"
+    class_pending: "<yellow>[待选]"
+  leaderboard:
+    title: "<gold>卫戍协议 · 累计卫戍币"
+    subtitle: "<yellow>通关与失败结算的累计获得"
+  command:
+    players_only: "<red>仅玩家可用。"
+    usage: "<yellow>/maggoteers <shop|debug ...>"

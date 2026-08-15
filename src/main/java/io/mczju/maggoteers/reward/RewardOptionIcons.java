@@ -4,6 +4,7 @@ import io.mczju.maggoteers.effect.BoundEquipParams;
 import io.mczju.maggoteers.effect.Effect;
 import io.mczju.maggoteers.effect.PlayerEffect;
 import io.mczju.maggoteers.game.MaggoteersGame;
+import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
@@ -16,6 +17,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
 
 public final class RewardOptionIcons {
@@ -109,7 +111,7 @@ public final class RewardOptionIcons {
                 }
             }
         }
-        lore.add(Component.text("\u25b6 \u70b9\u51fb\u9009\u62e9", NamedTextColor.YELLOW)
+        lore.add(MessageService.component("reward.click_choose", Map.of())
                 .decoration(TextDecoration.ITALIC, false));
         meta.lore(lore);
         stack.setItemMeta(meta);

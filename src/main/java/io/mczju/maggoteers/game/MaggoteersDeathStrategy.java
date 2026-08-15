@@ -3,6 +3,7 @@ package io.mczju.maggoteers.game;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import com.github.mczjuops.mczjugamecore.player.strategy.AbstractPlayerDeathStrategy;
+import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.effect.EffectService;
 import io.mczju.maggoteers.effect.Trigger;
 import io.mczju.maggoteers.effect.TriggerContext;
@@ -14,6 +15,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.PlayerDeathEvent;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,8 +69,7 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
             PlayerStateManager.restoreFullHealth(p);
             MaggoteersPluginLog.warn("死亡时无 PlayerState，已强制复活: " + p.getName());
             if (mg != null) {
-                mg.sender().warn("<red>" + p.getName()
-                        + " 死亡时无 PlayerState（已强制复活）。请回报此日志。");
+                mg.sender().warn(MessageService.raw("death.missing_state", Map.of("player", p.getName())));
             }
             return;
         }
@@ -116,8 +117,9 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
             }
             MaggoteersPluginLog.info("自动复活: " + p.getName()
                     + " 剩余 reviveCount=" + st.getReviveCount());
-            mg.sender().info("<yellow>" + p.getName()
-                    + " 倒下，自动复活！（剩余 " + st.getReviveCount() + " 次）");
+            mg.sender().info(MessageService.raw("death.auto_revive", Map.of(
+                    "player", p.getName(),
+                    "remaining", String.valueOf(st.getReviveCount()))));
             return;
         }
 
@@ -126,7 +128,7 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
         stabilizeAlive(p);
         p.setGameMode(GameMode.SPECTATOR);
         MaggoteersPluginLog.info("转观察者: " + p.getName() + "（复活次数耗尽）");
-        mg.sender().warn("<red>" + p.getName() + " 倒下！转为观察者（可用复活币救援）。");
+        mg.sender().warn(MessageService.raw("death.to_spectator", Map.of("player", p.getName())));
 
         if (!PlayerStateManager.isAnyAlive(mg)) {
             MaggoteersPluginLog.info("全员倒下，fail(): " + p.getName());

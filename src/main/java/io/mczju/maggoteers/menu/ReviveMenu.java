@@ -3,16 +3,18 @@ package io.mczju.maggoteers.menu;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.menu.Menu;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
+import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+
+import java.util.Map;
 
 /**
  * 复活币 GUI（§11）：本局玩家头像列表。点击头像：
@@ -30,7 +32,9 @@ public class ReviveMenu extends Menu {
         this.game = (AbstractGame) args[0];
     }
 
-    @Override protected String getTitle() { return "复活币 · 选择目标"; }
+    @Override protected String getTitle() {
+        return MessageService.raw("menu.revive.title", Map.of());
+    }
     @Override protected int getRows() { return 3; }
     @Override protected String getPermission() { return "maggoteers.play"; }
 
@@ -50,22 +54,26 @@ public class ReviveMenu extends Menu {
     private void onPick(Player clicker, Player target, boolean targetDead) {
         // 扣 1 复活币
         if (!ItemService.spendOneKind(clicker, ItemKind.REVIVE_COIN)) {
-            clicker.sendMessage(Component.text("没有复活币了！", NamedTextColor.RED));
+            clicker.sendMessage(MessageService.component("menu.revive.no_coin", Map.of()));
             return;
         }
         if (targetDead) {
             boolean ok = PlayerStateManager.revivePlayer(game, target.getUniqueId());
             if (ok) {
-                game.sender().info("<green>" + clicker.getName() + " 用复活币救回了 " + target.getName() + "！");
+                game.sender().info(MessageService.raw("menu.revive.revived", Map.of(
+                        "actor", clicker.getName(),
+                        "target", target.getName())));
             } else {
                 // 失败：退还（理论不发生，targetDead 已判定）
                 ItemService.giveKind(clicker, ItemKind.REVIVE_COIN, 1);
-                clicker.sendMessage(Component.text("该玩家无需复活。", NamedTextColor.GRAY));
+                clicker.sendMessage(MessageService.component("menu.revive.not_needed", Map.of()));
                 return;
             }
         } else {
             PlayerStateManager.addReviveCount(game, target.getUniqueId(), 1);
-            game.sender().info("<green>" + clicker.getName() + " 用复活币给 " + target.getName() + " +1 复活次数。");
+            game.sender().info(MessageService.raw("menu.revive.add_life", Map.of(
+                    "actor", clicker.getName(),
+                    "target", target.getName())));
         }
         clicker.closeInventory();
     }
@@ -75,8 +83,9 @@ public class ReviveMenu extends Menu {
         SkullMeta meta = (SkullMeta) skull.getItemMeta();
         if (meta != null) {
             meta.setPlayerProfile(target.getPlayerProfile());
-            meta.displayName(Component.text(target.getName() + (dead ? "（倒下）" : "（存活）"),
-                    dead ? NamedTextColor.RED : NamedTextColor.GREEN));
+            String key = dead ? "menu.revive.head_down" : "menu.revive.head_alive";
+            meta.displayName(MessageService.component(key, Map.of("name", target.getName()))
+                    .decoration(TextDecoration.ITALIC, false));
             skull.setItemMeta(meta);
         }
         return skull;

@@ -3,18 +3,18 @@ package io.mczju.maggoteers.menu;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.menu.Menu;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
+import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.reward.RewardOption;
 import io.mczju.maggoteers.reward.RewardOptionIcons;
 import io.mczju.maggoteers.reward.RewardService;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
+import java.util.Map;
 
 /** 3 选 1 奖励（休整菜单入口；货币在 apply 成功后扣除，保证原子性）。 */
 public class PickMenu extends Menu {
@@ -36,7 +36,9 @@ public class PickMenu extends Menu {
         this.cost = args.length > 4 ? ((Number) args[4]).intValue() : 0;
     }
 
-    @Override protected String getTitle() { return "3 选 1"; }
+    @Override protected String getTitle() {
+        return MessageService.raw("menu.pick.title", Map.of());
+    }
     @Override protected int getRows() { return 3; }
     @Override protected String getPermission() { return "maggoteers.play"; }
 
@@ -54,7 +56,7 @@ public class PickMenu extends Menu {
                     if (currencyKind != null && cost > 0) {
                         for (int j = 0; j < cost; j++) {
                             if (!ItemService.spendOneKind(p, currencyKind)) {
-                                p.sendMessage(Component.text("扣费异常，请联系管理员。", NamedTextColor.YELLOW));
+                                p.sendMessage(MessageService.component("menu.pick.charge_error", Map.of()));
                                 break;
                             }
                         }
@@ -62,7 +64,7 @@ public class PickMenu extends Menu {
                     p.closeInventory();
                     MenuFacade.open("maggoteers-rest", p, game);
                 } else {
-                    p.sendMessage(Component.text("应用失败，货币未扣除。请重试或联系管理员。", NamedTextColor.GRAY));
+                    p.sendMessage(MessageService.component("menu.pick.apply_failed", Map.of()));
                 }
             });
         }

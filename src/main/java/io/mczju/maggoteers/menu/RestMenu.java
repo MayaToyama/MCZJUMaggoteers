@@ -3,6 +3,7 @@ package io.mczju.maggoteers.menu;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.menu.Menu;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
+import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.reward.RewardOption;
@@ -10,7 +11,6 @@ import io.mczju.maggoteers.reward.RewardPool;
 import io.mczju.maggoteers.reward.RewardService;
 import io.mczju.maggoteers.wave.WaveScheduler;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -18,6 +18,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.List;
+import java.util.Map;
 
 /** 休整升级主菜单：普通/Boss 3 选 1 入口 + 跳过休整。 */
 public class RestMenu extends Menu {
@@ -28,7 +29,9 @@ public class RestMenu extends Menu {
         this.game = (AbstractGame) args[0];
     }
 
-    @Override protected String getTitle() { return "休整 · 升级"; }
+    @Override protected String getTitle() {
+        return MessageService.raw("menu.rest.title", Map.of());
+    }
     @Override protected int getRows() { return 3; }
     @Override protected String getPermission() { return "maggoteers.play"; }
 
@@ -41,18 +44,26 @@ public class RestMenu extends Menu {
         // Boss 池粘滞（§9.2）：用最近击杀 Boss 所在层，而非当前层
         String poolBoss = snap == null ? "act1_boss" : RewardService.poolForWave(WaveScheduler.bossPoolActIndex(game), "boss");
 
-        setSlot(11, btn(Material.GOLD_NUGGET, "<yellow>普通奖励",
-                        "消耗 1 普通卫戍币 · 3 选 1", ItemService.countKind(p, ItemKind.CURRENCY_NORMAL)),
+        setSlot(11, btn(Material.GOLD_NUGGET,
+                        MessageService.raw("menu.rest.normal_name", Map.of()),
+                        MessageService.raw("menu.rest.normal_lore", Map.of()),
+                        ItemService.countKind(p, ItemKind.CURRENCY_NORMAL)),
                 (c, e) -> openPick(p, poolNormal, ItemKind.CURRENCY_NORMAL));
-        setSlot(13, btn(Material.NETHER_STAR, "<light_purple>Boss 奖励",
-                        "消耗 1 Boss 币 · 3 选 1", ItemService.countKind(p, ItemKind.CURRENCY_BOSS)),
+        setSlot(13, btn(Material.NETHER_STAR,
+                        MessageService.raw("menu.rest.boss_name", Map.of()),
+                        MessageService.raw("menu.rest.boss_lore", Map.of()),
+                        ItemService.countKind(p, ItemKind.CURRENCY_BOSS)),
                 (c, e) -> openPick(p, poolBoss, ItemKind.CURRENCY_BOSS));
 
         // 跳过休整：全员投票（§9.3），按钮显示投票进度
         int skipVoted = WaveScheduler.skipVoteCount(game);
         int skipTotal = WaveScheduler.skipVoteTotal(game);
-        String skipLore = "投票进度 " + skipVoted + "/" + skipTotal + " · 全员同意立即进入下一波";
-        setSlot(15, btn(Material.LIME_DYE, "<green>跳过休整", skipLore, -1),
+        String skipLore = MessageService.raw("menu.rest.skip_lore", Map.of(
+                "voted", String.valueOf(skipVoted),
+                "total", String.valueOf(skipTotal)));
+        setSlot(15, btn(Material.LIME_DYE,
+                        MessageService.raw("menu.rest.skip_name", Map.of()),
+                        skipLore, -1),
                 (c, e) -> {
                     boolean skipped = WaveScheduler.voteSkip(game, p.getUniqueId());
                     p.closeInventory();
@@ -66,16 +77,16 @@ public class RestMenu extends Menu {
     private void openPick(Player p, String poolId, ItemKind currencyKind) {
         RewardPool pool = RewardService.pool(poolId);
         if (pool == null) {
-            p.sendMessage(Component.text("奖励池未配置：" + poolId, NamedTextColor.RED));
+            p.sendMessage(MessageService.component("menu.rest.pool_missing", Map.of("pool", poolId)));
             return;
         }
         List<RewardOption> offers = RewardService.draw(poolId, 3, new java.util.Random(), p);
         if (offers.isEmpty()) {
-            p.sendMessage(Component.text("当前没有可选奖励。", NamedTextColor.RED));
+            p.sendMessage(MessageService.component("menu.rest.no_offers", Map.of()));
             return;
         }
         if (ItemService.countKind(p, currencyKind) < pool.cost()) {
-            p.sendMessage(Component.text("货币不足！", NamedTextColor.RED));
+            p.sendMessage(MessageService.component("menu.rest.not_enough_currency", Map.of()));
             return;
         }
         p.closeInventory();
@@ -89,12 +100,14 @@ public class RestMenu extends Menu {
             m.displayName(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(name)
                     .decoration(TextDecoration.ITALIC, false));
             var lore = new java.util.ArrayList<Component>();
-            lore.add(Component.text(loreLine, NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false));
+            lore.add(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(loreLine)
+                    .decoration(TextDecoration.ITALIC, false));
             if (countHint >= 0) {
-                lore.add(Component.text("持有：" + countHint, NamedTextColor.DARK_GRAY)
+                lore.add(MessageService.component("menu.rest.held", Map.of("count", String.valueOf(countHint)))
                         .decoration(TextDecoration.ITALIC, false));
             }
-            lore.add(Component.text("▶ 点击", NamedTextColor.YELLOW).decoration(TextDecoration.ITALIC, false));
+            lore.add(MessageService.component("menu.rest.click", Map.of())
+                    .decoration(TextDecoration.ITALIC, false));
             m.lore(lore);
             s.setItemMeta(m);
         }

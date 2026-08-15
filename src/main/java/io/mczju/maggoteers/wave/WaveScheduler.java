@@ -3,6 +3,7 @@ package io.mczju.maggoteers.wave;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.plan.ActPlan;
 import io.mczju.maggoteers.plan.RunConfig;
@@ -11,7 +12,6 @@ import io.mczju.maggoteers.world.MapRepository;
 import io.mczju.maggoteers.world.StructurePaster;
 import io.mczju.maggoteers.world.WorldService;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -31,15 +31,13 @@ public final class WaveScheduler {
             Phase phase, String lastTier, int restSecondsLeft
     ) {
         public String phaseName() {
-            return switch (phase) {
-                case PREP -> "准备";
-                case SPAWNING -> "刷怪";
-                case ACTIVE -> "战斗";
-                case CLEARED -> "清场";
-                case REST -> "休整";
-                case DONE -> "结束";
-            };
+            return WaveScheduler.phaseName(phase);
         }
+    }
+
+    /** Plain phase label for scoreboard / UI (no MiniMessage tags). */
+    public static String phaseName(Phase phase) {
+        return MessageService.raw("wave.phase_" + phase.name().toLowerCase(Locale.ROOT), Map.of());
     }
 
     static final class Cursor {
@@ -144,10 +142,12 @@ public final class WaveScheduler {
         int total = skipVoteTotal(game);
         int voted = c.skipVotes.size();
         String voterName = voter.getName();
-        broadcast(game, Component.text("⏭ 跳过休整投票 " + voted + "/" + total
-                + "（" + voterName + " 已投）", NamedTextColor.YELLOW));
+        broadcast(game, MessageService.component("wave.skip_vote", Map.of(
+                "voted", String.valueOf(voted),
+                "total", String.valueOf(total),
+                "player", voterName)));
         if (voted >= total) {
-            broadcast(game, Component.text("⏭ 全员同意，跳过休整！", NamedTextColor.GREEN));
+            broadcast(game, MessageService.component("wave.skip_passed", Map.of()));
             advance(game, c);
             return true;
         }
@@ -233,7 +233,9 @@ public final class WaveScheduler {
         c.actIndex = actIndex;
         pasteActForCursor(game, c, actIndex);
         ActPlan act = c.acts.get(actIndex);
-        broadcast(game, Component.text("▶ 进入第 " + (actIndex + 1) + " 层 · " + act.mapId(), NamedTextColor.GOLD));
+        broadcast(game, MessageService.component("wave.enter_act", Map.of(
+                "act", String.valueOf(actIndex + 1),
+                "map", act.mapId())));
         io.mczju.maggoteers.effect.EffectService.fireTrigger((MaggoteersGame) game, io.mczju.maggoteers.effect.Trigger.ON_ACT_ENTER);
         io.mczju.maggoteers.effect.SummonRegistry.onActEnter((MaggoteersGame) game);
         beginActPrep(game, c);
@@ -267,7 +269,7 @@ public final class WaveScheduler {
         }
         c.phase = Phase.PREP;
         c.prepEndTicks = Bukkit.getCurrentTick() + prepSec * 20L;
-        broadcast(game, Component.text("⏳ 地图准备 " + prepSec + " 秒…", NamedTextColor.YELLOW));
+        broadcast(game, MessageService.component("wave.prep", Map.of("prep", String.valueOf(prepSec))));
     }
 
     private static void beginWave(AbstractGame game, Cursor c, int waveIndex) {
@@ -280,9 +282,14 @@ public final class WaveScheduler {
         c.waveStartTicks = Bukkit.getCurrentTick();
         c.runtime = (c.runtime == null) ? WaveEngine.start(game) : c.runtime;
         c.runtime.cleared = false;
-        broadcast(game, Component.text("▶ 第 " + (waveIndex + 1) + " / "
-                + c.acts.get(c.actIndex).waves().size() + " 波 · " + c.lastTier
-                + (spec.strategyId().isBlank() ? "" : " · " + spec.strategyId()), NamedTextColor.RED));
+        String strategyClause = spec.strategyId().isBlank()
+                ? ""
+                : MessageService.raw("wave.strategy_clause", Map.of("strategy", spec.strategyId()));
+        broadcast(game, MessageService.component("wave.begin", Map.of(
+                "wave", String.valueOf(waveIndex + 1),
+                "wave_count", String.valueOf(c.acts.get(c.actIndex).waves().size()),
+                "tier", c.lastTier,
+                "strategy_clause", strategyClause)));
     }
 
     private static String tierForWave(Cursor c, int waveIndex) {
@@ -338,9 +345,9 @@ public final class WaveScheduler {
         if (!rewards.isEmpty()) {
             RewardService.grantClearRewards(
                     game.getPlayers().stream().map(pe -> pe.player()).toList(), rewards);
-            broadcast(game, Component.text("✔ 本波清除！奖励已发放。", NamedTextColor.GREEN));
+            broadcast(game, MessageService.component("wave.cleared_rewarded", Map.of()));
         } else {
-            broadcast(game, Component.text("✔ 本波清除！", NamedTextColor.GREEN));
+            broadcast(game, MessageService.component("wave.cleared", Map.of()));
         }
         try {
             io.mczju.maggoteers.effect.EffectService.fireTrigger(
@@ -359,15 +366,11 @@ public final class WaveScheduler {
         // Boss 池粘滞（§9.2）：击杀本层 Boss 后更新粘滞层
         if ("boss".equals(c.lastTier)) c.lastBossKillAct = c.actIndex;
 
+        // 终局 Boss 也进休整：粘滞已切到 act3_boss，可花掉剩余 Boss 币；休整结束/跳过 → advance → win
         boolean isFinalWave = c.actIndex == c.acts.size() - 1
                 && c.waveIndex == c.acts.get(c.actIndex).waves().size() - 1;
         if (isFinalWave) {
-            c.phase = Phase.DONE;
-            if (c.task != null) c.task.cancel();
-            WaveEngine.stop(game);
-            broadcast(game, Component.text("🏆 通关 卫戍协议！", NamedTextColor.GOLD));
-            ((MaggoteersGame) game).win();
-            return;
+            broadcast(game, MessageService.component("wave.final_rest", Map.of()));
         }
 
         int restSec = MaggoteersPlugin.getInstance().getConfig().getInt("rest.duration_sec", 30);
@@ -389,7 +392,7 @@ public final class WaveScheduler {
         c.phase = Phase.DONE;
         if (c.task != null) c.task.cancel();
         WaveEngine.stop(game);
-        broadcast(game, Component.text("🏆 通关 卫戍协议！", NamedTextColor.GOLD));
+        broadcast(game, MessageService.component("wave.victory", Map.of()));
         ((MaggoteersGame) game).win();
     }
 

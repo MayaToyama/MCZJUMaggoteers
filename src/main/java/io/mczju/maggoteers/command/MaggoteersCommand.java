@@ -2,7 +2,10 @@ package io.mczju.maggoteers.command;
 
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
+import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.game.MaggoteersGame;
+import io.mczju.maggoteers.persist.MaggoteersPlayerData;
 import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.config.AffixService;
@@ -16,6 +19,8 @@ import io.mczju.maggoteers.plan.RunConfig;
 import io.mczju.maggoteers.plan.RunPlanner;
 import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
+import io.mczju.maggoteers.reward.RewardOption;
+import io.mczju.maggoteers.reward.RewardService;
 import io.mczju.maggoteers.wave.WaveEngine;
 import io.mczju.maggoteers.wave.WaveScheduler;
 import net.kyori.adventure.text.Component;
@@ -29,19 +34,23 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * /maggoteers 命令。
  * <ul>
  *   <li>{@code shop} —— 局外解锁商店（所有人）。</li>
- *   <li>{@code debug state|plan|wave|act|give|coin|jumpto|jump|spawnmob|effects} —— 运维/调试（需 maggoteers.admin）。</li>
+ *   <li>{@code debug ...} —— 运维/调试。{@code config debug.enabled=true} 时任意玩家可用；否则需 {@code maggoteers.admin}。</li>
  * </ul>
  */
 public class MaggoteersCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, @NotNull String[] args) {
-        if (!(sender instanceof Player p)) { sender.sendMessage("仅玩家可用。"); return true; }
+        if (!(sender instanceof Player p)) {
+            sender.sendMessage(MessageService.component("command.players_only", Map.of()));
+            return true;
+        }
         if (args.length == 0) { usage(p); return true; }
 
         switch (args[0].toLowerCase()) {
@@ -52,12 +61,14 @@ public class MaggoteersCommand implements CommandExecutor {
     }
 
     private boolean debug(Player p, String[] args) {
-        if (!p.hasPermission("maggoteers.admin")) {
-            p.sendMessage(Component.text("无权限（需 maggoteers.admin）。", NamedTextColor.RED));
+        if (!debugAllowed(p)) {
+            p.sendMessage(Component.text("无权限（需 maggoteers.admin，或 config debug.enabled=true）。", NamedTextColor.RED));
             return true;
         }
         if (args.length < 2) {
-            p.sendMessage(Component.text("用法：/maggoteers debug <state|plan|wave|act|give|coin|jumpto|jump|spawnmob|effects> [...]", NamedTextColor.GRAY));
+            p.sendMessage(Component.text(
+                    "用法：/maggoteers debug <state|plan|wave|act|give|coin|balance|unlock|jumpto|jump|spawnmob|effects> [...]",
+                    NamedTextColor.GRAY));
             return true;
         }
         var pe = new PlayerExt(p);
@@ -107,18 +118,71 @@ public class MaggoteersCommand implements CommandExecutor {
                 msg(p, "当前层=" + (prog[0] + 1) + "/3  当前层波=" + (prog[1] + 1));
             }
             case "give" -> {
-                // /maggoteers debug give <item_id> [amount]
-                if (args.length < 3) { msg(p, "用法：/maggoteers debug give <item_id> [amount]"); return true; }
+                // /maggoteers debug give <reward_id|item_id> [amount]
+                // reward_id → 局内应用奖励（STAT 效果+护符 / WEAPON·SUPPLY 物品）
+                // item_id → 仅发 ItemCreator 物品（可省略 maggoteers: 前缀）
+                if (args.length < 3) {
+                    msg(p, "用法：/maggoteers debug give <reward_id|item_id> [amount]");
+                    return true;
+                }
                 String id = args[2];
                 int amt = args.length > 3 ? safeInt(args[3], 1) : 1;
-                ItemService.give(p, id, amt);
-                msg(p, "已给 " + id + " ×" + amt);
+                var reward = RewardService.findOptionById(id);
+                if (reward.isPresent()) {
+                    if (game == null) {
+                        msg(p, "奖励需在局内发放：" + id);
+                        return true;
+                    }
+                    RewardOption opt = reward.get();
+                    boolean ok = RewardService.apply(p, opt, game);
+                    if (!ok) msg(p, "奖励应用失败：" + id);
+                    // 成功时 RewardService.apply 已发「获得：…」
+                    return true;
+                }
+                if (ItemService.give(p, id, amt)) {
+                    msg(p, "已给物品 " + id + " ×" + amt);
+                } else {
+                    msg(p, "失败：未知奖励/物品 id（" + id + "）。奖励例 a1b_atk150；物品例 maggoteers:herafinger");
+                }
             }
             case "coin" -> {
                 // /maggoteers debug coin [amount]
                 int amt = args.length > 2 ? safeInt(args[2], 1) : 5;
-                ItemService.giveKind(p, ItemKind.CURRENCY_NORMAL, amt);
-                msg(p, "已给普通卫戍币 ×" + amt);
+                if (!ItemService.giveKind(p, ItemKind.CURRENCY_NORMAL, amt)) {
+                    msg(p, "发放普通币失败（物品未定义？）");
+                } else {
+                    msg(p, "已给普通卫戍币 ×" + amt);
+                }
+            }
+            case "balance" -> {
+                // /maggoteers debug balance [amount] —— 局外商店账户货币（默认设为 500）
+                int amt = args.length > 2 ? safeInt(args[2], 500) : 500;
+                MaggoteersPlayerData data = pe.getData(MaggoteersPlayerData.class);
+                if (data == null) { msg(p, "无持久化玩家数据。"); return true; }
+                data.setBalance(amt);
+                msg(p, "账户余额已设为 " + data.balance + "（可用 /maggoteers shop）");
+            }
+            case "unlock" -> {
+                // /maggoteers debug unlock <option_id|all>
+                if (args.length < 3) { msg(p, "用法：/maggoteers debug unlock <option_id|all>"); return true; }
+                MaggoteersPlayerData data = pe.getData(MaggoteersPlayerData.class);
+                if (data == null) { msg(p, "无持久化玩家数据。"); return true; }
+                String key = args[2];
+                if ("all".equalsIgnoreCase(key)) {
+                    int n = 0;
+                    for (String poolId : RewardService.allPoolIds()) {
+                        var pool = RewardService.pool(poolId);
+                        if (pool == null) continue;
+                        for (RewardOption o : pool.options()) {
+                            if (o.requiresUnlock() && data.unlock(o.id())) n++;
+                        }
+                    }
+                    msg(p, "已解锁商店商品 ×" + n + "（已有不重复计）");
+                } else if (data.unlock(key)) {
+                    msg(p, "已解锁：" + key);
+                } else {
+                    msg(p, "解锁失败（已拥有或 id 空）：" + key);
+                }
             }
             case "jumpto" -> {
                 if (game == null) { msg(p, "不在局内。"); return true; }
@@ -178,8 +242,15 @@ public class MaggoteersCommand implements CommandExecutor {
         return true;
     }
 
+    /** 正式服仅 admin；内部测试 config debug.enabled=true 时 play 即可。 */
+    private static boolean debugAllowed(Player p) {
+        if (p.hasPermission("maggoteers.admin")) return true;
+        return MaggoteersPlugin.getInstance().getConfig().getBoolean("debug.enabled", false)
+                && p.hasPermission("maggoteers.play");
+    }
+
     private static void usage(Player p) {
-        p.sendMessage(Component.text("/maggoteers <shop|debug ...>", NamedTextColor.YELLOW));
+        p.sendMessage(MessageService.component("command.usage", Map.of()));
     }
 
     private static void msg(Player p, String text) {

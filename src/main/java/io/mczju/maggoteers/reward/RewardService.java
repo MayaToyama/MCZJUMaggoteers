@@ -3,6 +3,7 @@ package io.mczju.maggoteers.reward;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.effect.Effect;
 import io.mczju.maggoteers.effect.EffectContext;
 import io.mczju.maggoteers.effect.EffectKeys;
@@ -14,8 +15,6 @@ import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
 import io.mczju.maggoteers.wave.RewardItem;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -104,12 +103,15 @@ public final class RewardService {
 
     public static RewardPool pool(String id) { return POOLS.get(id); }
 
-    /** 按 option id 取当前池内定义（reload 后含已解析的属性/药水）。 */
+    /** 按 option id 取当前池内定义（含 bundle 子 grant；reload 后含已解析的属性/药水）。 */
     public static Optional<RewardOption> findOptionById(String optionId) {
         if (optionId == null || optionId.isBlank()) return Optional.empty();
         for (RewardPool pool : POOLS.values()) {
             for (RewardOption opt : pool.options()) {
                 if (optionId.equals(opt.id())) return Optional.of(opt);
+                for (RewardOption grant : opt.grants()) {
+                    if (optionId.equals(grant.id())) return Optional.of(grant);
+                }
             }
         }
         return Optional.empty();
@@ -174,27 +176,27 @@ public final class RewardService {
         PlayerState ps = PlayerStateManager.get(game, player.getUniqueId());
         if (ps == null) {
             LOG.warning("RewardService.apply: 无 PlayerState option=" + opt.id() + " uuid=" + player.getUniqueId());
-            player.sendMessage(Component.text("奖励未能应用（本局状态异常）", NamedTextColor.RED));
+            player.sendMessage(MessageService.component("reward.apply_no_state", Map.of()));
             return false;
         }
         RewardPool pool = poolId == null ? null : POOLS.get(poolId);
         try {
             if (opt.isBundle()) {
                 if (!applyBundle(player, opt, game, pool)) {
-                    player.sendMessage(Component.text("奖励未能应用（组合配置无效）", NamedTextColor.RED));
+                    player.sendMessage(MessageService.component("reward.apply_bad_bundle", Map.of()));
                     return false;
                 }
             } else if (!applySingle(player, opt, game, pool)) {
-                player.sendMessage(Component.text("奖励未能应用", NamedTextColor.RED));
+                player.sendMessage(MessageService.component("reward.apply_failed", Map.of()));
                 return false;
             }
         } catch (Exception ex) {
             LOG.warning("RewardService.apply 失败 " + opt.id() + ": " + ex.getMessage());
-            player.sendMessage(Component.text("奖励应用失败：" + opt.id(), NamedTextColor.RED));
+            player.sendMessage(MessageService.component("reward.apply_error", Map.of("id", opt.id())));
             return false;
         }
         ps.acquiredUnique().add(opt.id());
-        player.sendMessage(Component.text("获得：" + opt.displayPlain(), NamedTextColor.GREEN));
+        player.sendMessage(MessageService.component("reward.gained", Map.of("display", opt.displayPlain())));
         return true;
     }
 
@@ -223,7 +225,15 @@ public final class RewardService {
                                        boolean bundleGrant) {
         switch (opt.category()) {
             case SUPPLY, WEAPON -> {
-                ItemService.give(player, opt.item(), opt.amount());
+                if (opt.item() == null || opt.item().isBlank()) {
+                    LOG.warning("RewardService: WEAPON/SUPPLY 缺 item id=" + opt.id());
+                    return false;
+                }
+                int n = Math.max(1, opt.amount());
+                if (!ItemService.give(player, opt.item(), n)) {
+                    LOG.warning("RewardService: 发放物品失败 id=" + opt.id() + " item=" + opt.item());
+                    return false;
+                }
                 return true;
             }
             case STAT -> {

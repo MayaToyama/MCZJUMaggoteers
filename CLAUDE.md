@@ -228,7 +228,7 @@ RunPlan { seed, playerCount, scalingSnapshot,
 ```
 SPAWNING ──(按 delaySec 推进游标, 到点的 step 立即刷)──► ACTIVE
 ACTIVE   ──(livingMobs==0)──► CLEARED(发通关奖励) ──► REST(30s, 升级菜单; 全员同意可跳过/延长)
-REST     ──(到时/跳过)──► 下一波 | 本层 Boss 死 ► 进下一层 | Act3 Boss 死 ► VICTORY
+REST     ──(到时/跳过)──► 下一波 | 本层 Boss 死 ► 进下一层 | Act3 Boss 清场后亦进 REST（粘滞 act3_boss）► 再 VICTORY
 ```
 - **跨层**：本层 Boss 清除 → `WorldService` 粘贴下一层 `structure.nbt` → 全员传送新 `playerSpawn` → scheduler 从该层 wave 0 继续。
 
@@ -306,7 +306,7 @@ world: { cleanup_orphans_on_enable: true }
 按钮：`[普通奖励] [Boss奖励] [跳过休整] [延长休整]`（结构可扩展）。
 - 点 `普通奖励`/`Boss奖励`：扣对应货币 → 弹 3 选 1（从对应池抽 **3 个不同**选项）→ 选 1 应用 → 回主菜单，**可反复**直到货币不足/休整结束。
 - **抽池可见性**（`RewardDrawVisibility`）：**SUPPLY** 可重复；**WEAPON** 每 `id` 一次（`acquiredUnique`）；**STAT** 每 `id` 一次（看 `PlayerState.effects`；**UPGRADE_LEVEL** 未满级仍可抽）；与 `unique:`  YAML 字段解耦（STAT 仍建议写 `unique: true` 便于内容校验）。
-- **STAT 护符**：选中 STAT 时除写入 `PlayerState` 外，按 `collectibles.yml` 映射发放绑定 **护符**（ItemCreator 兔子脚等，PDC `kind=collectible` + `reward_id` + `reward_level`）；GUI 图标来自 ItemCreator 预览，**不再**使用 `rewards.yml` 的 `icon:`。
+- **STAT 护符**：选中 STAT 时除写入 `PlayerState` 外，按 `collectibles.yml` 映射发放绑定 **护符**（ItemCreator **RECOVERY_COMPASS（追溯指针）** 底材等；勿用兔子脚——右键骆驼尸壳会被吃掉；PDC `kind=collectible` + `reward_id` + `reward_level`）；GUI 图标来自 ItemCreator 预览，**不再**使用 `rewards.yml` 的 `icon:`。
 - **右键手持货币** = 打开本菜单的快捷方式（与点按钮殊途同归）。
 
 ### 9.2 池选择规则（RunPlan 预定）

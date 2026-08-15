@@ -9,6 +9,7 @@ import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import com.github.mczjuops.mczjugamecore.player.strategy.AbstractPlayerDeathStrategy;
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.plan.ActPlan;
@@ -34,6 +35,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class MaggoteersGame extends AbstractGame {
@@ -50,10 +52,10 @@ public class MaggoteersGame extends AbstractGame {
     @Override
     public GameMeta getGameMeta() {
         return GameMeta.builder()
-                .displayName("<gold>卫戍协议")
+                .displayName(MessageService.raw("game.meta_name", Map.of()))
                 .icon(Material.NETHERITE_SWORD)
-                .author("<green>MCZJU")
-                .description(List.of("<aqua>4人合作 PvE · 波数防守 + Roguelike"))
+                .author(MessageService.raw("game.meta_author", Map.of()))
+                .description(MessageService.rawList("game.meta_description"))
                 .build();
     }
 
@@ -109,7 +111,11 @@ public class MaggoteersGame extends AbstractGame {
 
     private void startInWorld() {
         World w = WorldService.create(this);
-        if (w == null) { sender().error("世界创建失败，对局终止。"); fail(); return; }
+        if (w == null) {
+            sender().error(MessageService.raw("game.world_create_failed", Map.of()));
+            fail();
+            return;
+        }
 
         int lives = MaggoteersPlugin.getInstance().getConfig().getInt("lives.default", 2);
         ClassSelectGate.reset(this);
@@ -122,7 +128,7 @@ public class MaggoteersGame extends AbstractGame {
 
         final long seed = WorldService.getSeed(this);
         final int players = getPlayers().size();
-        sender().info("<gray>正在生成本局剧本（异步）…");
+        sender().info(MessageService.raw("game.plan_generating", Map.of()));
         Bukkit.getScheduler().runTaskAsynchronously(MaggoteersPlugin.getInstance(), () -> {
             try {
                 plannedActs = RunPlanner.plan(seed, players);
@@ -137,7 +143,11 @@ public class MaggoteersGame extends AbstractGame {
             int ticks = 0;
             @Override public void run() {
                 if (planReady) { cancel(); beginClassSelect(); }
-                else if (++ticks > 20 * 30) { cancel(); sender().warn("剧本生成超时(30s)，终止。"); fail(); }
+                else if (++ticks > 20 * 30) {
+                    cancel();
+                    sender().warn(MessageService.raw("game.plan_timeout", Map.of()));
+                    fail();
+                }
             }
         }.runTaskTimer(MaggoteersPlugin.getInstance(), 1L, 1L);
     }
@@ -145,7 +155,8 @@ public class MaggoteersGame extends AbstractGame {
     /** 进图 → 发职业券 → 选职业（右键券可重开菜单）；全员选完再开波。 */
     private void beginClassSelect() {
         if (plannedActs == null) {
-            sender().error("剧本生成失败" + (planError != null ? "：" + planError : "") + "，对局终止。");
+            String detail = planError == null ? "" : "：" + planError;
+            sender().error(MessageService.raw("game.plan_failed", Map.of("detail", detail)));
             fail();
             return;
         }
@@ -158,7 +169,7 @@ public class MaggoteersGame extends AbstractGame {
             }
         }
 
-        sender().info("<yellow>已进入第 1 层地图 · 请选择职业（右键职业选择券可重新打开菜单）");
+        sender().info(MessageService.raw("game.enter_class_select", Map.of()));
         for (PlayerExt pe : getPlayers()) {
             ItemService.giveKind(pe.player(), ItemKind.CLASS_TICKET, 1);
             ItemService.giveKind(pe.player(), ItemKind.SHOP_EMERALD, 1);
@@ -192,11 +203,13 @@ public class MaggoteersGame extends AbstractGame {
         io.mczju.maggoteers.effect.EffectListener.startTick();
         WaveScheduler.start(this, plannedActs);
         int prep = MaggoteersPlugin.getInstance().getConfig().getInt("act_enter.prep_sec", 10);
-        sender().info("<green>卫戍协议 已就绪！"
-                + (prep > 0 ? " 地图准备 " + prep + " 秒后开战。" : "")
-                + " 三层共 "
-                + plannedActs.stream().mapToInt(a -> a.waves().size()).sum() + " 波。每人复活 "
-                + MaggoteersPlugin.getInstance().getConfig().getInt("lives.default", 2) + " 次。");
+        String prepClause = prep > 0
+                ? MessageService.raw("game.prep_clause", Map.of("prep", String.valueOf(prep)))
+                : "";
+        sender().info(MessageService.raw("game.ready", Map.of(
+                "prep_clause", prepClause,
+                "waves", String.valueOf(plannedActs.stream().mapToInt(a -> a.waves().size()).sum()),
+                "lives", String.valueOf(MaggoteersPlugin.getInstance().getConfig().getInt("lives.default", 2)))));
     }
 
     private static void grantRunNightVision(Player player) {
@@ -226,7 +239,9 @@ public class MaggoteersGame extends AbstractGame {
                     var data = pe.getData(io.mczju.maggoteers.persist.MaggoteersPlayerData.class);
                     if (data != null) {
                         data.grant(grant);
-                        sender().info("<yellow>" + pe.player().getName() + " 结算获得 " + grant + " 卫戍币。");
+                        sender().info(MessageService.raw("game.settlement_grant", Map.of(
+                                "player", pe.player().getName(),
+                                "grant", String.valueOf(grant))));
                     }
                 }
             }

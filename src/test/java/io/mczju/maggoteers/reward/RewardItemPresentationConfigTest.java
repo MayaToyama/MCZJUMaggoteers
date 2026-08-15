@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class RewardItemPresentationConfigTest {
 
     @Test
-    void everyCollectibleUsesRabbitFootBaseWithAValidModelAndLore() throws IOException {
+    void everyCollectibleUsesRecoveryCompassBaseWithAValidModelAndLore() throws IOException {
         YamlConfiguration mappings = resourceYaml("collectibles.yml");
         YamlConfiguration items = resourceYaml("items/collectibles.yml");
         ConfigurationSection collectibles = requireSection(mappings, "collectibles");
@@ -39,7 +39,9 @@ class RewardItemPresentationConfigTest {
         assertFalse(itemIds.isEmpty());
         for (String itemId : itemIds) {
             ConfigurationSection item = requireSection(items, itemId);
-            assertEquals("RABBIT_FOOT", item.getString("material"), itemId + " must use inert base material");
+            // RECOVERY_COMPASS: inert vs camel husk (RABBIT_FOOT is consumed on that interact)
+            assertEquals("RECOVERY_COMPASS", item.getString("material"),
+                    itemId + " must use inert base material");
             String model = item.getString("itemModel");
             assertNotNull(model, itemId + " must define its rewardplan appearance");
             assertNotNull(Material.matchMaterial(model), itemId + " has invalid itemModel " + model);

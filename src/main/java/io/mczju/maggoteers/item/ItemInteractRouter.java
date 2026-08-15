@@ -4,6 +4,7 @@ import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.item.interact.ItemUseHandler;
 import io.mczju.maggoteers.item.interact.OpenClassMenuHandler;
@@ -65,8 +66,7 @@ public final class ItemInteractRouter implements Listener {
         HANDLERS.put(ItemKind.SHOP_EMERALD, (player, game, stack) -> {
             // I6: 仅休整期可开升级菜单（与货币一致的门控）
             if (!io.mczju.maggoteers.wave.WaveScheduler.isRestPhase(game)) {
-                player.sendMessage(net.kyori.adventure.text.Component.text(
-                        "仅休整期可使用。", net.kyori.adventure.text.format.NamedTextColor.GRAY));
+                player.sendMessage(MessageService.component("item.shop_emerald_rest_only", Map.of()));
                 return;
             }
             MenuFacade.open("maggoteers-rest", player, game);
@@ -76,13 +76,12 @@ public final class ItemInteractRouter implements Listener {
                     ? player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue() : 20.0;
             double toHeal = Math.min(12.0, maxHealth - player.getHealth());
             if (toHeal <= 0) {
-                player.sendMessage(net.kyori.adventure.text.Component.text(
-                        "生命值已满", net.kyori.adventure.text.format.NamedTextColor.GRAY));
+                player.sendMessage(MessageService.component("item.heal_full", Map.of()));
                 return;
             }
             player.setHealth(player.getHealth() + toHeal);
-            player.sendMessage(net.kyori.adventure.text.Component.text(
-                    "♥ +" + (int) (toHeal / 2) + " 心", net.kyori.adventure.text.format.NamedTextColor.RED));
+            player.sendMessage(MessageService.component("item.heal_amount", Map.of(
+                    "hearts", String.valueOf((int) (toHeal / 2)))));
             if (stack.getAmount() <= 1) player.getInventory().setItemInMainHand(null);
             else stack.setAmount(stack.getAmount() - 1);
         });

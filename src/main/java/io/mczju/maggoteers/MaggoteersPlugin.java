@@ -31,6 +31,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        io.mczju.maggoteers.config.MessageService.load(this);
         PluginFiles.saveResourceIfMissing(this, "rewards.yml");
         PluginFiles.saveResourceIfMissing(this, "collectibles.yml");
         io.mczju.maggoteers.world.WorldService.cleanupOrphansOnEnable();
@@ -76,6 +77,10 @@ public final class MaggoteersPlugin extends JavaPlugin {
         var mc = getCommand("maggoteers");
         if (mc != null) mc.setExecutor(new io.mczju.maggoteers.command.MaggoteersCommand());
         getLogger().info("Maggoteers (卫戍协议) enabled, game 'maggoteers' registered.");
+        if (getConfig().getBoolean("debug.enabled", false) && getConfig().getBoolean("debug.announce", true)) {
+            getLogger().warning("=== 内部测试版：debug.enabled=true（任意玩家可用 /maggoteers debug）===");
+            getLogger().warning("正式上线前请将 config.yml 中 debug.enabled 改为 false。");
+        }
     }
 
     @Override

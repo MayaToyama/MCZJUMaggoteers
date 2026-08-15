@@ -5,6 +5,18 @@
 
 ---
 
+## 2026-08-15 — 玩家可见文案外置 config.yml messages
+
+- **做了什么**：新增 MessageService（MiniMessage + escapeTags 占位）；config.yml 嵌套 messages:；局内广播/记分板/GUI/物品提示/商店/排行榜/GameMeta/命令壳改走配置。onEnable：saveDefaultConfig → MessageService.load → 
+egisterGame/
+egisterLeaderboard。
+- **原因**：运维改提示无需改 Java；占位须 escape 防 sender() 二次 MM；嵌套片段禁带颜色标签（记分板用 line_wave/line_wave_resting）。
+- **决策**：缺 key 无代码回退，load 清单 warn；debug 子命令与 
+o_permission 仍硬编码；{tier} 保持英文 id。
+- **遗留**：服上已有 config.yml 不会自动合并 messages:，升级须手工合并或备份后重放默认；仅重启生效。
+
+---
+
 ## 2026-08-15 — 同层同档波次 strategy 不放回抽取
 
 - **做了什么**：`RunPlanner` 每层 weak/strong/boss 各自维护已用 strategy id；去重后加权抽；候选空则 `IllegalStateException`（`planError` 终止对局）。单测扩 fixture；`StrongWaveRollTest` 对齐现网 `waves_per_act` 并为 Act1 挂 special。
@@ -13,6 +25,65 @@
 - **遗留**：新 Act1 图若无足够 strong special/全局条目会开局炸；启动期 distinct-id 扫描仍可选（spec §5）。
 
 ---
+
+## 2026-08-15 — 怪物配置名 + boss_bar 开关 + 拦截 IM 命名
+
+- **做了什么**：waves.yml 可选 
+ame:（MiniMessage）与 oss_bar: true；MobDisplayNames.lock 在 mechanize+equipment 之后锁定/清除头顶名；Adventure BossBar；废除 hp>=6 启发式；附录 A 迁移（真 Boss 补开关；鸭本/哨兵溺尸等误伤不补）。
+- **原因**：IM 覆盖自定义名；启发式误挂高血小怪血条；Bukkit String 血条无法着色 MiniMessage。
+- **决策**：仅布尔 oss_bar；无名则清自定义名（含 IM）；5 tick 纠偏 + 刷怪后 0/1/2 tick reassert。
+- **遗留**：服上需同步 waves.yml；可选手测 IM 名闪一下是否可接受；RewardItemPresentationConfigTest 护符材质失败与本改无关。
+
+---
+
+## 2026-08-14 — 内部测试版 1.0.0-rc.1
+
+- **做了什么**：版本改为 `1.0.0-rc.1`；`config.debug.enabled/announce`；debug 在 enabled 时对 `maggoteers.play` 开放；增 `debug balance` / `unlock`；部署脚本清理旧 jar；文档 `docs/release/2026-08-14-internal-rc1.md`。
+- **原因**：先发内部可跑测试版完成签收 A，正式功能全开且方便 debug；正式服再关 debug、升 `1.0.0`。
+- **遗留**：签收 A 通过后关 `debug.enabled` 再正式发版。
+
+---
+
+## 2026-08-14 — debug give 空成功
+
+- **做了什么**：`debug give` 先按 `rewards.yml` option id 走 `RewardService.apply`（效果+护符/武器）；否则发 ItemCreator 物品；`ItemService.give` 改返回 boolean、满包掉脚下、可省略 `maggoteers:`。
+- **原因**：旧逻辑只 `ItemService.give` 且无论成败都回「已给」；奖励 id 找不到物品时静默失败。
+- **遗留**：奖励须局内；重启后手测 `a1b_atk150` / `maggoteers:herafinger`。
+
+---
+
+## 2026-08-14 — use_ability effects[] 嵌套 Map 丢 params
+
+- **做了什么**：`ItemAbilityRegistry.mapToSection` 对嵌套 `Map` 改用 `createSection`；幻景改为即时抗性 + 延期 `BUFF_AREA clear_potions:[RESISTANCE]`。
+- **原因**：`getMapList` 得到的 `params`/`expiry` 是 Map，`y.set(Map)` 后 `getConfigurationSection` 为 null → 误报 duration≤0 / 缺 expiry（宏愿/雷杖/匕首/赫拉芬格同源）。
+- **决策**：YAML 里 duration>0 本身没错；赫拉芬格配置已齐，无需再补。
+- **遗留**：重启后确认启动日志不再 skip 这 5 件武器。
+
+---
+
+## 2026-08-14 — 孤儿世界清理 + 经济闭环
+
+- **做了什么**：
+  1. `OrphanWorldDirs` 递归扫描 world container（深至 6），命中 `maggoteers_*`；`WorldService.cleanupOrphansOnEnable` 覆盖 Paper 26.2 嵌套路径 `world/dimensions/minecraft/maggoteers_*`。
+  2. `rewards.yml`：约 25 件精品武器加 `requires_unlock`/`unlock_cost`（35–100，对齐 `win_flat:100`）；`UnlockShopMenu` 按 option id 去重并用 `RewardOptionIcons`。
+  3. 扩充 `act3_boss`；`act2_boss` 补终局武器；**终局 Boss 清场后也进 REST**（粘滞已是 act3），休整结束/跳过再 `win()`——否则 act3_boss 永远不可达。
+- **原因**：旧清理只扫 container 直接子目录；商店无 `requires_unlock` 商品；终局跳过休整使 sticky act3_boss 成死配置。
+- **决策**：不改 §9.2 粘滞语义；用终局休整消费 Boss 币。护符 `a3b_*` 暂复用 `a2b_*` 外观。
+- **遗留**：重启 Paper 后确认孤儿目录被删、`/maggoteers shop` 有货、通关前能开 act3_boss。
+
+---
+
+## 2026-08-14 — 下次攻击伤掉到拳头 + 腐化宝珠无伤
+
+- **做了什么**：
+  1. `AttributeModifierKeys.effect/` 前缀 + `stripPluginModifiers` 仅剥 `effect/` 键；不再误剥 ItemCreator 物品上的 `maggoteers:*_attack_damage`。
+  2. `HEAL` 负值改为 `setHealth` 精确扣血；`DAMAGE_AREA`/`DAMAGE_BEAM` 经 `MagicDamage.applyIndependent`（清 `noDamageTicks`/`lastDamage`）再 `damage`。
+- **原因**：下次攻击 buff 到期 `resyncDerived` 把整命名空间 modifier 剥光 → 武器伤永久丢失（≈2 血拳头）；腐化宝珠 `p.damage` 自伤被护甲/抗性/无敌帧稀释，且同 tick 光束可能撞原版无敌窗。
+- **决策**：物品/光环键与效果派生键隔离；自伤不走伤害事件；魔法伤强制破无敌窗。
+- **遗留**：重启 Paper 后手测赫拉芬格/破碎君王下次近战加成，以及腐化宝珠自扣 20 + 光束 50。
+
+---
+
 ## 2026-08-13 — 下次攻击强化类 empower 打击特效
 
 - **做了什么**：纯延期 `use_ability`（下次攻击消耗）在无 `empower_fx`、cast 仅为 `preset: NONE`/缺省时，命中 victim 播内置 `deferredStrikeFx`（CRIT + DOT_ABOVE + 暴击音）；`playOnEntity` 对非玩家补播 sound 并尊重 NONE。
