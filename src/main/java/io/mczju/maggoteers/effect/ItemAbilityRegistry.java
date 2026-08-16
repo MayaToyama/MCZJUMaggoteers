@@ -247,7 +247,14 @@ public final class ItemAbilityRegistry {
             if (e.getKey() == null) {
                 continue;
             }
-            y.set(String.valueOf(e.getKey()), e.getValue());
+            String key = String.valueOf(e.getKey());
+            Object val = e.getValue();
+            // getMapList nests params/expiry as Map; y.set(Map) leaves getConfigurationSection null
+            if (val instanceof Map<?, ?> nested) {
+                y.createSection(key, nested);
+            } else {
+                y.set(key, val);
+            }
         }
         return y;
     }

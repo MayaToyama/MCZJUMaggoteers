@@ -20,6 +20,12 @@ public class MaggoteersPlayerData extends JsonPlayerData {
         setModified(true);
     }
 
+    /** 调试：直接设余额（不改 totalEarned）。 */
+    public void setBalance(int amount) {
+        balance = Math.max(0, amount);
+        setModified(true);
+    }
+
     public boolean spend(int amount) {
         if (amount <= 0 || balance < amount) return false;
         balance -= amount;

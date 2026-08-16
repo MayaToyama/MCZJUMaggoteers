@@ -1,7 +1,7 @@
 package io.mczju.maggoteers.wave;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
-import org.bukkit.boss.BossBar;
+import net.kyori.adventure.bossbar.BossBar;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,7 +21,7 @@ public final class WaveRuntime {
     final Map<UUID, SpawnStep> mobSteps = new HashMap<>();
     /** UUID → 运行时档案（词缀命中、死亡召唤、掉落倍率）。 */
     final Map<UUID, MobSpawnProfile> mobProfiles = new HashMap<>();
-    /** Boss 血条（按实体 UUID）。 */
+    /** Boss 血条（Adventure；按实体 UUID）。 */
     final Map<UUID, BossBar> bossBars = new HashMap<>();
     /** 本波是否已判定清除（防重复触发）。 */
     boolean cleared = false;

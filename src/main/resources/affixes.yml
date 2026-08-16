@@ -22,6 +22,9 @@ affixes:
   withering:
     potions: [ { effect: WITHER, amp: 255, dur: 99999}]
     display: "<red>狂暴宿主"
+  shield:
+    potions: [ { effect: ABSORPTION, amp: 255, dur: 19 } ]
+    display: "<yellow>护盾"
   exoskeleton:
     potions: [ { effect: RESISTANCE, amp: 1, dur: 99999}]
     display: "<blue>外骨骼"

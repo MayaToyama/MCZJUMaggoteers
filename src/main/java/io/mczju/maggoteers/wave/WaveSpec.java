@@ -50,7 +50,8 @@ public record WaveSpec(String strategyId, List<SpawnStep> steps, int repeat, Lis
                             s.hpMult(), s.dmgMult(), s.speedMult(), s.dropMult(),
                             s.scaleMult(), s.followRangeMult(),
                             at, s.affixes(), s.potions(), s.infernal(),
-                            s.equipment(), s.onDeath(), s.passengers(), 1));
+                            s.equipment(), s.onDeath(), s.passengers(), 1,
+                            s.name(), s.bossBar()));
                 }
             }
             roundStart = roundEnd;

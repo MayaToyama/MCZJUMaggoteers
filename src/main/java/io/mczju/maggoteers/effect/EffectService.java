@@ -376,6 +376,8 @@ public final class EffectService {
             } else if (step.effect() == Effect.ADD_POTION) {
                 int dur = step.params().getOrDefault(EffectKeys.DURATION_TICKS, 0);
                 ok = dur > 0 && applyInstantPotion(p, step.params());
+            } else if (step.effect() == Effect.HEAL) {
+                ok = applyHealOrSelfDamage(p, step.params().getOrDefault(EffectKeys.AMOUNT, 0.0));
             } else {
                 ok = executeMagicEffect(p, game, step.effect(), step.params(),
                         ability.fx(), ctx, true, beamHit);
@@ -437,6 +439,23 @@ public final class EffectService {
         return true;
     }
 
+    /**
+     * Positive amount heals; negative amount is an exact HP cost via {@link Player#setHealth}
+     * (not {@link Player#damage}) so armor / resistance / invuln frames cannot cancel or dilute it.
+     */
+    static boolean applyHealOrSelfDamage(Player p, double amount) {
+        if (p == null || amount == 0) return false;
+        if (amount < 0) {
+            // Exact cost: no Attribute lookup (keeps unit tests free of RegistryAccess).
+            p.setHealth(Math.max(0.0, p.getHealth() + amount));
+            return true;
+        }
+        var hp = p.getAttribute(Attribute.MAX_HEALTH);
+        double max = hp != null ? hp.getValue() : 20.0;
+        p.setHealth(Math.min(max, p.getHealth() + amount));
+        return true;
+    }
+
     /** 执行一条效果（触发型在 fireTrigger 时调；常驻型在 apply 时已施加）。 */
     private static void executeEffect(Player p, PlayerEffect e, MaggoteersGame game) {
         executeEffect(p, e, game, TriggerContext.empty());
@@ -444,12 +463,7 @@ public final class EffectService {
 
     private static void executeEffect(Player p, PlayerEffect e, MaggoteersGame game, TriggerContext ctx) {
         switch (e.effect()) {
-            case HEAL -> {
-                double amount = e.params().getOrDefault(EffectKeys.AMOUNT, 0.0);
-                var hp = p.getAttribute(Attribute.MAX_HEALTH);
-                double max = hp != null ? hp.getValue() : 20.0;
-                p.setHealth(Math.min(max, p.getHealth() + amount));
-            }
+            case HEAL -> applyHealOrSelfDamage(p, e.params().getOrDefault(EffectKeys.AMOUNT, 0.0));
             case ADD_POTION -> {
                 PotionEffectType type = e.params().get(EffectKeys.POTION);
                 if (type == null) return;
@@ -519,7 +533,7 @@ public final class EffectService {
                 List<PotionEffectType> clears = params.get(EffectKeys.CLEAR_POTIONS);
                 Runnable action = () -> {
                     for (LivingEntity le : targets) {
-                        le.damage(dmg, p);
+                        MagicDamage.applyIndependent(le, dmg, p);
                         if (!le.isValid() || le.isDead()) {
                             continue;
                         }
@@ -744,7 +758,7 @@ public final class EffectService {
                     if (!TargetResolver.isTarget(game, p, le, params)) continue;
                     if (!hit.add(le.getUniqueId())) continue;
                     first.compareAndSet(null, le);
-                    le.damage(dmg, p);
+                    MagicDamage.applyIndependent(le, dmg, p);
                 }
             }
         });
@@ -798,8 +812,8 @@ public final class EffectService {
                 ? AttributeModifier.Operation.MULTIPLY_SCALAR_1
                 : AttributeModifier.Operation.ADD_NUMBER;
         double maxBefore = attr == Attribute.MAX_HEALTH ? inst.getValue() : 0;
-        // D5：唯一 key = sanitize(id) + level + 自增序号（ability:/held: 等含 ':' 不能直接进 path）
-        NamespacedKey key = AttributeModifierKeys.pluginKey(MaggoteersPlugin.getInstance(),
+        // D5：唯一 key = effect/<sanitize(id)_level_seq>（与物品 maggoteers:xxx_attack_damage 隔离，防 strip 剥武器伤）
+        NamespacedKey key = AttributeModifierKeys.effectKey(MaggoteersPlugin.getInstance(),
                 e.id() + "_" + e.level() + "_" + KEY_SEQ.incrementAndGet());
         inst.addModifier(new AttributeModifier(key, value, operation));
         if (attr == Attribute.MAX_HEALTH && !BULK_RESYNC.get()) {

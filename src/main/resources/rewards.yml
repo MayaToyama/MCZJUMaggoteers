@@ -21,7 +21,7 @@ reward_pools:
             params:
               attr: ATTACK_DAMAGE
               op: PERCENT
-              value: 0.3
+              value: 0.5
             unique: true
             stack: ADD
           -
@@ -466,26 +466,13 @@ reward_pools:
               potion: INVISIBILITY
               amp: 0
               duration_ticks: 60
+            -
+              potion: speed
+              amp: 2
+              duration_ticks: 60
           fx:
             preset: DOT_ABOVE
             particle: SMOKE
-        unique: true
-        stack: IGNORE
-      -
-        id: a1w_thorn_arrow
-        display: "<gold>青铜羽饰"
-        category: STAT
-        trigger: ON_DAMAGE_TAKEN
-        effect: SUMMON
-        params:
-          entity: ARROW
-          anchor: attacker
-          cleanup: duration
-          duration_sec: 5
-          friendly_fire: false
-          projectile:
-            speed: 5.0
-            toward: look
         unique: true
         stack: IGNORE
       -
@@ -603,6 +590,8 @@ reward_pools:
         display: "<white>猎魔人的银剑"
         category: WEAPON
         item: "maggoteers:silver_sword"
+        requires_unlock: true
+        unlock_cost: 35
       -
         id: w_burn_blade
         display: "<red>一刀一刀燃烧刀"
@@ -613,11 +602,15 @@ reward_pools:
         display: "<gray>便携要塞"
         category: WEAPON
         item: "maggoteers:portable_fort"
+        requires_unlock: true
+        unlock_cost: 40
       -
         id: w_cat_hammer
         display: "<light_purple>充气猫猫锤"
         category: WEAPON
         item: "maggoteers:cat_hammer"
+        requires_unlock: true
+        unlock_cost: 40
   act1_strong:
     cost: 1
     currency: normal
@@ -809,7 +802,7 @@ reward_pools:
             params:
               attr: ATTACK_DAMAGE
               op: PERCENT
-              value: 0.2
+              value: 0.4
             unique: true
             stack: ADD
             trigger: ON_ACT_ENTER
@@ -821,7 +814,7 @@ reward_pools:
             params:
               attr: MAGIC_DAMAGE
               op: PERCENT
-              value: 0.2
+              value: 0.4
             unique: true
             stack: ADD
             trigger: ON_ACT_ENTER
@@ -879,7 +872,7 @@ reward_pools:
             radius: 10.0
       -
         id: prot_chest
-        display: "<aqua>保护胸甲"
+        display: "<aqua>防弹胸甲（可升级！）"
         category: STAT
         effect: BOUND_EQUIP
         params:
@@ -926,6 +919,8 @@ reward_pools:
         display: "<white>猎魔人的银剑"
         category: WEAPON
         item: "maggoteers:silver_sword"
+        requires_unlock: true
+        unlock_cost: 35
       -
         id: w_burn_blade
         display: "<red>一刀一刀燃烧刀"
@@ -936,31 +931,43 @@ reward_pools:
         display: "<gray>便携要塞"
         category: WEAPON
         item: "maggoteers:portable_fort"
+        requires_unlock: true
+        unlock_cost: 40
       -
         id: w_cat_hammer
         display: "<light_purple>充气猫猫锤"
         category: WEAPON
         item: "maggoteers:cat_hammer"
+        requires_unlock: true
+        unlock_cost: 40
       -
         id: w_unlit_glory
         display: "<white>未照耀的荣光"
         category: WEAPON
         item: "maggoteers:unlit_glory"
+        requires_unlock: true
+        unlock_cost: 45
       -
-        id: w_knight_greatsword
-        display: "<blue>骑士巨剑"
+        id: w_door
+        display: "<blue>铁栅门"
         category: WEAPON
-        item: "maggoteers:knight_greatsword"
+        item: "maggoteers:door"
+        requires_unlock: true
+        unlock_cost: 40
       -
         id: w_ritual_dagger
         display: "<dark_purple>仪式匕首"
         category: WEAPON
         item: "maggoteers:ritual_dagger"
+        requires_unlock: true
+        unlock_cost: 45
       -
         id: w_holy_water
         display: "<aqua>圣水"
         category: WEAPON
         item: "maggoteers:holy_water"
+        requires_unlock: true
+        unlock_cost: 35
   act1_boss:
     cost: 1
     currency: boss
@@ -1326,7 +1333,7 @@ reward_pools:
             -
               potion: SPEED
               amp: 1
-              duration_ticks: 40
+              duration_ticks: 100
         unique: true
         stack: IGNORE
       -
@@ -1400,30 +1407,46 @@ reward_pools:
       -
         id: a2w_cursed_blade
         display: "<dark_red>诅咒之刃"
-        category: STAT
-        effect: ADD_ATTRIBUTE
-        params:
-          attr: ATTACK_DAMAGE
-          op: PERCENT
-          value: 3.0
-        unique: true
-        stack: ADD
-      -
-        id: a2w_cursed_blade_mag
-        display: "<dark_red>诅咒之刃"
-        category: STAT
-        effect: ADD_ATTRIBUTE
-        params:
-          attr: MAGIC_DAMAGE
-          op: PERCENT
-          value: 3.0
-        unique: true
-        stack: ADD
+        grants:
+          -
+            id: a2w_cursed_blade_atk
+            display: "<dark_red>诅咒之刃"
+            category: STAT
+            effect: ADD_ATTRIBUTE
+            params:
+              attr: ATTACK_DAMAGE
+              op: PERCENT
+              value: 3.0
+            unique: true
+            stack: ADD
+          -
+            id: a2w_cursed_blade_mag
+            display: "<dark_red>诅咒之刃"
+            category: STAT
+            effect: ADD_ATTRIBUTE
+            params:
+              attr: MAGIC_DAMAGE
+              op: PERCENT
+              value: 3.0
+            unique: true
+            stack: ADD
+          -
+            id: a2w_cursed_blade_hurt
+            display: "<dark_red>诅咒之刃"
+            category: STAT
+            trigger: ON_DAMAGE_TAKEN
+            effect: HEAL
+            params:
+              amount: -10.0
+            unique: true
+            stack: IGNORE
       -
         id: w_shattered_king
         display: "<gold>破碎君王"
         category: WEAPON
         item: "maggoteers:shattered_king"
+        requires_unlock: true
+        unlock_cost: 55
       -
         id: w_famed_name
         display: "<aqua>显赫声名"
@@ -1459,11 +1482,15 @@ reward_pools:
         display: "<light_purple>至高之术"
         category: WEAPON
         item: "maggoteers:supreme_art"
+        requires_unlock: true
+        unlock_cost: 60
       -
         id: w_emp
         display: "<blue>E.M.P"
         category: WEAPON
         item: "maggoteers:emp"
+        requires_unlock: true
+        unlock_cost: 55
   act2_strong:
     cost: 1
     currency: normal
@@ -1637,7 +1664,7 @@ reward_pools:
             params:
               attr: ATTACK_DAMAGE
               op: PERCENT
-              value: 0.5
+              value: 1.0
             unique: true
             stack: ADD
             trigger: ON_WAVE_CLEAR
@@ -1649,7 +1676,7 @@ reward_pools:
             params:
               attr: MAGIC_DAMAGE
               op: PERCENT
-              value: 0.5
+              value: 1.0
             unique: true
             stack: ADD
             trigger: ON_WAVE_CLEAR
@@ -1741,6 +1768,8 @@ reward_pools:
         display: "<gold>破碎君王"
         category: WEAPON
         item: "maggoteers:shattered_king"
+        requires_unlock: true
+        unlock_cost: 55
       -
         id: w_famed_name
         display: "<aqua>显赫声名"
@@ -1776,36 +1805,57 @@ reward_pools:
         display: "<light_purple>至高之术"
         category: WEAPON
         item: "maggoteers:supreme_art"
+        requires_unlock: true
+        unlock_cost: 60
       -
         id: w_emp
         display: "<blue>E.M.P"
         category: WEAPON
         item: "maggoteers:emp"
+        requires_unlock: true
+        unlock_cost: 55
       -
         id: w_condense
         display: "<blue>凝结核"
         category: WEAPON
         item: "maggoteers:condense"
+        requires_unlock: true
+        unlock_cost: 60
       -
         id: w_corrupt_orb
         display: "<dark_purple>腐化宝珠"
         category: WEAPON
         item: "maggoteers:corrupt_orb"
+        requires_unlock: true
+        unlock_cost: 65
       -
         id: w_shimingzi
         display: "<gold>Shimingzi"
         category: WEAPON
         item: "maggoteers:shimingzi"
+        requires_unlock: true
+        unlock_cost: 70
       -
         id: w_bleed_knife
         display: "<red>放血小刀"
         category: WEAPON
         item: "maggoteers:bleed_knife"
+        requires_unlock: true
+        unlock_cost: 55
       -
         id: w_miaooneal
         display: "<yellow>妙奥尼尔"
-        category: WEAPON
-        item: "maggoteers:miaooneal"
+        category: STAT
+        trigger: ON_DAMAGE_DEALT
+        effect: SUMMON
+        params:
+          entity: LIGHTNING_BOLT
+          anchor: hit_target
+          cleanup: duration
+          duration_sec: 1
+          friendly_fire: false
+        unique: true
+        stack: IGNORE
   act2_boss:
     cost: 1
     currency: boss
@@ -1901,14 +1951,10 @@ reward_pools:
         display: "<light_purple>安眠迷香"
         category: STAT
         trigger: ON_DAMAGE_DEALT
-        effect: BUFF_AREA
+        effect: DISABLE_AI
         params:
           targets: hit_target
-          potions:
-            -
-              potion: SLOWNESS
-              amp: 9
-              duration_ticks: 20
+          duration_ticks: 20
         unique: true
         stack: IGNORE
       -
@@ -1950,11 +1996,34 @@ reward_pools:
         display: "<dark_purple>老魔杖"
         category: WEAPON
         item: "maggoteers:old_wand"
+        requires_unlock: true
+        unlock_cost: 70
       -
         id: w_revive_stone
         display: "<green>复活币"
         category: WEAPON
         item: "maggoteers:revive_coin"
+      -
+        id: w_herafinger
+        display: "<gold>赫拉芬格"
+        category: WEAPON
+        item: "maggoteers:herafinger"
+        requires_unlock: true
+        unlock_cost: 90
+      -
+        id: w_cataclysm
+        display: "<dark_red>灾变核心"
+        category: WEAPON
+        item: "maggoteers:cataclysm"
+        requires_unlock: true
+        unlock_cost: 100
+      -
+        id: w_thunder_rod
+        display: "<yellow>雷霆之杖"
+        category: WEAPON
+        item: "maggoteers:thunder_rod"
+        requires_unlock: true
+        unlock_cost: 90
   act3_weak:
     cost: 1
     currency: normal
@@ -1962,38 +2031,82 @@ reward_pools:
       -
         id: a3w_imm_wither
         display: "<dark_gray>凋零骷髅突变诱发物"
-        category: STAT
-        effect: ADD_POTION
-        params:
-          potion: WITHER
-          immunity: true
-        unique: true
-        stack: IGNORE
+        grants:
+          -
+            id: a3w_imm_wither_wither
+            display: "<dark_gray>凋零骷髅突变诱发物"
+            category: STAT
+            effect: ADD_POTION
+            params:
+              potion: WITHER
+              immunity: true
+            unique: true
+            stack: IGNORE
+          -
+            id: a3w_imm_wither_slow
+            display: "<dark_gray>凋零骷髅突变诱发物"
+            category: STAT
+            effect: ADD_POTION
+            params:
+              potion: SLOWNESS
+              immunity: true
+            unique: true
+            stack: IGNORE
       -
         id: a3w_imm_poison
         display: "<green>洞穴蜘蛛突变诱发物"
-        category: STAT
-        effect: ADD_POTION
-        params:
-          potion: POISON
-          immunity: true
-        unique: true
-        stack: IGNORE
+        grants:
+          -
+            id: a3w_imm_poison_poison
+            display: "<green>洞穴蜘蛛突变诱发物"
+            category: STAT
+            effect: ADD_POTION
+            params:
+              potion: POISON
+              immunity: true
+            unique: true
+            stack: IGNORE
+          -
+            id: a3w_imm_poison_weak
+            display: "<green>洞穴蜘蛛突变诱发物"
+            category: STAT
+            effect: ADD_POTION
+            params:
+              potion: WEAKNESS
+              immunity: true
+            unique: true
+            stack: IGNORE
       -
         id: a3w_imm_slow
-        display: "<blue>监守者突变诱发无"
-        category: STAT
-        effect: ADD_POTION
-        params:
-          potion: SLOWNESS
-          immunity: true
-        unique: true
-        stack: IGNORE
+        display: "<blue>监守者突变诱发物"
+        grants:
+          -
+            id: a3w_imm_slow_dark
+            display: "<blue>监守者突变诱发物"
+            category: STAT
+            effect: ADD_POTION
+            params:
+              potion: DARKNESS
+              immunity: true
+            unique: true
+            stack: IGNORE
+          -
+            id: a3w_imm_slow_blind
+            display: "<blue>监守者突变诱发物"
+            category: STAT
+            effect: ADD_POTION
+            params:
+              potion: BLINDNESS
+              immunity: true
+            unique: true
+            stack: IGNORE
       -
         id: w_mystery_blade
         display: "<dark_gray>？？？？"
         category: WEAPON
         item: "maggoteers:mystery_blade"
+        requires_unlock: true
+        unlock_cost: 80
       -
         id: a3w_glass_regen
         display: "<aqua>自修复玻璃刀"
@@ -2362,50 +2475,154 @@ reward_pools:
         display: "<gold>赫拉芬格"
         category: WEAPON
         item: "maggoteers:herafinger"
+        requires_unlock: true
+        unlock_cost: 90
       -
         id: w_molten_flame
         display: "<red>熔铸火焰"
         category: WEAPON
         item: "maggoteers:molten_flame"
+        requires_unlock: true
+        unlock_cost: 80
       -
         id: w_mission_sure
         display: "<aqua>使命必达"
         category: WEAPON
         item: "maggoteers:mission_sure"
+        requires_unlock: true
+        unlock_cost: 75
       -
         id: w_red_blessing
         display: "<red>镀红祝福"
         category: WEAPON
         item: "maggoteers:red_blessing"
+        requires_unlock: true
+        unlock_cost: 80
       -
         id: w_art_tyrant
         display: "<light_purple>艺术暴君"
         category: WEAPON
         item: "maggoteers:art_tyrant"
+        requires_unlock: true
+        unlock_cost: 95
       -
         id: w_phantasm
         display: "<blue>幻景"
         category: WEAPON
         item: "maggoteers:phantasm"
+        requires_unlock: true
+        unlock_cost: 85
       -
         id: w_paragon
         display: "<yellow>典范"
         category: WEAPON
         item: "maggoteers:paragon"
+        requires_unlock: true
+        unlock_cost: 85
       -
         id: w_thunder_rod
         display: "<yellow>雷霆之杖"
         category: WEAPON
         item: "maggoteers:thunder_rod"
+        requires_unlock: true
+        unlock_cost: 90
       -
         id: w_cataclysm
         display: "<dark_red>灾变核心"
         category: WEAPON
         item: "maggoteers:cataclysm"
+        requires_unlock: true
+        unlock_cost: 100
   act3_boss:
     cost: 1
     currency: boss
     options:
+      -
+        id: a3b_atk300
+        display: "<red>终焉锋刃"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params:
+          attr: ATTACK_DAMAGE
+          op: PERCENT
+          value: 3.0
+        unique: true
+        stack: ADD
+      -
+        id: a3b_mag300
+        display: "<light_purple>终焉咒文"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params:
+          attr: MAGIC_DAMAGE
+          op: PERCENT
+          value: 3.0
+        unique: true
+        stack: ADD
+      -
+        id: a3b_hp40
+        display: "<green>终焉甲胄"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params:
+          attr: MAX_HEALTH
+          op: FLAT
+          value: 80.0
+        unique: true
+        stack: ADD
+      -
+        id: a3b_spd25
+        display: "<blue>终焉疾步"
+        category: STAT
+        effect: ADD_ATTRIBUTE
+        params:
+          attr: MOVEMENT_SPEED
+          op: PERCENT
+          value: 0.25
+        unique: true
+        stack: ADD
+      -
+        id: w_herafinger
+        display: "<gold>赫拉芬格"
+        category: WEAPON
+        item: "maggoteers:herafinger"
+        requires_unlock: true
+        unlock_cost: 90
+      -
+        id: w_art_tyrant
+        display: "<light_purple>艺术暴君"
+        category: WEAPON
+        item: "maggoteers:art_tyrant"
+        requires_unlock: true
+        unlock_cost: 95
+      -
+        id: w_cataclysm
+        display: "<dark_red>灾变核心"
+        category: WEAPON
+        item: "maggoteers:cataclysm"
+        requires_unlock: true
+        unlock_cost: 100
+      -
+        id: w_thunder_rod
+        display: "<yellow>雷霆之杖"
+        category: WEAPON
+        item: "maggoteers:thunder_rod"
+        requires_unlock: true
+        unlock_cost: 90
+      -
+        id: w_phantasm
+        display: "<blue>幻景"
+        category: WEAPON
+        item: "maggoteers:phantasm"
+        requires_unlock: true
+        unlock_cost: 85
+      -
+        id: w_paragon
+        display: "<yellow>典范"
+        category: WEAPON
+        item: "maggoteers:paragon"
+        requires_unlock: true
+        unlock_cost: 85
       -
         id: w_revive_stone
         display: "<green>复活币"

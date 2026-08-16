@@ -70,6 +70,13 @@ try {
 
     Copy-Item $jar.FullName (Join-Path $ServerPlugins $jar.Name) -Force
     Write-Host ("JAR -> {0}" -f (Join-Path $ServerPlugins $jar.Name))
+    # 避免旧 SNAPSHOT 与新 RC 双 jar 并存
+    Get-ChildItem $ServerPlugins -Filter "Maggoteers-*.jar" |
+        Where-Object { $_.Name -ne $jar.Name } |
+        ForEach-Object {
+            Remove-Item $_.FullName -Force
+            Write-Host ("Removed old jar: {0}" -f $_.Name)
+        }
 
     New-Item -ItemType Directory -Force -Path $ServerData | Out-Null
     foreach ($f in @("config.yml", "waves.yml", "rewards.yml", "affixes.yml", "collectibles.yml")) {

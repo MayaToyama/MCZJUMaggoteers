@@ -14,6 +14,9 @@ import java.util.ArrayList;
  */
 public final class AttributeModifierKeys {
 
+    /** Prefix for PlayerState-derived ADD_ATTRIBUTE modifiers (not item / aura keys). */
+    public static final String EFFECT_PATH_PREFIX = "effect/";
+
     private AttributeModifierKeys() {}
 
     /**
@@ -37,8 +40,23 @@ public final class AttributeModifierKeys {
         return out.isEmpty() ? "unnamed" : (out.length() > 256 ? out.substring(0, 256) : out);
     }
 
+    /**
+     * True only for EffectService-managed derived modifiers.
+     * ItemCreator item keys (e.g. {@code herafinger_attack_damage}) and aura keys
+     * ({@code aura/...}) must NOT match — otherwise {@code resyncDerived} permanently
+     * strips held-weapon attack damage down to fist-level (~1–2 HP hits).
+     */
+    public static boolean isManagedEffectPath(String keyPath) {
+        return keyPath != null && keyPath.startsWith(EFFECT_PATH_PREFIX);
+    }
+
     public static NamespacedKey pluginKey(org.bukkit.plugin.Plugin plugin, String rawPath) {
         return new NamespacedKey(plugin, sanitizeKeyPath(rawPath));
+    }
+
+    /** Effect-derived modifier key: {@code effect/<sanitizedId>}. */
+    public static NamespacedKey effectKey(org.bukkit.plugin.Plugin plugin, String rawEffectId) {
+        return pluginKey(plugin, EFFECT_PATH_PREFIX + sanitizeKeyPath(rawEffectId));
     }
 
     public static boolean matches(AttributeModifier modifier, NamespacedKey expected) {
@@ -49,6 +67,12 @@ public final class AttributeModifierKeys {
 
     public static boolean matchesPluginNamespace(AttributeModifier modifier, String pluginNamespace) {
         return modifier != null && modifier.getKey().namespace().equals(pluginNamespace);
+    }
+
+    /** Plugin-namespace AND {@link #isManagedEffectPath} (excludes item / aura modifiers). */
+    public static boolean matchesManagedEffect(AttributeModifier modifier, String pluginNamespace) {
+        return matchesPluginNamespace(modifier, pluginNamespace)
+                && isManagedEffectPath(modifier.getKey().value());
     }
 
     public static void removeIfMatches(AttributeInstance inst, NamespacedKey key) {

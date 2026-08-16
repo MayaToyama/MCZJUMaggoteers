@@ -42,7 +42,11 @@ public final class DerivedViewAttributes {
         }
     }
 
-    /** Remove plugin-namespace modifiers (optional key-path prefix filter for aura links). */
+    /**
+     * Remove plugin-namespace modifiers (optional key-path prefix filter for aura links).
+     * When {@code keyPathPrefix} is null, only {@link AttributeModifierKeys#isManagedEffectPath}
+     * keys are removed — never ItemCreator item modifiers sharing the plugin namespace.
+     */
     public static void stripPluginModifiers(LivingEntity le, String pluginNamespace, String keyPathPrefix) {
         if (le == null || pluginNamespace == null || pluginNamespace.isBlank()) return;
         forEachPlayerStrip(attr -> {
@@ -50,7 +54,12 @@ public final class DerivedViewAttributes {
             if (inst == null) return;
             for (AttributeModifier m : new ArrayList<>(inst.getModifiers())) {
                 if (!AttributeModifierKeys.matchesPluginNamespace(m, pluginNamespace)) continue;
-                if (keyPathPrefix != null && !m.getKey().value().startsWith(keyPathPrefix)) continue;
+                String path = m.getKey().value();
+                if (keyPathPrefix != null) {
+                    if (!path.startsWith(keyPathPrefix)) continue;
+                } else if (!AttributeModifierKeys.isManagedEffectPath(path)) {
+                    continue;
+                }
                 inst.removeModifier(m);
             }
         });

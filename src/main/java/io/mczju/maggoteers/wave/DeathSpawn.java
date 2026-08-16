@@ -11,7 +11,8 @@ public record DeathSpawn(EntityType type, int count,
                          List<String> affixes, List<PotionSpec> potions,
                          InfernalCfg infernal,
                          List<MobEquipment> equipment, List<PassengerSpawn> passengers,
-                         List<DeathSpawn> onDeath) {
+                         List<DeathSpawn> onDeath,
+                         String name, boolean bossBar) {
     public DeathSpawn {
         affixes = affixes == null ? List.of() : List.copyOf(affixes);
         potions = potions == null ? List.of() : List.copyOf(potions);
@@ -20,5 +21,20 @@ public record DeathSpawn(EntityType type, int count,
         passengers = passengers == null ? List.of() : List.copyOf(passengers);
         onDeath = onDeath == null ? List.of() : List.copyOf(onDeath);
         if (count < 1) count = 1;
+        if (name != null) {
+            name = name.trim();
+            if (name.isEmpty()) name = null;
+        }
+    }
+
+    public DeathSpawn(EntityType type, int count,
+                      double hpMult, double dmgMult, double speedMult, double dropMult,
+                      double scaleMult, double followRangeMult,
+                      List<String> affixes, List<PotionSpec> potions,
+                      InfernalCfg infernal,
+                      List<MobEquipment> equipment, List<PassengerSpawn> passengers,
+                      List<DeathSpawn> onDeath) {
+        this(type, count, hpMult, dmgMult, speedMult, dropMult, scaleMult, followRangeMult,
+                affixes, potions, infernal, equipment, passengers, onDeath, null, false);
     }
 }

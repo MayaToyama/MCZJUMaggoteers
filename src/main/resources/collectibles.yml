@@ -65,6 +65,8 @@ collectibles:
     item: maggoteers:charm_a1w_atk25
   a1w_fangs:
     item: maggoteers:charm_a1w_fangs
+  w_miaooneal:
+    item: maggoteers:charm_w_miaooneal
   a1w_fire_res:
     item: maggoteers:charm_a1w_fire_res
   a1w_hit_splash:
@@ -96,12 +98,18 @@ collectibles:
       1: maggoteers:charm_a1w_str1
       2: maggoteers:charm_a2w_str2
       3: maggoteers:charm_a3s_str3
-  a1w_thorn_arrow:
-    item: maggoteers:charm_a1w_thorn_arrow
   a1w_wave_bone:
     item: maggoteers:charm_a1w_wave_bone
   a2b_atk225:
     item: maggoteers:charm_a2b_atk225
+  a3b_atk300:
+    item: maggoteers:charm_a2b_atk225
+  a3b_mag300:
+    item: maggoteers:charm_a2b_mag225
+  a3b_hp40:
+    item: maggoteers:charm_a2b_hp30
+  a3b_spd25:
+    item: maggoteers:charm_a2b_spd20
   a2b_frost_aura:
     item: maggoteers:charm_a2b_frost_aura
   a2b_hit_heal:
@@ -126,8 +134,6 @@ collectibles:
     item: maggoteers:charm_a2s_ally_str
   a2s_arrogance:
     item: maggoteers:charm_a2s_arrogance
-  a2s_enemy_regen:
-    item: maggoteers:charm_a2s_enemy_regen
   a2s_martyr:
     item: maggoteers:charm_a2s_martyr
   a2s_taken_splash:
@@ -142,8 +148,6 @@ collectibles:
     item: maggoteers:charm_a2w_atk45
   a2w_cursed_blade:
     item: maggoteers:charm_a2w_cursed_blade
-  a2w_cursed_blade_mag:
-    item: maggoteers:charm_a2w_cursed_blade_mag
   a2w_death_golem:
     item: maggoteers:charm_a2w_death_golem
   a2w_hit_wither:

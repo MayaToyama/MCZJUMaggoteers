@@ -46,6 +46,27 @@ public final class MobYamlParser {
         }
     }
 
+    /** MiniMessage display name; omitted/blank (after trim) → null. Non-string → hard-fail. */
+    public static String parseName(Map<?, ?> m, String context) {
+        if (!m.containsKey("name") || m.get("name") == null) return null;
+        Object raw = m.get("name");
+        if (!(raw instanceof String s)) {
+            throw new IllegalStateException("name must be string (" + context + ")");
+        }
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
+    }
+
+    /** Opt-in Maggoteers boss bar. Omitted → false. Non-boolean (incl. string "true") → hard-fail. */
+    public static boolean parseBossBar(Map<?, ?> m, String context) {
+        if (!m.containsKey("boss_bar") || m.get("boss_bar") == null) return false;
+        Object raw = m.get("boss_bar");
+        if (!(raw instanceof Boolean b)) {
+            throw new IllegalStateException("boss_bar must be boolean (" + context + ")");
+        }
+        return b;
+    }
+
     public static List<MobEquipment> parseEquipment(Object raw) {
         if (!(raw instanceof List<?> list) || list.isEmpty()) return List.of();
         List<MobEquipment> out = new ArrayList<>();
@@ -83,7 +104,10 @@ public final class MobYamlParser {
             List<MobEquipment> equipment = parseEquipment(m.get("equipment"));
             List<PassengerCfg> nested = parsePassengersDepth(m.get("passengers"), depth + 1, type.name());
             List<DeathSpawnCfg> onDeath = parseOnDeathDepth(m.get("on_death"), depth + 1, type.name());
-            out.add(new PassengerCfg(type, count, coeff, affixes, infernal, equipment, onDeath, nested));
+            String name = parseName(m, context + "/" + type.name());
+            boolean bossBar = parseBossBar(m, context + "/" + type.name());
+            out.add(new PassengerCfg(type, count, coeff, affixes, infernal, equipment, onDeath, nested,
+                    name, bossBar));
         }
         return out;
     }
@@ -104,7 +128,10 @@ public final class MobYamlParser {
             List<MobEquipment> equipment = parseEquipment(m.get("equipment"));
             List<PassengerCfg> passengers = parsePassengersDepth(m.get("passengers"), depth + 1, type.name());
             List<DeathSpawnCfg> nested = parseOnDeathDepth(m.get("on_death"), depth + 1, type.name());
-            out.add(new DeathSpawnCfg(type, count, coeff, affixes, infernal, equipment, passengers, nested));
+            String name = parseName(m, context + "/" + type.name());
+            boolean bossBar = parseBossBar(m, context + "/" + type.name());
+            out.add(new DeathSpawnCfg(type, count, coeff, affixes, infernal, equipment, passengers, nested,
+                    name, bossBar));
         }
         return out;
     }

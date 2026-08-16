@@ -134,7 +134,7 @@ maggoteers:blast_unit:
   customName: "<green>爆破单元"
   lore:
     - "<gray>右键治疗5格半径内玩家14点生命值，冷却20s"
-    - "<dark_gray>为什么北进重工的医疗干员要装配爆破施术单元啊?"
+    - "<dark_gray>北进重工支援所开发的施术单元，只有最强壮的使用者才能操纵。"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -761,7 +761,7 @@ maggoteers:heat_cutter_a1:
   customName: "<red>热熔切割器"
   lore:
     - "<gray>右键对4格半径内所有敌人造成4点伤害，冷却10s"
-    - "<dark_gray>北进重工用于切割矿石的链锯……剑？"
+    - "<dark_gray>北进重工用于切割矿石的链锯剑，性能优秀"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -795,7 +795,7 @@ maggoteers:herafinger:
   itemModel: DIAMOND_SWORD
   customName: "<gold>赫拉芬格"
   lore:
-    - "<gray>攻击会使敌人获得1s缓慢X，右键强化自身，下次攻击造成相当于攻击力200%的伤害，并使3格半径内的敌人获得3s缓慢X，冷却10s"
+    - "<gray>攻击会使敌人获得1s缓慢X，右键强化自身，下次攻击造成相当于攻击力300%的伤害，并使3格半径内的敌人获得3s缓慢X，冷却10s"
     - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
@@ -819,17 +819,51 @@ maggoteers:herafinger:
       key: "maggoteers:id"
       type: STRING
       value: "maggoteers:herafinger"
+  held_effects:
+    -
+      effect: BUFF_AREA
+      trigger: ON_DAMAGE_DEALT
+      params:
+        targets: hit_target
+        potions:
+          -
+            potion: SLOWNESS
+            amp: 9
+            duration_ticks: 20
   use_ability:
     cooldown_sec: 10
-    effect: ADD_ATTRIBUTE
-    params:
-      attr: ATTACK_DAMAGE
-      op: PERCENT
-      value: 2.0
-    expiry:
-      trigger: ON_DAMAGE_DEALT
-      charges: 1
-    stack: REPLACE
+    empower_fx:
+      preset: DOT_ABOVE
+      particle: SNOWFLAKE
+    effects:
+      -
+        effect: ADD_ATTRIBUTE
+        params:
+          attr: ATTACK_DAMAGE
+          op: PERCENT
+          value: 2.0
+        expiry:
+          trigger: ON_DAMAGE_DEALT
+          charges: 1
+        stack: REPLACE
+      -
+        effect: BUFF_AREA
+        params:
+          radius: 3.0
+          targets: enemies
+          enemy_scope: tracked
+          potions:
+            -
+              potion: SLOWNESS
+              amp: 9
+              duration_ticks: 60
+          mark_fx:
+            preset: DOT_ABOVE
+            particle: SNOWFLAKE
+        expiry:
+          trigger: ON_DAMAGE_DEALT
+          charges: 1
+        stack: REPLACE
   useCooldown:
     cooldownGroup: "maggoteers:herafinger"
     seconds: 10
@@ -838,7 +872,7 @@ maggoteers:holy_water:
   customName: "<aqua>圣水"
   lore:
     - "<gray>右键恢复10点生命值并净化自身，冷却时间15s"
-    - "<dark_gray>"
+    - "<dark_gray为什么我们不把它泼在僵尸身上呢？"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -869,7 +903,7 @@ maggoteers:jet_a1:
   customName: "<aqua>J.E.T"
   lore:
     - "<gray>右键获得2s速度III，冷却20s"
-    - "<dark_gray>"
+    - "<dark_gray>北进重工已解散的航空器部门制作的武器原型，载有增压喷射器"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -909,32 +943,32 @@ maggoteers:jet_a1:
   useCooldown:
     cooldownGroup: "maggoteers:jet_a1"
     seconds: 20
-maggoteers:knight_greatsword:
+maggoteers:door:
   material: SHIELD
   itemModel: IRON_SWORD
-  customName: "<blue>骑士巨剑"
+  customName: "<blue>铁栅门"
   lore:
-    - "<gray>8伤害，1.2攻击速度，+1触及距离，手持时获得抗性提升I，缓慢I"
-    - "<dark_gray>"
+    - "<gray>可以右键格挡敌人的攻击，手持时获得抗性提升I，缓慢I"
+    - "<dark_gray>Brains……ehrrr……"
   unbreakable: true
   maxStackSize: 1
   enchantments:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:knight_greatsword_attack_damage
+      id: maggoteers:door_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 8
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:knight_greatsword_attack_speed
+      id: maggoteers:door_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -3.2
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:knight_greatsword_entity_interaction_range
+      id: maggoteers:door_entity_interaction_range
       attribute: "minecraft:entity_interaction_range"
       amount: 1.0
       operation: ADD_NUMBER
@@ -943,7 +977,7 @@ maggoteers:knight_greatsword:
     -
       key: "maggoteers:id"
       type: STRING
-      value: "maggoteers:knight_greatsword"
+      value: "maggoteers:door"
   held_effects:
     -
       effect: ADD_POTION
@@ -962,8 +996,8 @@ maggoteers:knight_spirit:
   material: IRON_SWORD
   customName: "<blue>骑士精神"
   lore:
-    - "<gray>10伤害，右键治疗范围内玩家14点生命值，冷却20s"
-    - "<dark_gray>"
+    - "<gray>右键治疗范围内玩家14点生命值，冷却20s"
+    - "<dark_gray>骑士应该去治疗、强化，而不是搓元气弹otk秒人"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -996,8 +1030,8 @@ maggoteers:macro_wish:
   material: GOLDEN_SWORD
   customName: "<light_purple>宏愿"
   lore:
-    - "<gray>10伤害，右键对半径3格内的敌人造成一次8点伤害，并标记3s，冷却10s"
-    - "<dark_gray>"
+    - "<gray>右键对半径3格内的敌人造成一次8点伤害，并剥夺AI 3s，冷却10s"
+    - "<dark_gray>咕咕嘎嘎！"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1016,17 +1050,24 @@ maggoteers:macro_wish:
       slot: mainhand
   use_ability:
     cooldown_sec: 10
-    effect: DAMAGE_AREA
-    params:
-      damage: 8.0
-      radius: 3.0
-      targets: enemies
-      enemy_scope: tracked
-      mark_duration_sec: 3
-      mark_fx:
-        preset: DOT_ABOVE
-        particle: WAX_ON
-
+    fx:
+      preset: DOT_ABOVE
+      particle: WAX_ON
+    effects:
+      -
+        effect: DAMAGE_AREA
+        params:
+          damage: 8.0
+          radius: 3.0
+          targets: enemies
+          enemy_scope: tracked
+      -
+        effect: DISABLE_AI
+        params:
+          duration_ticks: 60
+          radius: 3.0
+          targets: enemies
+          enemy_scope: tracked
   useCooldown:
     cooldownGroup: "maggoteers:macro_wish"
     seconds: 10
@@ -1034,8 +1075,8 @@ maggoteers:mission_sure:
   material: HEART_OF_THE_SEA
   customName: "<aqua>使命必达"
   lore:
-    - "<gray>6伤害，2.0攻击速度，右键治疗范围内玩家20点生命值，并使其获得10s速度+15，冷却10s"
-    - "<dark_gray>"
+    - "<gray>右键治疗范围内玩家20点生命值，并使其获得10s速度+15，冷却10s"
+    - "<dark_gray>飞吧！"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1075,8 +1116,8 @@ maggoteers:molten_flame:
   itemModel: COPPER_SWORD
   customName: "<red>熔铸火焰"
   lore:
-    - "<gray>8伤害，火焰附加，右键对5格半径内所有敌人造成8点伤害，冷却8s"
-    - "<dark_gray>"
+    - "<gray>右键对5格半径内所有敌人造成8点伤害，冷却8s"
+    - "<dark_gray>莱万汀！"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1110,8 +1151,7 @@ maggoteers:mystery_blade:
   material: DIAMOND_SWORD
   customName: "<dark_gray>？？？？"
   lore:
-    - "<gray>12伤害，锋利VI，亡灵杀手V"
-    - "<dark_gray>"
+    - "<dark_gray>？？？？？？？？"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1135,8 +1175,8 @@ maggoteers:navigator:
   material: BOW
   customName: "<green>领航者"
   lore:
-    - "<gray>7伤害，右键释放伤害光束，基础伤害8，冷却2s"
-    - "<dark_gray>"
+    - "<gray>右键释放伤害光束，基础伤害8，冷却2s"
+    - "<dark_gray>以此致敬第一次踏上炒鸡大陆的领航者们"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1169,8 +1209,8 @@ maggoteers:old_wand:
   material: STICK
   customName: "<dark_purple>老魔杖"
   lore:
-    - "<gray>击杀敌人时扣除6点生命上限，右键释放绿色光束，造成1000点伤害，冷却时间60s"
-    - "<dark_gray>"
+    - "<gray>击杀敌人时受到40点伤害，右键释放绿色光束，造成1000点伤害，冷却时间60s"
+    - "<dark_gray>死亡三圣器之一，拥有过于强大的力量往往会遭到反噬"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1198,20 +1238,17 @@ maggoteers:old_wand:
     seconds: 60
   held_effects:
     -
-      effect: ADD_ATTRIBUTE
+      effect: HEAL
       trigger: ON_KILL
-      stack: ADD
       params:
-        attr: MAX_HEALTH
-        op: FLAT
-        value: -6.0
+        amount: -40.0
 
 maggoteers:past_fine:
   material: IRON_AXE
   customName: "<gold>昔日精品"
   lore:
-    - "<gray>12伤害，右键强化自身，直到下次攻击前获得120攻击力，冷却15s"
-    - "<dark_gray>"
+    - "<gray>右键强化自身，下次攻击造成相当于攻击力220%的伤害，冷却15s"
+    - "<dark_gray>北进重工已停产的的重型切割器，生产时期广受好评"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1248,7 +1285,7 @@ maggoteers:phantasm:
   customName: "<blue>幻景"
   lore:
     - "<gray>8伤害，右键对自己造成4点伤害，赋予自己净化效果，直到下次攻击前获得抗性提升V，冷却20s"
-    - "<dark_gray>"
+    - "<dark_gray>牌烧完了我打什么？"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1267,21 +1304,27 @@ maggoteers:phantasm:
       value: "maggoteers:phantasm"
   use_ability:
     cooldown_sec: 20
-    effect: ADD_POTION
     self_clear_potions: [WITHER, SLOWNESS, WEAKNESS, BLINDNESS, POISON, DARKNESS]
-    self_potions:
+    effects:
       -
-        potion: INSTANT_DAMAGE
-        amp: 0
-        duration_ticks: 1
-    params:
-      potion: RESISTANCE
-      amp: 4
-      duration_ticks: 0
-    expiry:
-      trigger: ON_DAMAGE_DEALT
-      charges: 1
-    stack: REPLACE
+        effect: HEAL
+        params:
+          amount: -4.0
+      -
+        effect: ADD_POTION
+        params:
+          potion: RESISTANCE
+          amp: 4
+          duration_ticks: 1200
+      -
+        effect: BUFF_AREA
+        params:
+          targets: self
+          clear_potions: [RESISTANCE]
+        expiry:
+          trigger: ON_DAMAGE_DEALT
+          charges: 1
+        stack: REPLACE
 
   useCooldown:
     cooldownGroup: "maggoteers:phantasm"
@@ -1290,8 +1333,8 @@ maggoteers:portable_fort:
   material: CROSSBOW
   customName: "<gray>便携要塞"
   lore:
-    - "<gray>右键释放伤害光束，基础伤害3，无冷却，手持时无法移动与跳跃"
-    - "<dark_gray>"
+    - "<gray>右键释放穿透箭矢，伤害3，冷却1s，手持时无法移动与跳跃"
+    - "<dark_gray>三连大杀杀！"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1331,8 +1374,8 @@ maggoteers:ritual_dagger:
   material: FLINT
   customName: "<dark_purple>仪式匕首"
   lore:
-    - "<gray>右键扣除自己5点生命值，获得5s速度+20，魔攻+100，冷却20s"
-    - "<dark_gray>"
+    - "<gray>右键扣除自己10点生命值，获得5s速度+20%，魔攻+100%，冷却20s"
+    - "<dark_gray>咔咔！"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1344,11 +1387,17 @@ maggoteers:ritual_dagger:
       value: "maggoteers:ritual_dagger"
   use_ability:
     cooldown_sec: 20
-    effect: ADD_POTION
-    params:
-      potion: SPEED
-      amp: 0
-      duration_ticks: 100
+    effects:
+      -
+        effect: HEAL
+        params:
+          amount: -10.0
+      -
+        effect: ADD_POTION
+        params:
+          potion: SPEED
+          amp: 0
+          duration_ticks: 100
   useCooldown:
     cooldownGroup: "maggoteers:ritual_dagger"
     seconds: 20
@@ -1365,8 +1414,8 @@ maggoteers:shattered_king:
   itemModel: COPPER_AXE
   customName: "<gold>破碎君王"
   lore:
-    - "<gray>15伤害，右键强化自身，直到下次攻击前获得150攻击力，冷却12s"
-    - "<dark_gray>"
+    - "<gray>右键强化自身，下次攻击造成相当于攻击力260%的伤害，冷却12s"
+    - "<dark_gray>似乎是依循着什么古老传说打造的外形，仿佛能捕捉梦境中的呻吟"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1389,7 +1438,7 @@ maggoteers:shattered_king:
     params:
       attr: ATTACK_DAMAGE
       op: PERCENT
-      value: 1.5
+      value: 1.6
     expiry:
       trigger: ON_DAMAGE_DEALT
       charges: 1
@@ -1403,13 +1452,12 @@ maggoteers:silver_sword:
   itemModel: IRON_SWORD
   customName: "<white>猎魔人的银剑"
   lore:
-    - "<gray>8伤害，亡灵杀手VI"
-    - "<dark_gray>"
+    - "<dark_gray>摔落保护-X"
   unbreakable: true
   maxStackSize: 1
   enchantments:
     - minecraft:unbreaking: 10
-    - minecraft:smite: 6
+    - minecraft:smite: 4
   attributeModifiers:
     -
       id: maggoteers:silver_sword_attack_damage
@@ -1428,8 +1476,8 @@ maggoteers:spike_wall:
   itemModel: IRON_SWORD
   customName: "<gray>尖刺壁垒"
   lore:
-    - "<gray>10伤害，0.8攻击速度，受到攻击时或右键对2格半径内敌人造成2点伤害，1秒冷却"
-    - "<dark_gray>"
+    - "<gray>受到攻击时/右键主动释放：对2格半径内敌人造成2点伤害，2秒冷却"
+    - "<dark_gray>敌人系自杀"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1453,7 +1501,7 @@ maggoteers:spike_wall:
       type: STRING
       value: "maggoteers:spike_wall"
   use_ability:
-    cooldown_sec: 1
+    cooldown_sec: 2
     effect: DAMAGE_AREA
     params:
       damage: 2.0
@@ -1504,8 +1552,8 @@ maggoteers:supreme_art:
   material: IRON_SWORD
   customName: "<light_purple>至高之术"
   lore:
-    - "<gray>4伤害，2.0攻击速度，生物触及距离+0.5，击杀敌人时获得5s急迫II，力量II"
-    - "<dark_gray>"
+    - "<gray>击杀敌人时获得5s急迫II，力量II"
+    - "<dark_gray>见识一下伊比利亚的哇嘎哇嘎！"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1554,8 +1602,8 @@ maggoteers:thunder_rod:
   material: LIGHTNING_ROD
   customName: "<yellow>雷霆之杖"
   lore:
-    - "<gray>右键射出伤害射线，造成3点伤害且使目标眩晕4s，冷却时间8s"
-    - "<dark_gray>"
+    - "<gray>右键召唤一道雷电：对5格内敌人造成20点伤害并眩晕4s，冷却20s"
+    - "<dark_gray>建议与雷石东、导管共同使用"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1566,21 +1614,49 @@ maggoteers:thunder_rod:
       type: STRING
       value: "maggoteers:thunder_rod"
   use_ability:
-    cooldown_sec: 8
-    effect: DISABLE_AI
-    params:
-      targets: hit_target
-      duration_ticks: 80
-
+    cooldown_sec: 20
+    self_potions:
+      -
+        potion: RESISTANCE
+        amp: 4
+        duration_ticks: 20
+      -
+        potion: FIRE_RESISTANCE
+        amp: 0
+        duration_ticks: 60
+    fx:
+      preset: SMOOTH_EXPAND_RING
+      particle: ELECTRIC_SPARK
+      radius: 5.0
+      expand_steps: 28
+      density: 64
+      sound: ENTITY_LIGHTNING_BOLT_THUNDER
+      sound_volume: 0.55
+      sound_pitch: 1.35
+    effects:
+      -
+        effect: DAMAGE_AREA
+        params:
+          damage: 20.0
+          radius: 5.0
+          targets: enemies
+          enemy_scope: tracked
+      -
+        effect: DISABLE_AI
+        params:
+          duration_ticks: 80
+          radius: 5.0
+          targets: enemies
+          enemy_scope: tracked
   useCooldown:
     cooldownGroup: "maggoteers:thunder_rod"
-    seconds: 8
+    seconds: 20
 maggoteers:tnt_orb:
   material: TNT
-  customName: "<dark_red>TNT 宝珠"
+  customName: "<dark_red>死魂灵"
   lore:
-    - "<gray>TNT 宝珠"
-    - "<dark_gray>"
+    - "<gray>死魂灵"
+    - "<dark_gray>卡兹戴尔议长最喜欢的一种弹药"
   maxStackSize: 4
   enchantments:
     - minecraft:unbreaking: 10
@@ -1606,8 +1682,8 @@ maggoteers:unlit_glory:
   material: GOLDEN_SWORD
   customName: "<white>未照耀的荣光"
   lore:
-    - "<gray>0伤害，锋利100，攻击速度0.1，手持时获得抗性提升I，受击时对伤害来源造成2点伤害"
-    - "<dark_gray>"
+    - "<gray>手持时获得抗性提升I，受击时对伤害来源造成2点伤害"
+    - "<dark_gray>放心，不会刺痛你的眼睛"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1652,8 +1728,8 @@ maggoteers:valor:
   itemModel: IRON_SPEAR
   customName: "<yellow>骁勇"
   lore:
-    - "<gray>12伤害，1.1攻击速度，+1触及范围，右键获得2s速度III，冷却15s"
-    - "<dark_gray>"
+    - "<gray>右键获得2s速度III，冷却15s"
+    - "<dark_gray>复古的巨箭型设计以及不俗的实战实用性，使其至今仍有市无价"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1697,8 +1773,8 @@ maggoteers:wedge:
   material: BOW
   customName: "<blue>楔子"
   lore:
-    - "<gray>6伤害，右键释放伤害光束，基础伤害7，冷却3s"
-    - "<dark_gray>"
+    - "<gray>右键发射穿透箭矢，基础伤害7，冷却3s"
+    - "<dark_gray>完美体现北进重工的风格的一把铳械：强大的破坏力、绝对的可靠性，以及令人头疼的操作性"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1731,8 +1807,8 @@ maggoteers:condense:
   material: BLUE_ICE
   customName: "<blue>凝结核"
   lore:
-    - "<gray>10伤害，右键对半径6格内的敌人造成一次6点伤害，并使其获得10s缓慢III，冷却20s"
-    - "<dark_gray>"
+    - "<gray>右键对半径6格内的敌人造成一次6点伤害，并使其获得10s缓慢III，冷却20s"
+    - "<dark_gray>易碎物品，请勿用于制作冰美式"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1770,7 +1846,7 @@ maggoteers:corrupt_orb:
   material: ENDER_EYE
   customName: "<dark_purple>腐化宝珠"
   lore:
-    - "<gray>右键扣除自己10点生命值，发射一道50伤害的伤害光束，冷却40s"
+    - "<gray>右键扣除自己20点生命值，发射一道50伤害的伤害光束，冷却40s"
     - "<dark_gray>"
   unbreakable: true
   maxStackSize: 1
@@ -1783,18 +1859,18 @@ maggoteers:corrupt_orb:
       value: "maggoteers:corrupt_orb"
   use_ability:
     cooldown_sec: 40
-    effect: DAMAGE_BEAM
-    self_potions:
+    effects:
       -
-        potion: INSTANT_DAMAGE
-        amp: 2
-        duration_ticks: 1
-    params:
-      damage: 50.0
-      ray_length: 48.0
-      targets: enemies
-      enemy_scope: tracked
-
+        effect: HEAL
+        params:
+          amount: -20.0
+      -
+        effect: DAMAGE_BEAM
+        params:
+          damage: 50.0
+          ray_length: 48.0
+          targets: enemies
+          enemy_scope: tracked
   useCooldown:
     cooldownGroup: "maggoteers:corrupt_orb"
     seconds: 40
@@ -1802,8 +1878,8 @@ maggoteers:shimingzi:
   material: IRON_SWORD
   customName: "<gold>Shimingzi"
   lore:
-    - "<gray>19伤害，0.7攻击速度，横扫攻击X，击杀时为半径5格内友军恢复6点生命值"
-    - "<dark_gray>"
+    - "<gray>击杀时为半径5格内友军恢复6点生命值"
+    - "<dark_gray>Shifengweimiaoshu"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1837,54 +1913,12 @@ maggoteers:shimingzi:
         targets: allies
         include_self: true
 
-maggoteers:miaooneal:
-  material: DIAMOND_AXE
-  itemModel: MACE
-  customName: "<yellow>妙奥尼尔"
-  lore:
-    - "<gray>16伤害，1.0攻击速度，右键在指针指向的敌人处召唤雷电"
-    - "<dark_gray>"
-  unbreakable: true
-  maxStackSize: 1
-  enchantments:
-    - minecraft:unbreaking: 10
-  attributeModifiers:
-    -
-      id: maggoteers:miaooneal_attack_damage
-      attribute: "minecraft:attack_damage"
-      amount: 16
-      operation: ADD_NUMBER
-      slot: mainhand
-    -
-      id: maggoteers:miaooneal_attack_speed
-      attribute: "minecraft:attack_speed"
-      amount: -3.0
-      operation: ADD_NUMBER
-      slot: mainhand
-  pdc:
-    -
-      key: "maggoteers:id"
-      type: STRING
-      value: "maggoteers:miaooneal"
-  use_ability:
-    cooldown_sec: 8
-    effect: DAMAGE_BEAM
-    params:
-      damage: 8.0
-      ray_length: 32.0
-      targets: enemies
-      enemy_scope: tracked
-
-  useCooldown:
-    cooldownGroup: "maggoteers:miaooneal"
-    seconds: 8
 maggoteers:solar_spear:
-  material: IRON_SWORD
+  material: IRON_AXE
   itemModel: GOLDEN_SPEAR
   customName: "<yellow>太阳王的长矛"
   lore:
-    - "<gray>20伤害，1.1攻击速度，+2触及距离"
-    - "<dark_gray>"
+    - "<dark_gray>已经过升级，不再需要配套的盔甲也能打出大量伤害"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1918,8 +1952,8 @@ maggoteers:red_blessing:
   material: COPPER_SWORD
   customName: "<red>镀红祝福"
   lore:
-    - "<gray>12伤害，1.1攻击速度，+1触及范围，攻击使敌人获得5s凋零II（红色粒子），击杀敌人时对目标周围的敌人造成一次5点伤害，右键获得3s速度III，冷却12s"
-    - "<dark_gray>"
+    - "<gray>攻击使敌人获得5s凋零II（红色粒子），击杀敌人时对目标周围的敌人造成一次5点伤害，右键获得3s速度III，冷却12s"
+    - "<dark_gray>年轻的血魔刚拿到这柄长枪时，它还不是通体赤红的"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1986,8 +2020,8 @@ maggoteers:paragon:
   itemModel: IRON_SWORD
   customName: "<yellow>典范"
   lore:
-    - "<gray>12伤害，1.2攻击速度，命中时为半径5格内友军恢复1点生命值"
-    - "<dark_gray>"
+    - "<gray>命中时为半径5格内友军恢复1点生命值"
+    - "<dark_gray>据传这款设计源于寂语修会的发掘产物，内含绝密技术，分金裂石，无坚不摧。"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -2026,7 +2060,6 @@ maggoteers:mob_iron_spear:
   itemModel: IRON_SPEAR
   customName: "<gray>铁矛"
   lore:
-    - "<gray>12伤害，1.1攻击速度，+1触及范围，右键获得2s速度III，冷却15s"
     - "<dark_gray>"
   unbreakable: true
   enchantments:
@@ -2043,7 +2076,6 @@ maggoteers:mob_gold_spear:
   itemModel: GOLDEN_SPEAR
   customName: "<gold>金矛"
   lore:
-    - "<gray>11伤害，1.1攻击速度，+0.5触及范围，右键获得2s速度III，冷却20s"
     - "<dark_gray>"
   unbreakable: true
   enchantments:

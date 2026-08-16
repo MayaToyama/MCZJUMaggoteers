@@ -5,7 +5,6 @@ import io.mczju.maggoteers.config.InfernalCfg;
 import io.mczju.maggoteers.integration.InfernalMobsBridge;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.wave.*;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
@@ -112,11 +111,12 @@ public final class MobFactory {
             }
             le.setRemoveWhenFarAway(false);
             applyMobStats(le, ds.hpMult(), ds.dmgMult(), ds.speedMult(), ds.scaleMult(), ds.followRangeMult());
-            applyName(le, ds.affixes());
             applyAffixPotions(le, ds.affixes(), ds.potions());
             applyAffixVisuals(le, ds.affixes());
             InfernalMobsBridge.mechanize(le, ds.infernal());
             applyEquipment(le, ds.equipment());
+            MobDisplayNames.lock(le, ds.name());
+            scheduleNameReassert(le);
             MountPassengerLimits.prepareMount(le);
             if (le instanceof Mob m) m.setAware(true);
             return le;
@@ -150,11 +150,12 @@ public final class MobFactory {
             le.setRemoveWhenFarAway(false);
             applyMobStats(le, step.hpMult(), step.dmgMult(), step.speedMult(),
                     step.scaleMult(), step.followRangeMult());
-            applyName(le, step.affixes());
             applyAffixPotions(le, step.affixes(), step.potions());
             applyAffixVisuals(le, step.affixes());
             InfernalMobsBridge.mechanize(le, step.infernal());
             applyEquipment(le, step.equipment());
+            MobDisplayNames.lock(le, step.name());
+            scheduleNameReassert(le);
             MountPassengerLimits.prepareMount(le);
             return le;
         } catch (Exception e) {
@@ -174,11 +175,12 @@ public final class MobFactory {
             le.setRemoveWhenFarAway(false);
             applyMobStats(le, ps.hpMult(), ps.dmgMult(), ps.speedMult(),
                     ps.scaleMult(), ps.followRangeMult());
-            applyName(le, ps.affixes());
             applyAffixPotions(le, ps.affixes(), ps.potions());
             applyAffixVisuals(le, ps.affixes());
             InfernalMobsBridge.mechanize(le, ps.infernal());
             applyEquipment(le, ps.equipment());
+            MobDisplayNames.lock(le, ps.name());
+            scheduleNameReassert(le);
             MountPassengerLimits.prepareMount(le);
             if (le instanceof Mob m) m.setAware(true);
             return le;
@@ -197,6 +199,17 @@ public final class MobFactory {
                 type, 1, hpMult, dmgMult, spdMult, 1.0, 1.0, 1.0,
                 0, affixIds, List.of(), InfernalCfg.NONE, List.of(), List.of(), List.of());
         return spawnMount(loc, fake);
+    }
+
+    private static void scheduleNameReassert(LivingEntity le) {
+        var plugin = MaggoteersPlugin.getInstance();
+        if (plugin == null) return;
+        Runnable r = () -> {
+            if (le.isValid()) MobDisplayNames.reassertIfNeeded(le);
+        };
+        Bukkit.getScheduler().runTask(plugin, r);
+        Bukkit.getScheduler().runTaskLater(plugin, r, 1L);
+        Bukkit.getScheduler().runTaskLater(plugin, r, 2L);
     }
 
     private static void applyMobStats(LivingEntity le, double hpMult, double dmgMult, double speedMult,
@@ -325,14 +338,7 @@ public final class MobFactory {
         }
     }
 
-    private static void applyName(LivingEntity le, List<String> affixes) {
-        if (affixes != null && !affixes.isEmpty()) {
-            le.customName(Component.text(String.join(" ", affixes)));
-            le.setCustomNameVisible(true);
-        }
-    }
-
-    static void applyAffixVisuals(LivingEntity le, List<String> affixIds) {
+    private static void applyAffixVisuals(LivingEntity le, List<String> affixIds) {
         if (affixIds == null || !affixIds.contains("invisible")) return;
         // 实体隐身旗标，避免 INVISIBILITY 药水在苦力怕爆炸时形成超长滞留云
         le.setInvisible(true);

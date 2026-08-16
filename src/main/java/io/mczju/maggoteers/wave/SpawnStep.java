@@ -16,7 +16,8 @@ public record SpawnStep(Vec3 point, EntityType type, int count,
                         int delayTicks, List<String> affixes, List<PotionSpec> potions,
                         InfernalCfg infernal,
                         List<MobEquipment> equipment, List<DeathSpawn> onDeath,
-                        List<PassengerSpawn> passengers, int repeat) {
+                        List<PassengerSpawn> passengers, int repeat,
+                        String name, boolean bossBar) {
     public SpawnStep(Vec3 point, EntityType type, int count,
                      double hpMult, double dmgMult, double speedMult, double dropMult,
                      double scaleMult, double followRangeMult,
@@ -25,7 +26,18 @@ public record SpawnStep(Vec3 point, EntityType type, int count,
                      List<MobEquipment> equipment, List<DeathSpawn> onDeath,
                      List<PassengerSpawn> passengers) {
         this(point, type, count, hpMult, dmgMult, speedMult, dropMult, scaleMult, followRangeMult,
-                delayTicks, affixes, potions, infernal, equipment, onDeath, passengers, 1);
+                delayTicks, affixes, potions, infernal, equipment, onDeath, passengers, 1, null, false);
+    }
+
+    public SpawnStep(Vec3 point, EntityType type, int count,
+                     double hpMult, double dmgMult, double speedMult, double dropMult,
+                     double scaleMult, double followRangeMult,
+                     int delayTicks, List<String> affixes, List<PotionSpec> potions,
+                     InfernalCfg infernal,
+                     List<MobEquipment> equipment, List<DeathSpawn> onDeath,
+                     List<PassengerSpawn> passengers, int repeat) {
+        this(point, type, count, hpMult, dmgMult, speedMult, dropMult, scaleMult, followRangeMult,
+                delayTicks, affixes, potions, infernal, equipment, onDeath, passengers, repeat, null, false);
     }
 
     public SpawnStep(Vec3 point, EntityType type, int count,
@@ -34,7 +46,7 @@ public record SpawnStep(Vec3 point, EntityType type, int count,
                      List<PassengerSpawn> passengers) {
         this(point, type, count, hpMult, dmgMult, speedMult, dropMult, 1.0, 1.0,
                 delayTicks, affixes, potions, InfernalCfg.NONE,
-                List.of(), List.of(), passengers, 1);
+                List.of(), List.of(), passengers, 1, null, false);
     }
 
     public SpawnStep(Vec3 point, EntityType type, int count,
@@ -51,5 +63,9 @@ public record SpawnStep(Vec3 point, EntityType type, int count,
         onDeath = onDeath == null ? List.of() : List.copyOf(onDeath);
         passengers = passengers == null ? List.of() : List.copyOf(passengers);
         repeat = Math.max(1, repeat);
+        if (name != null) {
+            name = name.trim();
+            if (name.isEmpty()) name = null;
+        }
     }
 }

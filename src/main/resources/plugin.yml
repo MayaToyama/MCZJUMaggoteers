@@ -11,6 +11,8 @@ commands:
     permission: maggoteers.play
 permissions:
   maggoteers.play:
+    description: 加入对局与打开商店
     default: true
   maggoteers.admin:
+    description: 使用 /maggoteers debug（正式服）；内部测试可用 config debug.enabled
     default: op

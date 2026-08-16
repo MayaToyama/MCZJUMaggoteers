@@ -1,5 +1,6 @@
 package io.mczju.maggoteers.effect;
 
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
 
@@ -69,5 +70,45 @@ class ItemAbilityParseTest {
         assertEquals(1, steps.size());
         assertEquals(Effect.DISABLE_AI, steps.get(0).effect());
         assertEquals(Trigger.ON_DAMAGE_DEALT, steps.get(0).expiryTrigger());
+    }
+
+    /** Regression: getMapList nests params/expiry as Map, not ConfigurationSection. */
+    @Test
+    void effectsListNestedMapsKeepParamsAndExpiry() throws InvalidConfigurationException {
+        YamlConfiguration y = new YamlConfiguration();
+        y.loadFromString("""
+                cooldown_sec: 10
+                effects:
+                  -
+                    effect: DISABLE_AI
+                    params:
+                      duration_ticks: 60
+                      radius: 3.0
+                      targets: enemies
+                  -
+                    effect: ADD_ATTRIBUTE
+                    params:
+                      attr: ATTACK_DAMAGE
+                      op: PERCENT
+                      value: 2.0
+                    expiry:
+                      trigger: ON_DAMAGE_DEALT
+                      charges: 1
+                    stack: REPLACE
+                  -
+                    effect: ADD_POTION
+                    params:
+                      potion: SPEED
+                      amp: 0
+                      duration_ticks: 100
+                """);
+        List<AbilityStep> steps = ItemAbilityRegistry.parseStepsForTest("maggoteers:nested_maps", y);
+        assertEquals(3, steps.size(), "all steps should parse; nested Map params must not be dropped");
+        assertEquals(Effect.DISABLE_AI, steps.get(0).effect());
+        assertEquals(60, steps.get(0).params().get(EffectKeys.DURATION_TICKS));
+        assertEquals(Effect.ADD_ATTRIBUTE, steps.get(1).effect());
+        assertEquals(Trigger.ON_DAMAGE_DEALT, steps.get(1).expiryTrigger());
+        assertEquals(Effect.ADD_POTION, steps.get(2).effect());
+        assertEquals(100, steps.get(2).params().get(EffectKeys.DURATION_TICKS));
     }
 }

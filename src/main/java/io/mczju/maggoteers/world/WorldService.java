@@ -106,15 +106,11 @@ public final class WorldService {
                 LOG.warning("清理孤立世界(已加载) " + w.getName());
             }
         }
-        // 2) 服务器根目录下未加载的残留文件夹
-        File root = Bukkit.getWorldContainer(); // 通常是服务端根目录
-        File[] kids = root.listFiles();
-        if (kids == null) return;
-        for (File f : kids) {
-            if (f.isDirectory() && f.getName().startsWith("maggoteers_")) {
-                deleteDir(f);
-                LOG.warning("清理孤立世界(目录) " + f.getName());
-            }
+        // 2) 磁盘残留：含 Paper 26.2 嵌套路径 world/dimensions/minecraft/maggoteers_*
+        File root = Bukkit.getWorldContainer();
+        for (File f : OrphanWorldDirs.findUnder(root)) {
+            deleteDir(f);
+            LOG.warning("清理孤立世界(目录) " + f.getAbsolutePath());
         }
     }
 

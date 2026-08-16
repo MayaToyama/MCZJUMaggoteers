@@ -12,7 +12,8 @@ public record PassengerSpawn(EntityType type,
                              List<String> affixes, List<PotionSpec> potions,
                              InfernalCfg infernal,
                              List<MobEquipment> equipment, List<DeathSpawn> onDeath,
-                             List<PassengerSpawn> passengers) {
+                             List<PassengerSpawn> passengers,
+                             String name, boolean bossBar) {
     public PassengerSpawn {
         affixes = affixes == null ? List.of() : List.copyOf(affixes);
         potions = potions == null ? List.of() : List.copyOf(potions);
@@ -20,12 +21,27 @@ public record PassengerSpawn(EntityType type,
         equipment = equipment == null ? List.of() : List.copyOf(equipment);
         onDeath = onDeath == null ? List.of() : List.copyOf(onDeath);
         passengers = passengers == null ? List.of() : List.copyOf(passengers);
+        if (name != null) {
+            name = name.trim();
+            if (name.isEmpty()) name = null;
+        }
     }
 
     /** 无嵌套乘客（兼容旧构造）。 */
     public PassengerSpawn(EntityType type, double hpMult, double dmgMult, double speedMult, double dropMult,
                           List<String> affixes, List<PotionSpec> potions) {
         this(type, hpMult, dmgMult, speedMult, dropMult, 1.0, 1.0,
-                affixes, potions, InfernalCfg.NONE, List.of(), List.of(), List.of());
+                affixes, potions, InfernalCfg.NONE, List.of(), List.of(), List.of(), null, false);
+    }
+
+    public PassengerSpawn(EntityType type,
+                          double hpMult, double dmgMult, double speedMult, double dropMult,
+                          double scaleMult, double followRangeMult,
+                          List<String> affixes, List<PotionSpec> potions,
+                          InfernalCfg infernal,
+                          List<MobEquipment> equipment, List<DeathSpawn> onDeath,
+                          List<PassengerSpawn> passengers) {
+        this(type, hpMult, dmgMult, speedMult, dropMult, scaleMult, followRangeMult,
+                affixes, potions, infernal, equipment, onDeath, passengers, null, false);
     }
 }

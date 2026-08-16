@@ -164,8 +164,15 @@ public final class ItemService {
     }
 
     public static Optional<ItemStack> createItem(String id, int amount) {
+        if (id == null || id.isBlank()) return Optional.empty();
         ItemStack base = CACHE.get(id);
         if (base == null && api != null) base = api.createItem(id).orElse(null);
+        if (base == null && !id.contains(":")) {
+            String prefixed = "maggoteers:" + id;
+            base = CACHE.get(prefixed);
+            if (base == null && api != null) base = api.createItem(prefixed).orElse(null);
+            if (base != null) id = prefixed;
+        }
         if (base == null) return Optional.empty();
         ItemStack stack = base.clone();
         stack.setAmount(Math.max(1, amount));
@@ -177,14 +184,32 @@ public final class ItemService {
         return Optional.of(stack);
     }
 
-    public static void give(Player player, String id, int amount) {
-        createItem(id, amount).ifPresentOrElse(
-                stack -> player.getInventory().addItem(stack),
-                () -> LOG.warning("物品不存在，无法发放：" + id));
+    /**
+     * 发放物品到背包；满则掉脚下。未知 id 返回 false（不抛异常）。
+     * 无冒号前缀时会尝试 {@code maggoteers:<id>}。
+     */
+    public static boolean give(Player player, String id, int amount) {
+        Optional<ItemStack> created = createItem(id, amount);
+        if (created.isEmpty()) {
+            LOG.warning("物品不存在，无法发放：" + id);
+            return false;
+        }
+        deliver(player, created.get());
+        return true;
     }
 
-    public static void giveKind(Player player, ItemKind kind, int amount) {
-        give(player, itemId(kind), amount);
+    /** 背包满则掉落脚下（与 CLAUDE G2 / Collectible 一致）。 */
+    public static void deliver(Player player, ItemStack stack) {
+        if (player == null || stack == null || stack.getType().isAir()) return;
+        var leftover = player.getInventory().addItem(stack);
+        for (ItemStack left : leftover.values()) {
+            if (left == null || left.getType().isAir()) continue;
+            player.getWorld().dropItemNaturally(player.getLocation(), left);
+        }
+    }
+
+    public static boolean giveKind(Player player, ItemKind kind, int amount) {
+        return give(player, itemId(kind), amount);
     }
 
     public static void giveInitialEquipment(Player player) {
@@ -196,7 +221,7 @@ public final class ItemService {
                             ItemKind.RUN_GEAR.pdcValue());
                     stack.setItemMeta(meta);
                 }
-                player.getInventory().addItem(stack);
+                deliver(player, stack);
             });
         }
     }

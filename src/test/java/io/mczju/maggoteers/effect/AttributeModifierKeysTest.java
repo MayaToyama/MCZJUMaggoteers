@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AttributeModifierKeysTest {
 
@@ -19,5 +20,12 @@ class AttributeModifierKeysTest {
     void sanitizeHeldPrefix() {
         assertEquals("held_maggoteers_wedge_0",
                 AttributeModifierKeys.sanitizeKeyPath("held:maggoteers:wedge:0"));
+    }
+
+    @Test
+    void managedEffectPathExcludesItemAndAuraModifiers() {
+        assertTrue(AttributeModifierKeys.isManagedEffectPath("effect/ability_maggoteers_herafinger_0_1_23"));
+        assertFalse(AttributeModifierKeys.isManagedEffectPath("herafinger_attack_damage"));
+        assertFalse(AttributeModifierKeys.isManagedEffectPath("aura/source/effect/attribute"));
     }
 }

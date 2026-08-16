@@ -9,20 +9,29 @@ import java.util.List;
 public record StepCfg(String point, EntityType type, int count, CoeffCfg coeff,
                       int delaySec, List<String> affixes, InfernalCfg infernal,
                       List<MobEquipment> equipment, List<DeathSpawnCfg> onDeath,
-                      List<PassengerCfg> passengers, int repeat) {
+                      List<PassengerCfg> passengers, int repeat,
+                      String name, boolean bossBar) {
     public StepCfg(String point, EntityType type, int count, CoeffCfg coeff,
                    int delaySec, List<String> affixes) {
         this(point, type, count, coeff, delaySec, affixes, InfernalCfg.NONE,
-                List.of(), List.of(), List.of(), 1);
+                List.of(), List.of(), List.of(), 1, null, false);
     }
 
-    /** 兼容旧调用：无 step 级 repeat 时默认为 1。 */
+    /** 兼容旧调用：无 step 级 repeat / name / boss_bar 时默认。 */
     public StepCfg(String point, EntityType type, int count, CoeffCfg coeff,
                    int delaySec, List<String> affixes, InfernalCfg infernal,
                    List<MobEquipment> equipment, List<DeathSpawnCfg> onDeath,
                    List<PassengerCfg> passengers) {
         this(point, type, count, coeff, delaySec, affixes, infernal,
-                equipment, onDeath, passengers, 1);
+                equipment, onDeath, passengers, 1, null, false);
+    }
+
+    public StepCfg(String point, EntityType type, int count, CoeffCfg coeff,
+                   int delaySec, List<String> affixes, InfernalCfg infernal,
+                   List<MobEquipment> equipment, List<DeathSpawnCfg> onDeath,
+                   List<PassengerCfg> passengers, int repeat) {
+        this(point, type, count, coeff, delaySec, affixes, infernal,
+                equipment, onDeath, passengers, repeat, null, false);
     }
 
     public StepCfg {
@@ -32,5 +41,9 @@ public record StepCfg(String point, EntityType type, int count, CoeffCfg coeff,
         onDeath = onDeath == null ? List.of() : List.copyOf(onDeath);
         passengers = passengers == null ? List.of() : List.copyOf(passengers);
         repeat = Math.max(1, repeat);
+        if (name != null) {
+            name = name.trim();
+            if (name.isEmpty()) name = null;
+        }
     }
 }

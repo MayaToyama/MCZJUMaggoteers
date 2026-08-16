@@ -2,17 +2,17 @@ package io.mczju.maggoteers.wave;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import io.mczju.maggoteers.integration.InfernalMobsBridge;
+import io.mczju.maggoteers.mob.MobDisplayNames;
 import io.mczju.maggoteers.mob.MobFactory;
 import io.mczju.maggoteers.mob.MountedSquadAiService;
 import io.mczju.maggoteers.mob.MountedSquadRegistry;
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
 import org.bukkit.entity.LivingEntity;
 
 import java.util.HashMap;
@@ -70,7 +70,7 @@ public final class WaveEngine {
 
     /**
      * 生成一个 SpawnStep 的全部 count 只怪于其绝对点，登记进追踪。
-     * Boss 类（单只、高血）自动挂 BossBar 给全员。
+     * 仅当配置 {@code boss_bar: true} 时挂 Adventure BossBar。
      */
     public static void spawnStep(AbstractGame game, WaveRuntime rt, SpawnStep step, World world) {
         Location base = new Location(world, step.point().x(), step.point().y(), step.point().z());
@@ -84,16 +84,29 @@ public final class WaveEngine {
         if (step != null) rt.mobSteps.put(uuid, step);
         rt.mobProfiles.put(uuid, profile);
         BY_ENTITY.put(uuid, rt);
-        if (step != null && step.count() == 1 && step.passengers().isEmpty() && step.hpMult() >= 6.0) {
+        boolean wantBar = step != null ? step.bossBar() : (profile != null && profile.bossBar());
+        if (wantBar) {
             attachBossBar(game, rt, le);
         }
     }
 
     private static void attachBossBar(AbstractGame game, WaveRuntime rt, LivingEntity le) {
-        BossBar bar = Bukkit.createBossBar(le.getType().name(), BarColor.RED, BarStyle.SOLID);
-        bar.setProgress(1.0);
-        for (var pe : game.getPlayers()) bar.addPlayer(pe.player());
+        Component title = MobDisplayNames.resolveTitle(
+                MobDisplayNames.lockedDisplayName(le).orElse(null), le.getType());
+        BossBar bar = BossBar.bossBar(
+                title, 1f, BossBar.Color.RED, BossBar.Overlay.PROGRESS);
+        for (var pe : game.getPlayers()) pe.player().showBossBar(bar);
         rt.bossBars.put(le.getUniqueId(), bar);
+    }
+
+    private static void hideBossBar(AbstractGame game, BossBar bar) {
+        if (bar == null) return;
+        for (var pe : game.getPlayers()) pe.player().hideBossBar(bar);
+    }
+
+    private static void clearBossBars(WaveRuntime rt) {
+        for (BossBar bar : rt.bossBars.values()) hideBossBar(rt.game, bar);
+        rt.bossBars.clear();
     }
 
     /** 清追踪表但不 remove 实体（调试跳波前由调用方清怪）。 */
@@ -107,8 +120,7 @@ public final class WaveEngine {
         rt.livingMobs.clear();
         rt.mobSteps.clear();
         rt.mobProfiles.clear();
-        rt.bossBars.values().forEach(BossBar::removeAll);
-        rt.bossBars.clear();
+        clearBossBars(rt);
     }
 
     /** 移除当前波次追踪的所有实体。 */
@@ -138,8 +150,7 @@ public final class WaveEngine {
         rt.livingMobs.clear();
         rt.mobSteps.clear();
         rt.mobProfiles.clear();
-        rt.bossBars.values().forEach(BossBar::removeAll);
-        rt.bossBars.clear();
+        clearBossBars(rt);
     }
 
     /** 死亡处理：移除追踪；死亡召唤计入本波 livingMobs。返回 true 表示是我们的怪。 */
@@ -157,7 +168,7 @@ public final class WaveEngine {
         BY_ENTITY.remove(uuid);
         MountedSquadRegistry.removeByRoot(uuid);
         BossBar bar = rt.bossBars.remove(uuid);
-        if (bar != null) bar.removeAll();
+        hideBossBar(rt.game, bar);
         if (loc != null && profile != null && !profile.onDeath().isEmpty()) {
             spawnOnDeath(rt, loc, profile.onDeath());
         }
@@ -194,11 +205,13 @@ public final class WaveEngine {
                 handleMobDeath(uuid, raw != null ? raw.getLocation() : null);
                 continue;
             }
+            if (!(raw instanceof LivingEntity le)) continue;
+            MobDisplayNames.reassertIfNeeded(le);
             BossBar bar = rt.bossBars.get(uuid);
-            if (bar != null && raw instanceof LivingEntity le) {
+            if (bar != null) {
                 AttributeInstance hp = le.getAttribute(Attribute.MAX_HEALTH);
                 double max = hp != null ? hp.getValue() : 20.0;
-                bar.setProgress(Math.max(0.0, Math.min(1.0, le.getHealth() / max)));
+                bar.progress((float) Math.max(0.0, Math.min(1.0, le.getHealth() / max)));
             }
         }
     }

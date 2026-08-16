@@ -1,6 +1,10 @@
 package io.mczju.maggoteers.effect;
 
+import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Proxy;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,5 +56,45 @@ class EffectServiceAbilityTest {
         boolean self = false;
         assertTrue(step0 || step1 || self);
         assertFalse(false || false || false);
+    }
+
+    @Test
+    void negativeHealIsExactHealthCostNotDamageEvent() {
+        AtomicReference<Double> health = new AtomicReference<>(30.0);
+        AtomicReference<Double> damageCall = new AtomicReference<>();
+        Player player = (Player) Proxy.newProxyInstance(
+                Player.class.getClassLoader(),
+                new Class<?>[]{Player.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "getHealth" -> health.get();
+                    case "setHealth" -> {
+                        health.set((Double) args[0]);
+                        yield null;
+                    }
+                    case "damage" -> {
+                        damageCall.set((Double) args[0]);
+                        yield null;
+                    }
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    case "toString" -> "test-player";
+                    default -> primitiveDefault(method.getReturnType());
+                });
+
+        assertTrue(EffectService.applyHealOrSelfDamage(player, -20.0));
+        assertEquals(10.0, health.get(), 0.001);
+        assertNull(damageCall.get(), "health costs must bypass armor, resistance and invulnerability frames");
+    }
+
+    private static Object primitiveDefault(Class<?> type) {
+        if (!type.isPrimitive() || type == void.class) return null;
+        if (type == boolean.class) return false;
+        if (type == char.class) return '\0';
+        if (type == byte.class) return (byte) 0;
+        if (type == short.class) return (short) 0;
+        if (type == int.class) return 0;
+        if (type == long.class) return 0L;
+        if (type == float.class) return 0F;
+        return 0D;
     }
 }
