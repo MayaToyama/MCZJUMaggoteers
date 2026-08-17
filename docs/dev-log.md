@@ -5,6 +5,26 @@
 
 ---
 
+## 2026-08-17 — Mounted Squad Hardening（骑乘小队加固，SDD 六任务 @ 9487c0a..2bccf18）
+
+- **做了什么**：分支 `feat/mounted-squad-hardening`，6 个任务全部经 task review（Approved）与 whole-branch final review（opus，无 Critical/无 Important，13 个 Minor 全部分流 FALSE-POSITIVE/DEFER）。全量 `mvn -o test` = **329 pass / 0 fail / 5 skip**；`package` 产出 `Maggoteers-1.0.0-rc.1.jar`。
+  - **R3 数据面**：`PassengerSpawn`/`PassengerCfg`/`MobYamlParser`/`RunPlanner` 贯穿 `controller` 布尔字段（`parseController` 省略=false、布尔原样、非布尔硬失败，仿 `parseBossBar`）。
+  - **R3 逻辑面**：`MountControllerResolver` 拆纯函数 `controllerCandidates(List, rootIsCamel)`（无 Bukkit、可单测，9 用例）+ 薄运行时 `resolve`/`walkPath`；显式段→默认回落段（camel 双叶→[[0]]；camel 嵌套→[前子树最深, 全树最深]；非 camel→全树最深），去重，子树内 `>=` 后胜 / 跨子树 `>` 先胜（复刻旧语义）。
+  - **R1**：`MountedSquadRegistry` 从静态全局表改 `IdentityHashMap<AbstractGame, Map<UUID,Squad>>` 按局隔离；`MobFactory.spawnStepGroup`/`mountPassengersDelayed` 加 `AbstractGame` 首参。
+  - **R2**：`WaveEngine.clearTracking` 与 `stop` **各自**调 `removeGame(game)`；`stop` 删逐根 `removeByRoot`；`handleMobDeath` 保留逐根。
+  - **R4 座位**：`MountPassengerLimits.directPassengerLimit(EntityType)`（Camel 族 `CAMEL||CAMEL_HUSK→2`，余 1）；`prepareMount` 删 `setTamed(true)`（原版僵尸骑士/骆驼队未驯服，车辆由 moveTo 驱动）。
+  - **M1 + R4 移动**：`MountedSquadAiService` 每 tick 读 `mob_attributes.squad_target_range/squad_move_speed/squad_charge_speed`（getDouble 带默认值，旧配置缺键不崩）；`sprint = root instanceof AbstractHorse` 门控 `moveTo(target, sprint ? chargeSpeed : moveSpeed)`；无 root `setTarget`。
+- **关键决策与原因**：
+  - **`setSprinting` 删除（spec §5.2 偏离）**：`setSprinting(boolean)` 在 paper-api 26.2 **仅 `Player` 有**（javap 确认 build.112-stable，LivingEntity/Mob/AbstractHorse 全无），`root.setSprinting(true)` 无法编译。裁决：删行，`sprint` 仅作 moveTo 速度倍率门控——spec 自述 sprint 只是可能动画，R4 实际提速来自倍率，需求完整保留。
+  - **冲刺检测用族分类而非 EntityType 白名单（铁律③）**：`instanceof AbstractHorse` 覆盖 Camel/CAMEL_HUSK/未来子类；座位上限是唯一豁免（显式列 Camel 族，spec §8 授权）。
+  - **Config 键带默认值**：三新键 `getDouble(..., 默认)`，旧服缺键不崩。
+  - **纯函数先行**：候选链逻辑无 Bukkit 依赖才可单测；Bukkit 交互（registry/AiService/WaveEngine）靠编译 + 测试服验证，不强行 mock。
+- **遗留 / 移交**：
+  - **测试服验证（spec §6 Must，合前阻塞）**：部署 jar 到 `E:\MCpaper`，生成 `w2_endless_spear`（ZOMBIE_HORSE 根 + 持矛 ZOMBIE）与 `s1_desert_four_camels`（CAMEL_HUSK 根 + HUSK/PARCHED）：① 车辆位移明显提速 ② controller 举矛姿态 ③ `squad_charge_speed` 可调档校准默认 4.0。Stretch ④ 贴脸挥矛伤害（失败记 follow-up，不挡本计划）。
+  - Reviewer 建议：未来若有 camel 前座嵌套乘客，补 1 条 `controllerCandidates`「camel 子树内显式 controller」用例；可选 `MountedSquadRegistry` 加 `Bukkit.isPrimaryThread()` 守卫；顺手补 `MobYamlParserTest` 末尾换行。
+
+---
+
 ## 2026-08-17 — 设计冗余清理 plan（§1–§14：合并重复实现 + 删半死参数 + 文档修正）
 
 - **做了什么**：执行「设计冗余清理」plan 全部 §1–§14。与同日死代码清理互补：上一步删**纯死符号**，本步合并「同一逻辑多处拷贝」、删「定义了但无运行时消费者」的半死参数/分支，并修正 CLAUDE.md 与代码的错位。每节删前 `grep` 引用面、合并保持行为不变。
