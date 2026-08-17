@@ -1,10 +1,9 @@
 package io.mczju.maggoteers.item;
 
-import com.github.mczjuops.mczjugamecore.game.AbstractGame;
-import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.effect.WeaponHeldService;
 import io.mczju.maggoteers.game.MaggoteersGame;
+import io.mczju.maggoteers.state.PlayerStateManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -53,15 +52,8 @@ public final class WeaponHeldListener implements Listener {
     }
 
     private void syncIfInGame(Player p) {
-        MaggoteersGame game = gameOf(p);
+        MaggoteersGame game = PlayerStateManager.gameOf(p);
         if (game == null) return;
         WeaponHeldService.sync(p, game);
-    }
-
-    private static MaggoteersGame gameOf(Player p) {
-        PlayerExt pe = new PlayerExt(p);
-        if (!pe.isInGame()) return null;
-        AbstractGame g = pe.getGame();
-        return g instanceof MaggoteersGame mg ? mg : null;
     }
 }

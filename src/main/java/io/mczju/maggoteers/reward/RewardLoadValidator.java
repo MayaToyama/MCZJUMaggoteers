@@ -1,5 +1,6 @@
 package io.mczju.maggoteers.reward;
 
+import io.mczju.maggoteers.effect.AttributeModifierKeys;
 import io.mczju.maggoteers.effect.AuraParams;
 import io.mczju.maggoteers.effect.BoundEquipParams;
 import io.mczju.maggoteers.effect.BuffAreaTargets;
@@ -68,9 +69,6 @@ public final class RewardLoadValidator {
         if (fire != null && !ALLOWED_FIRE.contains(fire)) {
             return Optional.of("forbidden fireTrigger: " + fire);
         }
-        if (opt.expiryTrigger() == Trigger.ON_INTERACT) {
-            return Optional.of("forbidden expiry.trigger: ON_INTERACT");
-        }
         if (opt.effect() == Effect.ADD_ATTRIBUTE && opt.params() != null
                 && TriggeredGrantAttribute.isRevoke(opt.params())) {
             return validateRevokeGrants(opt);
@@ -106,6 +104,10 @@ public final class RewardLoadValidator {
             }
             return Optional.empty();
         }
+        Optional<String> opErr = validateAttributeOp(opt);
+        if (opErr.isPresent()) {
+            return opErr;
+        }
         Optional<String> magic = validateMagicDamagePercent(opt);
         if (magic.isPresent()) {
             return magic;
@@ -139,12 +141,15 @@ public final class RewardLoadValidator {
         if (slot == null || !BoundEquipParams.SLOT_CHEST.equalsIgnoreCase(slot)) {
             return Optional.empty();
         }
-        boolean exists = alreadyAccepted.stream().anyMatch(o ->
+        // Same id may repeat across act pools (UPGRADE_LEVEL draw, like collectibles).
+        // Different CHEST BOUND_EQUIP ids still conflict (one bound chestpiece type).
+        boolean otherIdExists = alreadyAccepted.stream().anyMatch(o ->
                 o.effect() == Effect.BOUND_EQUIP
                         && o.params() != null
                         && BoundEquipParams.SLOT_CHEST.equalsIgnoreCase(
-                                String.valueOf(o.params().get(EffectKeys.SLOT))));
-        return exists
+                                String.valueOf(o.params().get(EffectKeys.SLOT)))
+                        && !java.util.Objects.equals(o.id(), candidate.id()));
+        return otherIdExists
                 ? Optional.of("duplicate BOUND_EQUIP slot CHEST: " + candidate.id())
                 : Optional.empty();
     }
@@ -305,6 +310,20 @@ public final class RewardLoadValidator {
             if (sid != null && !sid.isBlank() && !grantIds.contains(sid)) {
                 return Optional.of("REVOKE source_id not in bundle grants: " + sid);
             }
+        }
+        return Optional.empty();
+    }
+
+    private static Optional<String> validateAttributeOp(RewardOption opt) {
+        if (opt.effect() != Effect.ADD_ATTRIBUTE || opt.params() == null) {
+            return Optional.empty();
+        }
+        if (TriggeredGrantAttribute.isRevoke(opt.params())) {
+            return Optional.empty(); // REVOKE_GRANTS 由 validateRevokeGrants 处理
+        }
+        String op = opt.params().getOrDefault(EffectKeys.OP, "FLAT");
+        if (!AttributeModifierKeys.isValidAttributeOp(op)) {
+            return Optional.of("ADD_ATTRIBUTE unknown op: " + op);
         }
         return Optional.empty();
     }

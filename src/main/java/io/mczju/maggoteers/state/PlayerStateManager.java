@@ -70,6 +70,17 @@ public final class PlayerStateManager {
         return null;
     }
 
+    /** 解析玩家所在对局：先 registry（更稳），回退 MGC {@code PlayerExt} 实例判断。 */
+    public static MaggoteersGame gameOf(Player p) {
+        if (p == null) return null;
+        MaggoteersGame bound = gameForPlayer(p.getUniqueId());
+        if (bound != null) return bound;
+        var pe = new com.github.mczjuops.mczjugamecore.player.PlayerExt(p);
+        if (!pe.isInGame()) return null;
+        AbstractGame g = pe.getGame();
+        return g instanceof MaggoteersGame mg ? mg : null;
+    }
+
     /**
      * 本局仍在役：有 {@link PlayerState} 且 {@link PlayerState#isAlive()}。
      * 不检查 GameMode（测试/创造模式切换不影响光环、治疗等）。
@@ -143,21 +154,32 @@ public final class PlayerStateManager {
     static void applyAdventure(Player p) {
         if (p == null) return;
         p.setGameMode(GameMode.ADVENTURE);
-        p.setFallDistance(0f);
-        p.setFireTicks(0);
+        clearFallFire(p);
         p.setNoDamageTicks(40);
     }
 
     /** 按当前 MAX_HEALTH 属性回满血（须在 EffectService.resync 之后调用）。 */
     public static void restoreFullHealth(Player p) {
         if (p == null) return;
+        healToMax(p);
+        clearFallFire(p);
+        p.setNoDamageTicks(40);
+    }
+
+    /** 清摔落距离与着火状态（复活/进层/回大厅共用）。 */
+    public static void clearFallFire(Player p) {
+        if (p == null) return;
+        p.setFallDistance(0f);
+        p.setFireTicks(0);
+    }
+
+    /** 按当前 MAX_HEALTH 回满血；MAX_HEALTH 异常 ≤0 时回落 20.0（保留 restoreFullHealth 原守卫语义）。 */
+    public static void healToMax(Player p) {
+        if (p == null) return;
         var maxHp = p.getAttribute(Attribute.MAX_HEALTH);
         double max = maxHp != null ? maxHp.getValue() : 20.0;
         if (max <= 0) max = 20.0;
         p.setHealth(max);
-        p.setFallDistance(0f);
-        p.setFireTicks(0);
-        p.setNoDamageTicks(40);
     }
 
     /** 结束钩子：清掉本局所有玩家状态。 */

@@ -1,5 +1,6 @@
 package io.mczju.maggoteers.world;
 
+import io.mczju.maggoteers.config.ConfigParse;
 import io.mczju.maggoteers.config.MapPoints;
 import io.mczju.maggoteers.config.WavesConfig;
 import io.mczju.maggoteers.util.PluginFiles;
@@ -17,7 +18,6 @@ public final class MapRepository {
                            Map<String, List<WavesConfig.PoolEntry>> specialWaves) {}
 
     private static final Map<String, List<MapEntry>> BY_ACT = new HashMap<>();
-    private static final Random RNG = new Random();
 
     /** jar 内 bundled 地图：首次启动释放 points.yml / special_waves.yml / structure.nbt（若存在）。 */
     private static final Map<String, List<String>> BUNDLED_MAP_IDS = Map.of(
@@ -66,15 +66,11 @@ public final class MapRepository {
             List<WavesConfig.PoolEntry> entries = new ArrayList<>();
             for (var m : list) {
                 entries.add(new WavesConfig.PoolEntry((String) m.get("strategy"),
-                        num(m.get("weight"), 1).doubleValue()));
+                        ConfigParse.num(m.get("weight"), 1).doubleValue()));
             }
             out.put(tier, entries);
         }
         return out;
-    }
-
-    private static Number num(Object v, Number fallback) {
-        return v instanceof Number n ? n : fallback;
     }
 
     private static MapPoints parsePoints(YamlConfiguration cfg) {
@@ -96,12 +92,6 @@ public final class MapRepository {
 
     public static MapLibrary library() {
         return new MapLibrary(BY_ACT);
-    }
-
-    /** 随机抽一张图（Plan 3 起改由种子 RNG）。无图返回 null。 */
-    public static MapEntry pickRandom(String act) {
-        List<MapEntry> list = getMaps(act);
-        return list.isEmpty() ? null : list.get(RNG.nextInt(list.size()));
     }
 
     private static void ensureResource(JavaPlugin plugin, String path) {

@@ -20,14 +20,6 @@ public enum ItemKind {
 
     public String pdcValue() { return pdcValue; }
 
-    public static ItemKind fromPdc(String raw) {
-        if (raw == null) return null;
-        for (ItemKind k : values()) {
-            if (k.pdcValue.equals(raw)) return k;
-        }
-        return null;
-    }
-
     public static ItemKind fromPdcLoose(String raw) {
         if (raw == null) return null;
         String n = raw.toLowerCase(Locale.ROOT);

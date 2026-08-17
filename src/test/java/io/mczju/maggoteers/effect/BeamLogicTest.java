@@ -20,10 +20,4 @@ class BeamLogicTest {
     void doesNotExceedMaxRange() {
         assertEquals(32.0, BeamLogic.resolveLength(32.0, 100.0), 1e-9);
     }
-
-    @Test
-    void sampleStepsScalesWithLength() {
-        assertEquals(16, BeamLogic.sampleSteps(4.0));
-        assertEquals(64, BeamLogic.sampleSteps(32.0));
-    }
 }

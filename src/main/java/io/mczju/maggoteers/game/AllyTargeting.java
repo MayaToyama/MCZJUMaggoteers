@@ -18,7 +18,7 @@ public final class AllyTargeting {
 
     public static MaggoteersGame resolveForPlayer(Player player, AbstractGame hint) {
         if (player == null) return null;
-        MaggoteersGame bound = PlayerStateManager.gameForPlayer(player.getUniqueId());
+        MaggoteersGame bound = PlayerStateManager.gameOf(player);
         if (bound != null) return bound;
         if (hint instanceof MaggoteersGame mg) return mg;
         for (MaggoteersGame mg : ActiveMaggoteersGames.snapshot()) {

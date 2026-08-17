@@ -1,7 +1,5 @@
 package io.mczju.maggoteers.effect;
 
-import com.github.mczjuops.mczjugamecore.game.AbstractGame;
-import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.state.PlayerStateManager;
 import org.bukkit.entity.Entity;
@@ -18,7 +16,7 @@ public final class SummonFriendlyFireListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onFriendlyFire(EntityDamageByEntityEvent e) {
         if (!(e.getEntity() instanceof Player victim)) return;
-        MaggoteersGame game = gameOf(victim);
+        MaggoteersGame game = PlayerStateManager.gameOf(victim);
         if (game == null || !PlayerStateManager.isRunParticipant(game, victim)) return;
 
         Entity damager = resolveDamager(e.getDamager());
@@ -36,10 +34,4 @@ public final class SummonFriendlyFireListener implements Listener {
         return null;
     }
 
-    private static MaggoteersGame gameOf(Player p) {
-        PlayerExt pe = new PlayerExt(p);
-        if (!pe.isInGame()) return null;
-        AbstractGame g = pe.getGame();
-        return g instanceof MaggoteersGame mg ? mg : null;
-    }
 }

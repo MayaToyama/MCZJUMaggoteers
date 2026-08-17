@@ -11,7 +11,7 @@ import java.util.List;
  * <p>{@code repeat} 为该 step 自身重复次数（未展开前）；{@link WaveSpec#expand()} 后恒为 1。
  */
 public record SpawnStep(Vec3 point, EntityType type, int count,
-                        double hpMult, double dmgMult, double speedMult, double dropMult,
+                        double hpMult, double dmgMult, double speedMult,
                         double scaleMult, double followRangeMult,
                         int delayTicks, List<String> affixes, List<PotionSpec> potions,
                         InfernalCfg infernal,
@@ -19,40 +19,40 @@ public record SpawnStep(Vec3 point, EntityType type, int count,
                         List<PassengerSpawn> passengers, int repeat,
                         String name, boolean bossBar) {
     public SpawnStep(Vec3 point, EntityType type, int count,
-                     double hpMult, double dmgMult, double speedMult, double dropMult,
+                     double hpMult, double dmgMult, double speedMult,
                      double scaleMult, double followRangeMult,
                      int delayTicks, List<String> affixes, List<PotionSpec> potions,
                      InfernalCfg infernal,
                      List<MobEquipment> equipment, List<DeathSpawn> onDeath,
                      List<PassengerSpawn> passengers) {
-        this(point, type, count, hpMult, dmgMult, speedMult, dropMult, scaleMult, followRangeMult,
+        this(point, type, count, hpMult, dmgMult, speedMult, scaleMult, followRangeMult,
                 delayTicks, affixes, potions, infernal, equipment, onDeath, passengers, 1, null, false);
     }
 
     public SpawnStep(Vec3 point, EntityType type, int count,
-                     double hpMult, double dmgMult, double speedMult, double dropMult,
+                     double hpMult, double dmgMult, double speedMult,
                      double scaleMult, double followRangeMult,
                      int delayTicks, List<String> affixes, List<PotionSpec> potions,
                      InfernalCfg infernal,
                      List<MobEquipment> equipment, List<DeathSpawn> onDeath,
                      List<PassengerSpawn> passengers, int repeat) {
-        this(point, type, count, hpMult, dmgMult, speedMult, dropMult, scaleMult, followRangeMult,
+        this(point, type, count, hpMult, dmgMult, speedMult, scaleMult, followRangeMult,
                 delayTicks, affixes, potions, infernal, equipment, onDeath, passengers, repeat, null, false);
     }
 
     public SpawnStep(Vec3 point, EntityType type, int count,
-                     double hpMult, double dmgMult, double speedMult, double dropMult,
+                     double hpMult, double dmgMult, double speedMult,
                      int delayTicks, List<String> affixes, List<PotionSpec> potions,
                      List<PassengerSpawn> passengers) {
-        this(point, type, count, hpMult, dmgMult, speedMult, dropMult, 1.0, 1.0,
+        this(point, type, count, hpMult, dmgMult, speedMult, 1.0, 1.0,
                 delayTicks, affixes, potions, InfernalCfg.NONE,
                 List.of(), List.of(), passengers, 1, null, false);
     }
 
     public SpawnStep(Vec3 point, EntityType type, int count,
-                     double hpMult, double dmgMult, double speedMult, double dropMult,
+                     double hpMult, double dmgMult, double speedMult,
                      int delayTicks, List<String> affixes, List<PotionSpec> potions) {
-        this(point, type, count, hpMult, dmgMult, speedMult, dropMult, delayTicks, affixes, potions, List.of());
+        this(point, type, count, hpMult, dmgMult, speedMult, delayTicks, affixes, potions, List.of());
     }
 
     public SpawnStep {

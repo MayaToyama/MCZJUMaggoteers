@@ -217,7 +217,7 @@ public class MaggoteersCommand implements CommandExecutor {
                 var snap = ScalingConfig.getInstance().scaleFor(game.getPlayers().size());
                 var ms = Compose.compose(new io.mczju.maggoteers.config.CoeffCfg(1, 1, 1), affixList, snap);
                 var le = MobFactory.spawnDebugMob(p.getLocation(), type, ms.hp(), ms.dmg(), ms.speed(), affixes);
-                if (le != null) WaveEngine.trackDebugMob(game, le, affixes);
+                if (le != null) WaveEngine.trackDebugMob(game, le);
                 msg(p, le == null ? "生成失败。" : "已生成 " + type.name() + "（词缀=" + affixes + "）");
             }
             case "effects" -> {

@@ -27,6 +27,8 @@ import java.util.logging.Logger;
 public final class RewardService {
     private static final Logger LOG = Logger.getLogger("Maggoteers");
     private static final Map<String, RewardPool> POOLS = new HashMap<>();
+    /** 3 选 1 抽签缓存（R10）：按 (玩家, 池) 缓存上次抽取，ESC 退出不刷新。 */
+    private static final Map<UUID, Map<String, List<RewardOption>>> DRAW_CACHE = new HashMap<>();
 
     private RewardService() {}
 
@@ -43,7 +45,6 @@ public final class RewardService {
             ConfigurationSection sec = root.getConfigurationSection(poolId);
             if (sec == null) continue;
             int cost = sec.getInt("cost", 1);
-            String currency = sec.getString("currency", "normal");
             int upgradeLevelCap = sec.getInt("upgrade_level_cap", 0);
             List<RewardOption> options = new ArrayList<>();
             for (var m : sec.getMapList("options")) {
@@ -85,7 +86,7 @@ public final class RewardService {
                 }
                 options.add(opt);
             }
-            POOLS.put(poolId, new RewardPool(poolId, cost, currency, upgradeLevelCap, options));
+            POOLS.put(poolId, new RewardPool(poolId, cost, upgradeLevelCap, options));
         }
         LOG.info("RewardService 已加载 " + POOLS.size() + " 个奖励池。");
 
@@ -159,6 +160,34 @@ public final class RewardService {
 
     public static List<RewardOption> draw(String poolId, int n, Random rng) {
         return draw(poolId, n, rng, null);
+    }
+
+    /** 抽签（带缓存，R10）：同一玩家同一池重开返回上次选项；购买成功后由 {@link #invalidateDraw} 刷新。 */
+    public static List<RewardOption> drawCached(UUID player, String poolId, int n, Random rng, Player viewer) {
+        if (player != null && poolId != null) {
+            Map<String, List<RewardOption>> byPool = DRAW_CACHE.get(player);
+            if (byPool != null) {
+                List<RewardOption> cached = byPool.get(poolId);
+                if (cached != null) return cached;
+            }
+        }
+        List<RewardOption> drawn = draw(poolId, n, rng, viewer);
+        if (player != null && poolId != null) {
+            DRAW_CACHE.computeIfAbsent(player, k -> new HashMap<>()).put(poolId, drawn);
+        }
+        return drawn;
+    }
+
+    /** 购买成功后调用：使该玩家该池的抽签缓存失效，下次重开重新抽。 */
+    public static void invalidateDraw(UUID player, String poolId) {
+        if (player == null || poolId == null) return;
+        Map<String, List<RewardOption>> byPool = DRAW_CACHE.get(player);
+        if (byPool != null) byPool.remove(poolId);
+    }
+
+    /** 玩家退出/对局结束清理其全部抽签缓存。 */
+    public static void clearDraws(UUID player) {
+        if (player != null) DRAW_CACHE.remove(player);
     }
 
     public static boolean apply(Player player, RewardOption opt) {
@@ -301,5 +330,13 @@ public final class RewardService {
 
     public static String poolForWave(int actIndex, String tier) {
         return "act" + (actIndex + 1) + "_" + tier;
+    }
+
+    /**
+     * 普通商店抽池档位：Act3 一律 strong；其余层 weak 波→weak，强怪/Boss 波→strong。
+     */
+    public static String normalShopTier(int actIndex, String lastTier) {
+        if (actIndex == 2) return "strong";
+        return "weak".equals(lastTier) ? "weak" : "strong";
     }
 }

@@ -23,9 +23,9 @@ public record SummonParams(
         if (projectile == null) projectile = ProjectileParams.defaults();
     }
 
-    public record ProjectileParams(double speed, String toward) {
+    public record ProjectileParams(double speed) {
         public static ProjectileParams defaults() {
-            return new ProjectileParams(1.0, "look");
+            return new ProjectileParams(1.0);
         }
     }
 }

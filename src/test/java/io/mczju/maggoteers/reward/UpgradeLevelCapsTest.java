@@ -26,14 +26,14 @@ class UpgradeLevelCapsTest {
 
     @Test
     void optionOverrideBeatsPool() {
-        RewardPool pool = new RewardPool("act1_weak", 1, "normal", 2, List.of());
+        RewardPool pool = new RewardPool("act1_weak", 1, 2, List.of());
         RewardOption opt = upgradeOpt(3);
         assertEquals(3, UpgradeLevelCaps.resolve(pool, opt));
     }
 
     @Test
     void poolCapWhenOptionUnset() {
-        RewardPool pool = new RewardPool("act1_weak", 1, "normal", 2, List.of());
+        RewardPool pool = new RewardPool("act1_weak", 1, 2, List.of());
         RewardOption opt = upgradeOpt(0);
         assertEquals(2, UpgradeLevelCaps.resolve(pool, opt));
     }

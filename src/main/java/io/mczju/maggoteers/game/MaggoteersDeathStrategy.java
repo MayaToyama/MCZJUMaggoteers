@@ -101,7 +101,6 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
                 spawn = deathLoc;
             }
             p.teleport(spawn);
-            p.setFallDistance(0f);
             p.setGameMode(GameMode.ADVENTURE);
             stabilizeAlive(p);
             try {
@@ -131,8 +130,8 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
         mg.sender().warn(MessageService.raw("death.to_spectator", Map.of("player", p.getName())));
 
         if (!PlayerStateManager.isAnyAlive(mg)) {
-            MaggoteersPluginLog.info("全员倒下，fail(): " + p.getName());
-            mg.fail();
+            MaggoteersPluginLog.info("全员倒下，markDefeated(): " + p.getName());
+            mg.markDefeated();
         }
     }
 
@@ -146,8 +145,7 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
         if (hp < 1.0) {
             p.setHealth(Math.min(1.0, max));
         }
-        p.setFallDistance(0f);
-        p.setFireTicks(0);
+        PlayerStateManager.clearFallFire(p);
         p.setNoDamageTicks(Math.max(p.getNoDamageTicks(), 40));
     }
 

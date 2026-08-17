@@ -1,41 +1,26 @@
 package io.mczju.maggoteers.wave;
 
-import io.mczju.maggoteers.config.InfernalCfg;
-
 import java.util.List;
 
-public record MobSpawnProfile(double dropMult,
-                              List<String> affixes,
-                              InfernalCfg infernal,
-                              List<DeathSpawn> onDeath,
-                              String name,
-                              boolean bossBar) {
+/** 运行时怪物档案：死亡召唤列表 + 是否挂 Boss 血条。 */
+public record MobSpawnProfile(List<DeathSpawn> onDeath, boolean bossBar) {
     public MobSpawnProfile {
-        affixes = affixes == null ? List.of() : List.copyOf(affixes);
-        infernal = infernal == null ? InfernalCfg.NONE : infernal;
         onDeath = onDeath == null ? List.of() : List.copyOf(onDeath);
-        if (name != null) {
-            name = name.trim();
-            if (name.isEmpty()) name = null;
-        }
     }
 
-    public MobSpawnProfile(double dropMult, List<String> affixes, InfernalCfg infernal, List<DeathSpawn> onDeath) {
-        this(dropMult, affixes, infernal, onDeath, null, false);
+    public MobSpawnProfile(List<DeathSpawn> onDeath) {
+        this(onDeath, false);
     }
 
     public static MobSpawnProfile fromStep(SpawnStep step) {
-        return new MobSpawnProfile(step.dropMult(), step.affixes(), step.infernal(), step.onDeath(),
-                step.name(), step.bossBar());
+        return new MobSpawnProfile(step.onDeath(), step.bossBar());
     }
 
     public static MobSpawnProfile fromPassenger(PassengerSpawn spawn) {
-        return new MobSpawnProfile(spawn.dropMult(), spawn.affixes(), spawn.infernal(), spawn.onDeath(),
-                spawn.name(), spawn.bossBar());
+        return new MobSpawnProfile(spawn.onDeath(), spawn.bossBar());
     }
 
     public static MobSpawnProfile fromDeathSpawn(DeathSpawn spawn) {
-        return new MobSpawnProfile(spawn.dropMult(), spawn.affixes(), spawn.infernal(), spawn.onDeath(),
-                spawn.name(), spawn.bossBar());
+        return new MobSpawnProfile(spawn.onDeath(), spawn.bossBar());
     }
 }

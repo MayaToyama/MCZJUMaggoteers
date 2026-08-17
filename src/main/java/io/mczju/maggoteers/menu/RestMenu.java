@@ -39,9 +39,12 @@ public class RestMenu extends Menu {
     protected void setup() {
         Player p = player.player();
         var snap = WaveScheduler.snapshot(game);
-        String normalTier = snap == null ? "weak" : ("weak".equals(snap.lastTier()) ? "weak" : "strong");
+        // Act3：普通商店一律 act3_strong（见 2026-08-16-act3-reward-pool-shift）
+        String normalTier = snap == null
+                ? "weak"
+                : RewardService.normalShopTier(snap.actIndex(), snap.lastTier());
         String poolNormal = snap == null ? "act1_weak" : RewardService.poolForWave(snap.actIndex(), normalTier);
-        // Boss 池粘滞（§9.2）：用最近击杀 Boss 所在层，而非当前层
+        // Boss 池粘滞（§9.2）：用最近击杀 Boss 所在层，而非当前层；Act3 清 weak 后提前切到 act3_boss
         String poolBoss = snap == null ? "act1_boss" : RewardService.poolForWave(WaveScheduler.bossPoolActIndex(game), "boss");
 
         setSlot(11, btn(Material.GOLD_NUGGET,
@@ -80,7 +83,7 @@ public class RestMenu extends Menu {
             p.sendMessage(MessageService.component("menu.rest.pool_missing", Map.of("pool", poolId)));
             return;
         }
-        List<RewardOption> offers = RewardService.draw(poolId, 3, new java.util.Random(), p);
+        List<RewardOption> offers = RewardService.drawCached(p.getUniqueId(), poolId, 3, new java.util.Random(), p);
         if (offers.isEmpty()) {
             p.sendMessage(MessageService.component("menu.rest.no_offers", Map.of()));
             return;

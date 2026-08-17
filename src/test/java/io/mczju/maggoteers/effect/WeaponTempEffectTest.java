@@ -19,7 +19,7 @@ class WeaponTempEffectTest {
     @Test
     void effectIdPrefixed() {
         assertEquals("ability:maggoteers:power_strike",
-                WeaponTempEffect.effectId("maggoteers:power_strike"));
+                WeaponAbilityIds.effectId("maggoteers:power_strike"));
     }
 
     @Test
@@ -76,7 +76,7 @@ class WeaponTempEffectTest {
     @Test
     void nextHitExpiryChargesOneRemovedOnFirstDealt() {
         PlayerEffect buff = new PlayerEffect(
-                WeaponTempEffect.effectId("maggoteers:power_strike"),
+                WeaponAbilityIds.effectId("maggoteers:power_strike"),
                 Effect.ADD_ATTRIBUTE,
                 dmgPercent(0.5),
                 null,
@@ -89,7 +89,7 @@ class WeaponTempEffectTest {
                 0);
         List<PlayerEffect> list = new ArrayList<>(List.of(buff));
         List<String> removed = EffectStacker.sweepExpiry(list, Trigger.ON_DAMAGE_DEALT);
-        assertEquals(List.of(WeaponTempEffect.effectId("maggoteers:power_strike")), removed);
+        assertEquals(List.of(WeaponAbilityIds.effectId("maggoteers:power_strike")), removed);
         assertTrue(list.isEmpty());
     }
 
@@ -143,6 +143,6 @@ class WeaponTempEffectTest {
 
     @Test
     void secondWriteReplaceDefaultStack() {
-        assertEquals(Stack.REPLACE, ItemAbilityRegistry.defaultStackForStep(null, true));
+        assertEquals(Stack.REPLACE, ItemAbilityRegistry.defaultStackForStep(null));
     }
 }

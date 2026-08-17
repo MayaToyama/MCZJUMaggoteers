@@ -1,6 +1,5 @@
 package io.mczju.maggoteers.effect;
 
-import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
@@ -74,10 +73,8 @@ public final class PotionImmunity {
     }
 
     private static PlayerState stateOf(Player player) {
-        var pe = new PlayerExt(player);
-        if (!pe.isInGame() || !(pe.getGame() instanceof MaggoteersGame mg)) {
-            return null;
-        }
+        MaggoteersGame mg = PlayerStateManager.gameOf(player);
+        if (mg == null) return null;
         return PlayerStateManager.get(mg, player.getUniqueId());
     }
 }

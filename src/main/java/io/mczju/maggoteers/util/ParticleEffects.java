@@ -22,14 +22,6 @@ public final class ParticleEffects {
         }
     }
 
-    /**
-     * 在 center 周围画一个水平粒子圆环（半径 radius），用于范围效果的范围提示。
-     * 中心高度抬 0.5（约腰部），points 为采样点数（建议 ~半径*4）。
-     */
-    public static void playAreaRing(World world, Location center, double radius, Particle particle, int points) {
-        playThickRing(world, center, radius, particle, Math.max(points, (int) (radius * 8)));
-    }
-
     /** 简便重载：默认用 FLAME + 加粗密度。 */
     public static void playAreaRing(World world, Location center, double radius) {
         playThickRing(world, center, radius, Particle.FLAME, Math.max(32, (int) (radius * 12)));

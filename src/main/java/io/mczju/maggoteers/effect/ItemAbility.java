@@ -22,39 +22,6 @@ public record ItemAbility(
         steps = steps == null ? List.of() : List.copyOf(steps);
     }
 
-    public AbilityStep primaryStep() {
-        return steps.isEmpty() ? null : steps.get(0);
-    }
-
-    public Effect effect() {
-        AbilityStep s = primaryStep();
-        return s == null ? null : s.effect();
-    }
-
-    public EffectContext params() {
-        AbilityStep s = primaryStep();
-        return s == null ? null : s.params();
-    }
-
-    public Trigger expiryTrigger() {
-        AbilityStep s = primaryStep();
-        return s == null ? null : s.expiryTrigger();
-    }
-
-    public int expiryCharges() {
-        AbilityStep s = primaryStep();
-        return s == null ? 0 : s.expiryCharges();
-    }
-
-    public Stack stack() {
-        AbilityStep s = primaryStep();
-        return s == null ? null : s.stack();
-    }
-
-    public boolean isLegacySingleStep() {
-        return steps.size() == 1;
-    }
-
     /** All steps have expiry (next-hit / deferred pack). */
     public boolean isDeferredOnly() {
         if (steps.isEmpty()) {
@@ -66,16 +33,5 @@ public record ItemAbility(
             }
         }
         return true;
-    }
-
-    /** Compat factory for single-step abilities. */
-    public static ItemAbility single(
-            String itemId, int cooldownSec, Effect effect, EffectContext params,
-            MagicUseFx fx, boolean consume, Trigger expiryTrigger, int expiryCharges,
-            Stack stack, List<BuffPotionSpec> selfPotions,
-            List<PotionEffectType> selfClear, MagicUseFx empowerFx) {
-        AbilityStep step = new AbilityStep(effect, params, expiryTrigger, expiryCharges, stack);
-        return new ItemAbility(itemId, cooldownSec, consume, fx, empowerFx,
-                selfPotions, selfClear, List.of(step));
     }
 }

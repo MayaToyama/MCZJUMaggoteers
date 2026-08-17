@@ -159,7 +159,14 @@ public final class EffectService {
 
     /** 对局结束：剥除派生视图 + 清 PlayerState 效果 + 剥离绑定装备/护符视图。 */
     public static void removeAll(Player p) {
-        MaggoteersGame game = currentGame(p);
+        removeAllFor(p, currentGame(p));
+    }
+
+    /**
+     * 按显式对局清理单个玩家的派生效果。中途退出玩家已不在 MGC game map（{@code currentGame} 查不到），
+     * 必须把对局对象显式传进来才能拿到 PlayerState 并剥除 MAX_HEALTH 等属性加成/常驻药水。
+     */
+    public static void removeAllFor(Player p, MaggoteersGame game) {
         PlayerState st = PlayerStateManager.get(game, p.getUniqueId());
         if (st == null) return;
         stripDerived(p, st.effects());
@@ -289,13 +296,7 @@ public final class EffectService {
         }
     }
 
-    /** Pass 1: REVOKE_GRANTS; pass 2: all other triggered effects on {@code fired}. */
-    private static void dispatchTriggeredEffects(Player p, PlayerState ps, MaggoteersGame game,
-                                                 Trigger fired, TriggerContext ctx) {
-        dispatchTriggeredEffectsCollecting(p, ps, game, fired, ctx);
-    }
-
-    /** Same as {@link #dispatchTriggeredEffects} but returns executed {@code ability:*} effect ids. */
+    /** Executes triggered effects on {@code fired}; returns executed {@code ability:*} effect ids. */
     private static Set<String> dispatchTriggeredEffectsCollecting(Player p, PlayerState ps, MaggoteersGame game,
                                                                   Trigger fired, TriggerContext ctx) {
         TriggerContext useCtx = ctx != null ? ctx : TriggerContext.empty();
@@ -440,6 +441,20 @@ public final class EffectService {
     }
 
     /**
+     * 治疗：上限按 MAX_HEALTH（缺省 20.0），返回实际增加的血量。
+     * 集中散落各处的 {min(max, health+amount)}（applyHealOrSelfDamage 正分支 / HEAL_AREA / AuraService / SUPPLY_HEALING）。
+     */
+    public static double heal(Player p, double amount) {
+        if (p == null || amount <= 0) return 0.0;
+        var hp = p.getAttribute(Attribute.MAX_HEALTH);
+        double max = hp != null ? hp.getValue() : 20.0;
+        double before = p.getHealth();
+        double after = Math.min(max, before + amount);
+        p.setHealth(after);
+        return after - before;
+    }
+
+    /**
      * Positive amount heals; negative amount is an exact HP cost via {@link Player#setHealth}
      * (not {@link Player#damage}) so armor / resistance / invuln frames cannot cancel or dilute it.
      */
@@ -450,17 +465,16 @@ public final class EffectService {
             p.setHealth(Math.max(0.0, p.getHealth() + amount));
             return true;
         }
-        var hp = p.getAttribute(Attribute.MAX_HEALTH);
-        double max = hp != null ? hp.getValue() : 20.0;
-        p.setHealth(Math.min(max, p.getHealth() + amount));
+        heal(p, amount);
         return true;
     }
 
-    /** 执行一条效果（触发型在 fireTrigger 时调；常驻型在 apply 时已施加）。 */
-    private static void executeEffect(Player p, PlayerEffect e, MaggoteersGame game) {
-        executeEffect(p, e, game, TriggerContext.empty());
-    }
-
+    /**
+     * 执行一条效果（触发型在 fireTrigger 时调；常驻型在 apply 时已施加）。
+     * <p>PlayerEffect 路径：params 在解析期已带默认值，这里<b>不</b>套 withDefaults。
+     * 因此 GRANT_ITEM/SUMMON/GRANT_REVIVE 与 {@link #executeMagicEffect} 里的双份分支<b>有意保留</b>——
+     * 那边先套 {@code MagicEffectParams.withDefaults}（武器 use_ability 路径），合并会把默认值引入本路径，改变行为。
+     */
     private static void executeEffect(Player p, PlayerEffect e, MaggoteersGame game, TriggerContext ctx) {
         switch (e.effect()) {
             case HEAL -> applyHealOrSelfDamage(p, e.params().getOrDefault(EffectKeys.AMOUNT, 0.0));
@@ -492,7 +506,6 @@ public final class EffectService {
             case GRANT_ITEM -> executeGrantItem(p, e.params());
             case SUMMON -> executeSummon(p, game, e.params(), ctx, false);
             case ADD_ATTRIBUTE -> executeTriggeredAddAttribute(p, e, game, ctx);
-            case AURA -> activateAura(p, e, game);
         }
     }
 
@@ -508,6 +521,11 @@ public final class EffectService {
         return executeMagicEffect(p, game, effect, rawParams, weaponFx, ctx, weaponPath, null);
     }
 
+    /**
+     * 武器 use_ability/held 路径：先 {@code MagicEffectParams.withDefaults} 套默认值再分发。
+     * <p>GRANT_ITEM/SUMMON/GRANT_REVIVE 与 {@link #executeEffect} 里的双份分支<b>有意保留</b>——
+     * 那边（PlayerEffect 路径）不套默认值，合并会把本路径默认值引入普通效果执行，改变行为。
+     */
     private static boolean executeMagicEffect(Player p, MaggoteersGame game, Effect effect,
                                            EffectContext rawParams, MagicUseFx weaponFx,
                                            TriggerContext ctx, boolean weaponPath,
@@ -566,9 +584,7 @@ public final class EffectService {
                 boolean includeSelf = AuraParams.includeSelf(params);
                 org.bukkit.Location origin = TriggerContext.resolveOrigin(p, useCtx);
                 for (Player ally : AllyTargeting.alliesNear(game, origin, radius, p, includeSelf)) {
-                    var hp = ally.getAttribute(Attribute.MAX_HEALTH);
-                    double max = hp != null ? hp.getValue() : 20.0;
-                    ally.setHealth(Math.min(max, ally.getHealth() + amount));
+                    heal(ally, amount);
                 }
                 return true;
             }
@@ -580,6 +596,11 @@ public final class EffectService {
                 executeDisableAi(p, game, params, weaponFx, useCtx, weaponPath);
                 return true;
             }
+            case GRANT_REVIVE -> {
+                int count = params.getOrDefault(EffectKeys.COUNT, 1);
+                PlayerStateManager.addReviveCount(game, p.getUniqueId(), count);
+                return true;
+            }
             default -> {
                 return false;
             }
@@ -588,14 +609,7 @@ public final class EffectService {
 
     private static boolean executeGrantItem(Player p, EffectContext params) {
         return GrantItemParams.parse(params)
-                .map(g -> {
-                    if (io.mczju.maggoteers.item.ItemService.createItem(g.itemId(), g.amount()).isEmpty()) {
-                        LOG.warning("GRANT_ITEM: unknown item " + g.itemId());
-                        return false;
-                    }
-                    io.mczju.maggoteers.item.ItemService.give(p, g.itemId(), g.amount());
-                    return true;
-                })
+                .map(g -> io.mczju.maggoteers.item.ItemService.give(p, g.itemId(), g.amount()))
                 .orElse(false);
     }
 
@@ -739,7 +753,7 @@ public final class EffectService {
         }
         double length = BeamLogic.resolveLength(maxRange, targetDist);
 
-        MagicUseFx fx = weaponFx != null ? weaponFx : MagicFxConfig.forWeapon(null);
+        MagicUseFx fx = weaponFx != null ? weaponFx : MagicFxConfig.currentDefaults();
         fx = new MagicUseFx(fx.sound(), fx.soundVolume(), fx.soundPitch(), fx.preset(), fx.particle(),
                 fx.radius(), length, fx.density(), fx.rippleRings(), fx.expandSteps(), fx.spiralTicks());
         if (fx.sound() != null) {
@@ -763,21 +777,6 @@ public final class EffectService {
             }
         });
         return first.get();
-    }
-
-    /** 触发型 AURA：交互后写入 fireTrigger=null 的携带条目（保留 expiry）。 */
-    private static void activateAura(Player p, PlayerEffect e, MaggoteersGame game) {
-        if (e.effect() != Effect.AURA) return;
-        PlayerState st = PlayerStateManager.get(game, p.getUniqueId());
-        if (st != null) {
-            st.effects().removeIf(x -> x.id().equals(e.id()) && x.fireTrigger() != null);
-        }
-        PlayerEffect active = new PlayerEffect(
-                e.id(), Effect.AURA, e.params().copy(), null,
-                e.expiryTrigger(), e.expiryCharges(),
-                0, null, e.stack(), e.upgradeMax(), e.cooldownSec());
-        active.setLevel(e.level());
-        apply(p, active);
     }
 
     // —— 派生视图施加（常驻型）——
@@ -808,9 +807,7 @@ public final class EffectService {
         if (inst == null) return;
         String op = e.params().getOrDefault(EffectKeys.OP, "FLAT");
         double value = e.params().getOrDefault(EffectKeys.VALUE, 0.0);
-        AttributeModifier.Operation operation = "PERCENT".equalsIgnoreCase(op)
-                ? AttributeModifier.Operation.MULTIPLY_SCALAR_1
-                : AttributeModifier.Operation.ADD_NUMBER;
+        AttributeModifier.Operation operation = AttributeModifierKeys.attributeOperation(op);
         double maxBefore = attr == Attribute.MAX_HEALTH ? inst.getValue() : 0;
         // D5：唯一 key = effect/<sanitize(id)_level_seq>（与物品 maggoteers:xxx_attack_damage 隔离，防 strip 剥武器伤）
         NamespacedKey key = AttributeModifierKeys.effectKey(MaggoteersPlugin.getInstance(),
@@ -866,8 +863,7 @@ public final class EffectService {
     }
 
     private static MaggoteersGame currentGame(Player p) {
-        var pe = new com.github.mczjuops.mczjugamecore.player.PlayerExt(p);
-        return pe.isInGame() ? (MaggoteersGame) pe.getGame() : null;
+        return PlayerStateManager.gameOf(p);
     }
 
     private EffectService() {}

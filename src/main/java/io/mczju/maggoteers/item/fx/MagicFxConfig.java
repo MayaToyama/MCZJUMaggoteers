@@ -4,6 +4,7 @@ import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.effect.AbilityStep;
 import io.mczju.maggoteers.effect.ItemAbility;
 import io.mczju.maggoteers.util.GameRegistries;
+import io.mczju.maggoteers.util.ItemYaml;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
@@ -13,7 +14,6 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * 从 {@code config.yml → magic_fx} 与 {@code items/*.yml → use_fx} 加载魔法释放配置。
@@ -59,12 +59,7 @@ public final class MagicFxConfig {
     }
 
     private static void loadItemYamlFx(File dir) {
-        if (dir == null || !dir.isDirectory()) return;
-        File[] files = dir.listFiles((d, n) -> n.endsWith(".yml"));
-        if (files == null) return;
-        for (File f : files) {
-            mergeYamlItems(YamlConfiguration.loadConfiguration(f));
-        }
+        ItemYaml.forEachYaml(dir, MagicFxConfig::mergeYamlItems);
     }
 
     private static void mergeYamlItems(YamlConfiguration yaml) {
@@ -73,7 +68,7 @@ public final class MagicFxConfig {
             if (itemSec == null) continue;
             ConfigurationSection fx = itemSec.getConfigurationSection("use_fx");
             if (fx == null) continue;
-            String itemId = key.contains(":") ? key : "maggoteers:" + key.replaceFirst("^maggoteers:", "");
+            String itemId = ItemYaml.normalizeItemId(key);
             MagicUseFx base = BY_WEAPON.getOrDefault(itemId, defaults);
             BY_WEAPON.put(itemId, merge(base, parseSection(fx, base)));
         }
@@ -168,12 +163,6 @@ public final class MagicFxConfig {
         };
     }
 
-    /** @deprecated use {@link #mergedFxForAbility(String, io.mczju.maggoteers.effect.Effect, io.mczju.maggoteers.effect.EffectContext, ConfigurationSection)} */
-    @Deprecated
-    public static MagicUseFx mergedFxForAbility(String itemId, ConfigurationSection abilityFx) {
-        return mergedFxForAbility(itemId, null, null, abilityFx);
-    }
-
     static String templateKeyForEffect(io.mczju.maggoteers.effect.Effect effect,
                                        io.mczju.maggoteers.effect.EffectContext params) {
         if (effect == null) {
@@ -220,18 +209,9 @@ public final class MagicFxConfig {
         };
     }
 
-    public static MagicUseFx forWeapon(String itemId) {
-        if (itemId == null) return defaults;
-        return BY_WEAPON.getOrDefault(itemId, defaults);
-    }
-
-    /** 是否在配置里显式绑定了 FX（非仅靠 defaults）。 */
-    public static boolean hasExplicitBinding(String itemId) {
-        return itemId != null && BY_WEAPON.containsKey(itemId);
-    }
-
-    public static Set<String> boundWeaponIds() {
-        return Set.copyOf(BY_WEAPON.keySet());
+    /** 配置加载的默认 FX（非 {@link MagicUseFx#defaults()} 的写死值——两者半径等字段不同）。 */
+    public static MagicUseFx currentDefaults() {
+        return defaults;
     }
 
     private static MagicUseFx merge(MagicUseFx base, MagicUseFx over) {

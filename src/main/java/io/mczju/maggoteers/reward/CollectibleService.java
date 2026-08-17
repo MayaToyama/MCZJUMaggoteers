@@ -67,13 +67,7 @@ public final class CollectibleService {
             RunItemTags.setCollectiblePdc(meta, rewardId, level);
             stack.setItemMeta(meta);
         }
-        var leftover = player.getInventory().addItem(stack);
-        if (!leftover.isEmpty()) {
-            for (ItemStack left : leftover.values()) {
-                if (left == null || left.getType().isAir()) continue;
-                player.getWorld().dropItemNaturally(player.getLocation(), left);
-            }
-        }
+        ItemService.deliver(player, stack);
         return true;
     }
 

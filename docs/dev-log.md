@@ -5,6 +5,140 @@
 
 ---
 
+## 2026-08-17 — 设计冗余清理 plan（§1–§14：合并重复实现 + 删半死参数 + 文档修正）
+
+- **做了什么**：执行「设计冗余清理」plan 全部 §1–§14。与同日死代码清理互补：上一步删**纯死符号**，本步合并「同一逻辑多处拷贝」、删「定义了但无运行时消费者」的半死参数/分支，并修正 CLAUDE.md 与代码的错位。每节删前 `grep` 引用面、合并保持行为不变。
+  - **§1 半死/死符号**：`Trigger.ON_GAME_END` 枚举值 + `MaggoteersGame` 的 fire 调用删除；`ItemAbility.single(...)` 工厂删除；@Deprecated `ItemService.CURRENCY_NORMAL/BOSS` 删除；`TriggeredGrantAttribute.isRevokeOp/normalizeOp` 删除；`rewards.yml` 9 个 `currency:` 键删除。
+  - **§2 toward 死链 + 不可达 AURA**：`EffectKeys.PROJECTILE_TOWARD`/解析 case/`SummonParams.toward`/`SummonParamsParser.weaponPath` 参数全链删除，`items/maggoteers.yml` 的 `toward: look` 删除；确认触发型 AURA 无来源能构造 → `executeEffect` 的 `case AURA` 与 `activateAura` 删除。
+  - **§3 GRANT_ITEM 双 createItem**：`executeGrantItem` 整段收敛到 `GrantItemParams.parse().map(ItemService.give)`；`MagicFxConfig.forWeapon` → `currentDefaults()`（返回**配置加载的** defaults，非 `MagicUseFx.defaults()` 写死值——两者半径 4.5 vs 4.0 不同）。
+  - **§4 items 目录扫描共享**：新 `util/ItemYaml`（`normalizeItemId` + `forEachYaml`）；`ItemAbilityRegistry`/`WeaponHeldRegistry`/`MagicFxConfig`/`ItemService` 四处目录扫描与 id 规范化共用之。
+  - **§5 交付/消耗共享**：`ItemService.deliver` 提 public 供 `CollectibleService` 复用；新 `spendOneFromMainHand`；`ConfigMagicHandler`/`ItemInteractRouter`(SUPPLY_HEALING) 改调；保留 kind 级 `spendOne/spendOneKind`（遍历全背包，语义不同）。
+  - **§6 Act 粘贴+传送去重**：`WaveScheduler.pasteActForCursor/findMap` 删除，统一走 `ActSpawnHelper.pasteAndTeleport`。
+  - **§7 PDC kindKey + 参数清理**：`ItemService.kindKey()` 提包可见，`RunItemTags` 内联复用；`ItemAbilityRegistry.defaultStackForStep` 去未用 `deferred` 参数（测试同步）。记录 held `ADD` 默认 vs deferred `REPLACE` 的**有意不一致**。
+  - **§8 治疗统一**：新 `EffectService.heal(Player,double)`（`min(max,hp+amount)`，返回实际量）；`applyHealOrSelfDamage` 正分支 / HEAL_AREA / `AuraService` HEAL grant / `ItemInteractRouter`(SUPPLY_HEALING) 统一调之；负分支（自伤 HP 精确扣除）不动。
+  - **§9 玩家活力重置合并**：新 `PlayerStateManager.clearFallFire` + `healToMax`；`applyAdventure`/`restoreFullHealth`/`MaggoteersGame.resetLobbyVitality`/`MaggoteersDeathStrategy.stabilizeAlive`/`ActSpawnHelper` 统一调用（用户拍板「三处全部统一」）。`resetLobbyVitality` 刻意**不加** `noDamageTicks`。
+  - **§10 配置解析工具 + MobYamlParser**：新 `config/ConfigParse`（`num`/`trimToNull`）；替换 `MapRepository`/`AffixService`/`WavesConfig`/`MobYamlParser` 的私有 num；`parsePassengersDepth`/`parseOnDeathDepth` 抽共享 `parseMobNode`（PassengerCfg/DeathSpawnCfg 构造参数顺序已核对：onDeath 与 passengers 互相前置）。
+  - **§11 MobFactory 刷怪配置块提取**：新 `configureSpawnedLiving(...)` 统一 death/mount/passenger 三个 spawn 配置序列；`setAware(true)` 只在 death-mob 与 passenger（mount 无，保持现状）。
+  - **§12 game 解析器统一**：新 `PlayerStateManager.gameOf(Player)`（先 registry 级 `gameForPlayer`，回退 MGC `PlayerExt` instanceof）；`EffectService.currentGame`/`EffectListener`/`WeaponHeldListener`/`AllyTargeting.resolveForPlayer`/`PotionImmunity.stateOf`/`SummonFriendlyFireListener` 统一委托；顺带修复旧裸 cast `(MaggoteersGame) pe.getGame()` 的潜在 CCE。`ItemInteractRouter:129` **保留** `new PlayerExt`——需要 `AbstractGame` hint 传给 `resolveForPlayer`，记录为 §12 例外。
+  - **§13 明确不合并项（只加注释）**：两个 20-tick 心跳（`EffectListener.startTick` 分发 ON_TICK_1S vs `GameplayTickListener` 光环/药水/满腹维护）互引注释；`executeEffect`（无 defaults）vs `executeMagicEffect`（先 `withDefaults`）双 switch 互引注释；`RewardOption.parseParams` vs `EffectParamsParser` **不整体合并**（前者吃 `Map<?,?>`、后者吃 `ConfigurationSection`，且默认值 radius 8.0 vs null 真实不同）；`RewardOption.unique` 保持；config.yml `scaling:` 下加 `# mob_speed` 注释占位（不启用）。
+  - **§14 文档修正（CLAUDE.md）**：§4.2 子系统表按实际包结构重写（`plan/RunPlan`→`ActPlan`+`RunConfig`、`mob/` 移除 `AffixService`、菜单移入新 `menu/` 行、删 `currency/` 与 `shop/` 行、`PoolBuilder`→`UnlockRegistry`、`PdcKeys`→`RunItemTags`、`ConfigManager`→各 Config 类，并补 `listener/`/`persist/`/`integration/` 行）；§6 剧本结构块按 `RunPlanner.plan` → `List<ActPlan>` + `RunConfig` 重写；§7.6 配置块与 config.yml 逐键同步（`initial_equipment`→detection_radar、`rest`→60、act2/act3 波数、`scaling` 数值，补 `debug`/`mob_attributes`/`class_select`/`items`/`run_items`/`aura`/`magic_fx`/`world`/`player`/`act_enter`/`map`/`rewards`/`messages`）；§12 schema 删 `currency:` 与 cost 示例（统一 `cost: 1`），加注币种由 RestMenu 按波次层级推导（`RewardService.normalShopTier`）；§10.1/§15 同步删已移除的 `ON_GAME_END`。
+- **原因**：三线并行审计确认一批「同一逻辑多处拷贝」与「定义了但无运行时消费者」的配置项/参数/分支；全部合并或删除，行为不变。
+- **决策**：
+  - **`Trigger.ON_REVIVE` 保留**（未来会用，fire 点不动）——§1 只删 `ON_GAME_END`。
+  - **`RewardOption.parseParams` vs `EffectParamsParser` 不整体合并**——数据结构与默认值有真实差异，只共享 `parseGrantBlock` 子解析器，残余字段漂移记为**可选未来工作**。
+  - **两个心跳 / GRANT_ITEM+SUMMON+GRANT_REVIVE 双 switch 有意不合并**——职责/枚举源/默认值语义不同，合并会改变行为（§13 注释已记录）。
+  - **`ItemInteractRouter:129` 保留 PlayerExt**——需要 `AbstractGame` hint，`gameOf` 返回 `MaggoteersGame` 不满足签名。
+  - **config.yml `# mob_speed` 仅注释占位**——当前速度缩放不生效，取消注释即启用。
+- **遗留**：`parseGrantBlock` 之外 `RewardOption.parseParams` 的残余字段漂移；最终验收（本机 WSL 仅 JDK 21 无法编译 Java 25）在 **Windows IntelliJ `mvn test`** 完成。
+
+## 2026-08-17 — 波次关卡中文名（`关卡名称`）：开波提示 + 计分板
+
+- **做了什么**：`waves.yml` 每条 strategy 增加 `关卡名称`（取自原中文注释，如「烟花秀」）；`SpawnStrategyCfg` / `WaveSpec` 携带该字段；`wave.begin` 的 `{strategy}` 改用中文名；计分板新增 `scoreboard.line_strategy`（`关卡 · {strategy}`）。缺省回落 strategy id。
+- **决策**：YAML 键用中文 `关卡名称`（需求原文）；运行时字段英文 `displayName`。服上已有 `waves.yml`/`config.yml` 不会被 jar `saveResource(false)` 覆盖，部署须显式同步。
+- **遗留**：无。
+
+## 2026-08-17 — 中途退出玩家残留状态修复：观察者模式进大厅 + 上局档案（物品栏/血量加成）跨局残留
+
+- **问题（QA 反馈）**：玩家死亡转观察者后 `/mgc leave`，回大厅仍保持观察者模式；再次进入房间时，会拿到上局退出时的玩家档案（物品栏、MAX_HEALTH 加成等）。
+- **根因**：MGC `DefaultPlayerManager.leaveGame` 只调 `switchProfile(null)`，而 MGC `ProfileCapture` **只保存/恢复物品栏 + XP**，完全不碰 GameMode、血量、属性加成、药水效果。退出玩家又不在 `cleanupRun` 的 `getPlayers()` 清理范围，故：
+  - `setGameMode(SPECTATOR)` 无人复位 → 观察者进大厅；
+  - `EffectService.removeAll` 从未对退出玩家调用 → MAX_HEALTH 属性加成/常驻药水跨局累积（且 `removeAll` 走 `currentGame(p)` 查 MGC game map，退出玩家已移除 → 即便调用也拿不到 PlayerState 提前 return）；
+  - `switchProfile(null)` 会把局内物品 capture 进 `maggoteers` profile，下次 `joinGame` 的 `switchProfile` 又 apply 回来 → 等待房展示陈货。
+- **修复**：
+  - `EffectService` 新增 `removeAllFor(Player, MaggoteersGame)`（显式传对局对象），`removeAll(p)` 委托之——解决「退出玩家查不到 game」的问题，剥除派生属性/药水并 `clearEffects`。
+  - `MaggoteersPlayerQuitStrategy` 补 per-player 清理：`removeAllFor` + `setGameMode(SURVIVAL)`（修观察者模式）+ `MaggoteersGame.resetLobbyVitality`（血量/饥饿复位）；`AuraService.stripAllFromSource` 改为无条件调用（幂等）。**刻意不清物品栏**——此刻当前 profile 已是 lobby，若清空，下次 `joinGame` 的 `switchProfile` 会把空物品栏写进 lobby profile，永久清空大厅物品。
+  - `MaggoteersGame.getGameWaitStrategy()` 返回子类，`onPlayerJoin`/`onPartyJoin` 先清物品栏——`tryJoin` 里 `joinGame` 先 apply 陈旧 `maggoteers` 快照、随后才调 wait 策略的 `onPlayerJoin`，此处清掉即隐藏等待房陈货。
+  - `startInWorld` 调整顺序：**先 `getInventory().clear()` 再 `switchProfile(this.getId())`**——让 profile capture 把空物品栏写进 `maggoteers`，从源头清掉残留快照（此后再 apply 也是空）。
+- **决策**：
+  - 未直接改 MGC（`ProfileManager.playerProfileCache` 私有、无公开 per-player ProfileData 访问），故「清空残留 profile」靠「先清物品栏再 switchProfile」达成，不依赖 MGC 内部。
+  - 死亡转观察者时**不**清物品栏（复活币要还回背包），残留清理统一放在 quit 路径。
+- **遗留**：`maggoteers` profile 若残留 XP 等级（capture 含 level/exp），不在本次处理范围（游戏不用 XP，属次要外观问题）。
+- **验证**：JDK25 定向编译 EXIT 0；Windows IntelliJ 实测通过——死亡后 `/mgc leave` 回大厅为生存模式，再次进入不再出现上局物品/MAX_HEALTH 加成残留。
+
+---
+
+## 2026-08-17 — 死代码清理 plan（R1 drop× 链 + 战斗/波次 + 效果/物品 + 奖励 + 可见性收紧）
+
+- **做了什么**：执行 `docs/plan/2026-08-17-dead-code-cleanup.md` 全部五节。每节流程：删前 `grep` 0 引用（含 src/test）→ 删除 → 测试同步 → 删后 `grep` 复核残留为 0。
+  - **§1 R1 drop× 货币掉落死代码链**（`CurrencyService` 类不存在、货币仅来自清波 `clearReward`）：`plan/Compose` 移除 drop 倍率计算与 compose 产物 drop 参数；`RunPlanner` 不再传 `dropMult`；`wave/MobSpawnProfile` 移除 `dropMult` 字段及 from* 参数；`wave/SpawnStep`/`PassengerSpawn`/`DeathSpawn` 移除 `dropMult` 参数（构造器全量同步）；`config/Affix` 移除 `drop`；`config/ScalingConfig` 移除 `currencyDrop` 及读取；`config.yml` 删 `scaling.currency_drop`；`affixes.yml` 删 `greedy` 词缀。
+  - **§2 战斗/波次**：`MobFactory.spawn(Location,SpawnStep)`、`spawnStepGroup` 2 参重载；`WaveEngine.entityStep(UUID)` + `WaveRuntime.mobSteps` Map；`MountedSquadRegistry.clearAll()`；`WaveScheduler.pause/resume`、`isPrepPhase`；`WaveRuntime.cleared` 字段及置位；`Phase.CLEARED`；`MobSpawnProfile` 未读字段 `affixes/infernal/name`；`DeathSpawn.count`（恒 1，靠外部 for 展开）；`MapRepository.pickRandom` + 非种子 `RNG`；`WavesConfig.getStrategy/getPool`（统一走 `definitions()`）。
+  - **§3 效果/物品**（15 生产符号 + 5 测试方法）：`EffectService.dispatchTriggeredEffects`（5 参包装）→ 只留 `...Collecting` 并更新 javadoc；`executeEffect` 3 参重载 → 只留 4 参；`EmpowerFxCoalesce.pickFxLabel`；`MagicFxConfig.mergedFxForAbility`（2 参 deprecated）、`hasExplicitBinding/boundWeaponIds`；`BeamLogic.sampleSteps`（调用点内联）；`AttributeModifierKeys.matchesManagedEffect`；`MagicFxPresets.followMarkAbove` + `EffectKeys.MARK_DURATION_SEC` + `EffectParamsParser` 对应 case；`TriggerContext.withAttacker`；`WeaponAbilityIds.isPackMember`；`WeaponTempEffect.EFFECT_ID_PREFIX/effectId`；`ItemAbility` 7 个访问器（record 重构为只留 `isDeferredOnly`+`single`）；`ItemAbilityRegistry.snapshot()`；`ItemKind.fromPdc` 精确重载（留 `fromPdcLoose`）；`SummonExecutor.applyProjectile` 相同 if/else 合并为一行。测试：`EmpowerFxCoalesceTest`/`BeamLogicTest`/`TriggerContextWithersTest`/`WeaponAbilityIdsTest` 删对应用例、`WeaponTempEffectTest` 改用 `WeaponAbilityIds.effectId`。
+  - **§4 奖励**：`RewardPool.currency` 组件 + `currencyKind()/currencyItemKind()` + 4 参 legacy 构造 + `RewardService` 解析局部变量（`POOLS.put` 改 3 参 record）；`UpgradeLevelCaps.defaultCap()`；`collectibles.yml` 删 4 个 `a3b_*` 映射（复用 act2 护符）；`RewardPool` 相关 2 处测试构造同步。
+  - **§5 可见性收紧**：`ItemService.itemId/deliver/countCurrency/spendOne` 由 public 收紧为 private（0 外部调用，均内部私有助手）；`ParticleEffects.playAreaRing` 4 参重载删除（留 3 参便捷版，EffectService 消费）；`GameRegistries.PARTICLE_ALLOWLIST` + `particle()` 回退遍历删除——**确认为不可达**：`Particle.valueOf` 用大写名、allowlist 是枚举常量子集，不可能比 valueOf 匹配更多，非 Paper 粒子重命名预留。
+- **原因**：四线审计确认一批「定义了但从未被消费」的方法/字段/枚举/配置项；全量符号删前 `grep` 0 引用、删后复核无残留。
+- **决策**：
+  - `ItemInteractRouter.registerHandler`/`WEAPON_HANDLERS` **保留**——CLAUDE.md §15 记录的设计逃生口（Escape hatch），运行时恒空但属公开扩展点 API，不做 deprecated 标注以免误删。
+  - `Fake255Rules` 保留（仍在服役：禁止 amp-255 伪装清除/免疫，硬失败校验）。
+  - `RewardOption.unique` **不删**（半死：仅加载告警，不参与运行判定）。
+  - `ItemAbility.single(...)` 工厂 0 引用但不在 plan 列举范围 → 保留未动。
+  - `projectile.toward`：`SummonExecutor` 两分支原相同、运行时无消费者，仅合并 if/else；`items/maggoteers.yml` 的 `toward: look` 配置保留（疑似预留），未删。
+  - @Deprecated `ItemService.CURRENCY_NORMAL/CURRENCY_BOSS` 常量 0 引用，不在 plan §5 范围 → 未删。
+- **遗留**：
+  - `rewards.yml` 仍有 9 个 `currency:` 键（normal/boss），`RewardService` 已不再解析（币种由 RestMenu 硬编码）→ 现为「半死」配置，未在本 plan 删；建议单独确认后移除。
+  - **验收**：本机 WSL 仅 JDK 21 无法编译 Java 25 字节码，WSL 侧无法编译；最终由 Windows IntelliJ `mvn test` 全绿 + 测试服实测通过确认（2026-08-17）。
+
+---
+
+## 2026-08-17 — 战斗/触发/奖励链路审计：修复 7 处 + 删 3 处冗余 + 2 个后续 plan
+
+- **做了什么**：
+  - 四线并行审计（战斗数据链路 / 触发→效果 / 三选一奖励 / 跨模块死代码），逐条与需求方确认处置后落地。
+  - **修复 7 处**：
+    - R2 `WaveEngine` 新增 `clearPendingSplitCancel()`，`onWaveCleared` 与 `stop` 清空史莱姆分裂取消集合（防 `SlimeSplitEvent` 先于 `EntityDeathEvent`/被取消导致的无界增长）。
+    - R6 `EffectService.executeMagicEffect` 补 `GRANT_REVIVE` 分支（此前 use_ability 配 `GRANT_REVIVE` 加载通过但运行时静默失败）。
+    - R9 `MaggoteersPlayerQuitStrategy` 退出时清 `CooldownService` CD 表（防跨局泄漏/陈旧 CD）。
+    - R10 三选一抽签缓存：`RewardService.drawCached/invalidateDraw/clearDraws`；ESC 退出保留选项，仅购买/换池刷新（此前可 ESC 重进白刷新不耗币）。
+    - R11 bundle 可见性按 bundle 自身 id 的 `acquiredUnique` 判定（此前含 WEAPON/SUPPLY grant 的 bundle 恒可见、无限重复发放）。
+    - R13 `ItemService.countCurrency` 改遍历 `getSize()`（含副手），与 `spendOne` 范围一致。
+    - R14 `UnlockShopMenu` 解锁前经 MGC `AlertMenu(Player, Runnable)` 二次确认。
+  - **删 3 处**：延长休整（`config.yml` `rest.extend_sec/extend_max` + CLAUDE.md §9.1/§9.3/§7.6）；`Trigger.ON_INTERACT`（枚举 + `RewardLoadValidator` 引用 + 2 测试占位改 `ON_KILL`/`ON_TICK_1S`）；孤立世界清理开关（`world.cleanup_orphans_on_enable` 键 + CLAUDE.md §7.6）。
+- **原因**：审计发现 `drop×` 货币掉落整链是死代码（`CurrencyService` 类不存在、`MobSpawnProfile.dropMult` 无读取）、`scaling.mob_speed`/`currency_drop` 等配置键未被消费、多处文档-代码错位。
+- **决策**：`drop×` 掉落链（`Affix.drop`/`scaling.currency_drop`/`MobSpawnProfile.dropMult`/`Compose` 掉落倍率）与其余死方法/死字段一并纳入「死代码清理 plan」确保安全再删；`debug.enabled=true` 为测试期开关、上线前改 false；`mob_speed` 保留（后续扩展「词条」）；`friendly_fire` 召唤物误触 `ON_DAMAGE_TAKEN` 作风味保留。
+- **遗留**：
+  - **R3（延迟挂载乘客竞态，需单独 plan 重做）**：`MobFactory.spawnStepGroup`/`mountPassengersDelayed` 用 `runTaskLater(1L)` 挂载乘客、回调闭包捕获当时的 `rt`；若这 1 tick 内 `WaveScheduler.defeat/stop` 先跑完，延迟任务仍会把乘客写进陈旧 runtime + `BY_ENTITY`，实体无人移除。建议挂载前校验 `RUNTIMES.get(game)==rt`，或挂载前判 game 是否已 `cleanedUp`。
+  - 本机 WSL 仅 JDK 21（读不了 Java 25 依赖 jar），本次改动未能在 WSL 编译；建议 Windows IntelliJ 跑一次完整 `mvn test` 收尾。
+
+---
+
+## 2026-08-16 — 全员倒下改为观战保留房间，全员 leave 才结束
+
+- **做了什么**：
+  - `MaggoteersGame` 拆出三个结束入口：`fail()`（启动失败 / 世界创建失败等**即时**结束）、`markDefeated()`（全员倒下：`outcome=FAIL` + 停波清怪，但**不** endGame，保留房间）、`finishGame()`（全员 leave 后真正 endGame；若 `outcome` 仍 `IN_PROGRESS` 视为失败）。
+  - `WaveScheduler.defeat()`：停心跳 + 清怪 + 置 `DEFEATED`，但**保留 cursor** 供结算读进度（区别于 `stop()` 会移除 cursor）。`Phase` 新增 `DEFEATED` 枚举，计分板经 `wave.phase_defeated`（config.yml 可配文本）显示「失败」。
+  - 死亡策略「全员倒下」与退出策略「最后存活者离开」都改调 `markDefeated()`；退出策略「已无人」改调 `finishGame()`。新增消息 `game.defeat`。
+- **原因**：原「全员倒下 → 立即 fail → 删房」体验生硬，玩家来不及看结算/复盘；希望倒下后继续以观察者观战，直到全员 `/mgc leave` 才真正结束并删房。
+- **决策**：`markDefeated` 在败局时就置 `outcome=FAIL` 但**保留 cursor**——否则 `WaveScheduler.stop` 移除 cursor 会让结算 `progress` 读到 {0,0}、败局货币归零；真正结束统一由 `finishGame` 触发，结算在 `cleanupRun` 用保留下来的 progress 计算 FAIL 部分货币。
+- **遗留**：掉线（DISCONNECT）走同一 quit 策略，最后一人掉线也会 `markDefeated` 而非直接结束。
+
+---
+
+## 2026-08-16 — 多人生命周期加固：掉线不停局 + 中止后孤儿定时器 + 结算幂等
+
+- **做了什么**：
+  - 重写 `getPlayerQuitStrategy()`，新增 `MaggoteersPlayerQuitStrategy`：单人掉线/退出不再走 MGC 默认的 `abortGame`（整局终止），改为 `markDown`（alive=false，等同死亡耗尽转观察者）+ `AuraService.stripAllFromSource` 剥离光环来源，其余人继续；退出后已无人（含 STATING 窗口 world/PlayerState 尚未初始化的极端情况）或局已开局且无存活玩家时才 `fail()`。
+  - `MaggoteersGame` 新增 `volatile boolean cleanedUp`：`cleanupRun` 首行幂等守卫；`win/fail/startInWorld`、plan 轮询、职业选择轮询、`onAllClassesChosen` 全部加存活守卫。
+  - 新增消息 key `death.to_down_quit`（config.yml + `MessageService.REQUIRED_KEYS`）。
+- **原因**：
+  - MGC `DefaultPlayerQuitStrategy` 对「任何一人退出」都 `abortGame`，与本设计文档假设的「onGameAbort = 全员退出」矛盾——4 人局一人网络闪断即整局清退、其余人 0 收益（P0-1）。
+  - abort 时 `outcome` 保持 `IN_PROGRESS`，原 `outcome != IN_PROGRESS` 守卫对 abort 路径形同虚设，导致 `startInWorld` 的 plan 轮询定时器在局已中止后仍 `beginClassSelect → onAllClassesChosen → WaveScheduler.start` 在已删世界的死局上重启波次状态机；`runWhenReady` 延迟的 `startInWorld` 也会在中止后建孤儿世界（P1-1）。
+  - `onGameCancel/Abort/End` 三者直连 `cleanupRun` 且无幂等，重复触发会重复发账户货币（P1-2）。
+- **决策**：掉线者标记 `alive=false` 后，`isAnyAlive`/`skipVoteTotal`/光环治疗等所有 `isRunParticipant` 过滤自动排除他，无需额外清 `BY_UUID`（P0-2 一并解决）；`cleanedUp` 在 `cleanupRun` 同步置位作为唯一存活信号；`Settlement` 对 `IN_PROGRESS` 仍返 0，不改失败结算语义。
+- **遗留**：
+  - 掉线者不能再被复活币救（`ReviveMenu` 遍历 `getPlayers()`，离线者已被 MGC 移出）——无中途重连故无实际意义，接受。
+  - 服上旧 config.yml 缺 `death.to_down_quit` 会退回字面量 `messages.death.to_down_quit`，正式发版随 config 一并更新。
+  - 本机 WSL 仅 JDK 21（读不了 Java 25 依赖 jar），已用 `javac.exe` 定向编译 `MaggoteersGame` / `MaggoteersPlayerQuitStrategy` / `MessageService` 验证通过；建议 Windows IntelliJ 跑一次完整 `mvn test` 收尾。
+
+---
+
+## 2026-08-16 — 修复 ADD_ATTRIBUTE 百分比乘算 bug + op 白名单校验
+
+- **做了什么**：`AttributeModifierKeys.attributeOperation` 把 `PERCENT` 从 `MULTIPLY_SCALAR_1`（乘算）改为 `ADD_SCALAR`（加算）；新增 `op: MULTIPLY` 显式映射到 `MULTIPLY_SCALAR_1`（预留乘算扩展点）；新增 `isValidAttributeOp`，`RewardLoadValidator.validateAttributeOp` 对 `ADD_ATTRIBUTE` 的 `op` 做 `FLAT/PERCENT/MULTIPLY` 白名单校验（非法值加载即报错）。`EffectService`/`AuraService` 两处属性施加统一走 `attributeOperation`。
+- **原因**：`PERCENT` 语义应为"百分比加算"（`base × (1 + Σvalue)`），但代码从计划阶段（`plan5-effects.md`）就错写成 `MULTIPLY_SCALAR_1`（`base × Π(1+value)` 逐层连乘），导致 `stack: ADD` 的百分比物理属性实际按乘算叠加、数值膨胀，且与魔攻（`1.0 + Σ`）语义不一致。错误源头在计划文档，代码照抄。
+- **决策**：`PERCENT`＝加算、`MULTIPLY`＝乘算（当前 rewards.yml 未使用）；`FLAT`/缺省仍 `ADD_NUMBER`；魔攻（虚拟属性）继续只支持 `PERCENT` 加算，不走 `attributeOperation`。
+- **遗留**：`MAGIC_DAMAGE` 若要乘算需在 `PlayerCombatStats` 单独加逻辑；`op: MULTIPLY` 目前是可用但未启用的扩展点；建议 Windows IntelliJ 跑一次完整 `mvn test` 收尾确认。
+
+---
+
 ## 2026-08-15 — 玩家可见文案外置 config.yml messages
 
 - **做了什么**：新增 MessageService（MiniMessage + escapeTags 占位）；config.yml 嵌套 messages:；局内广播/记分板/GUI/物品提示/商店/排行榜/GameMeta/命令壳改走配置。onEnable：saveDefaultConfig → MessageService.load → 

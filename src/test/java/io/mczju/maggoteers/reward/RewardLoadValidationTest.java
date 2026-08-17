@@ -22,9 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RewardLoadValidationTest {
 
     @Test
-    void rejectsOnInteractFireTrigger() {
-        RewardOption opt = stat(Effect.DAMAGE_AREA, Trigger.ON_INTERACT, null, 0, null);
-        assertTrue(RewardLoadValidator.validateStatOption(opt).orElse("").contains("ON_INTERACT"));
+    void rejectsForbiddenFireTrigger() {
+        RewardOption opt = stat(Effect.DAMAGE_AREA, Trigger.ON_TICK_1S, null, 0, null);
+        assertTrue(RewardLoadValidator.validateStatOption(opt).orElse("").contains("forbidden fireTrigger"));
     }
 
     @Test
@@ -42,6 +42,26 @@ class RewardLoadValidationTest {
         params.put(EffectKeys.VALUE, 0.10);
         RewardOption opt = stat(Effect.ADD_ATTRIBUTE, null, null, 0, params);
         assertTrue(RewardLoadValidator.validateStatOption(opt).orElse("").contains("PERCENT"));
+    }
+
+    @Test
+    void rejectsUnknownAttributeOp() {
+        EffectContext params = new EffectContext();
+        params.put(EffectKeys.ATTR_NAME, "ATTACK_DAMAGE");
+        params.put(EffectKeys.OP, "BOGUS");
+        params.put(EffectKeys.VALUE, 0.10);
+        RewardOption opt = stat(Effect.ADD_ATTRIBUTE, null, null, 0, params);
+        assertTrue(RewardLoadValidator.validateStatOption(opt).orElse("").contains("unknown op"));
+    }
+
+    @Test
+    void acceptsMultiplyOp() {
+        EffectContext params = new EffectContext();
+        params.put(EffectKeys.ATTR_NAME, "ATTACK_DAMAGE");
+        params.put(EffectKeys.OP, "MULTIPLY");
+        params.put(EffectKeys.VALUE, 0.10);
+        RewardOption opt = stat(Effect.ADD_ATTRIBUTE, null, null, 0, params);
+        assertTrue(RewardLoadValidator.validateStatOption(opt).isEmpty());
     }
 
     @Test
@@ -192,6 +212,13 @@ class RewardLoadValidationTest {
         RewardOption b = boundEquipStat("prot_b", null, Stack.UPGRADE_LEVEL, 8);
         assertTrue(RewardLoadValidator.chestBoundEquipConflict(List.of(a), b).isPresent());
         assertTrue(RewardLoadValidator.chestBoundEquipConflict(List.of(), a).isEmpty());
+    }
+
+    @Test
+    void sameIdChestBoundEquipAllowedAcrossPools() {
+        RewardOption a1 = boundEquipStat("prot_chest", null, Stack.UPGRADE_LEVEL, 8);
+        RewardOption a2 = boundEquipStat("prot_chest", null, Stack.UPGRADE_LEVEL, 8);
+        assertTrue(RewardLoadValidator.chestBoundEquipConflict(List.of(a1), a2).isEmpty());
     }
 
     @Test

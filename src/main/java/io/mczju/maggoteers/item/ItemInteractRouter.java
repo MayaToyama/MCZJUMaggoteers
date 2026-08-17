@@ -5,6 +5,7 @@ import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.config.MessageService;
+import io.mczju.maggoteers.effect.EffectService;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.item.interact.ItemUseHandler;
 import io.mczju.maggoteers.item.interact.OpenClassMenuHandler;
@@ -72,18 +73,14 @@ public final class ItemInteractRouter implements Listener {
             MenuFacade.open("maggoteers-rest", player, game);
         });
         HANDLERS.put(ItemKind.SUPPLY_HEALING, (player, game, stack) -> {
-            double maxHealth = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH) != null
-                    ? player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue() : 20.0;
-            double toHeal = Math.min(12.0, maxHealth - player.getHealth());
-            if (toHeal <= 0) {
+            double healed = EffectService.heal(player, 12.0);
+            if (healed <= 0) {
                 player.sendMessage(MessageService.component("item.heal_full", Map.of()));
                 return;
             }
-            player.setHealth(player.getHealth() + toHeal);
             player.sendMessage(MessageService.component("item.heal_amount", Map.of(
-                    "hearts", String.valueOf((int) (toHeal / 2)))));
-            if (stack.getAmount() <= 1) player.getInventory().setItemInMainHand(null);
-            else stack.setAmount(stack.getAmount() - 1);
+                    "hearts", String.valueOf((int) (healed / 2)))));
+            ItemService.spendOneFromMainHand(player);
         });
     }
 

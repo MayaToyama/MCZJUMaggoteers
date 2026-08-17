@@ -59,17 +59,6 @@ public final class MobFactory {
         }
     }
 
-    /** @deprecated 使用 {@link #spawnStepGroup(Location, SpawnStep, BiConsumer)} */
-    public static List<LivingEntity> spawnStepGroup(Location baseLoc, SpawnStep step) {
-        List<LivingEntity> out = new ArrayList<>();
-        spawnStepGroup(baseLoc, step, (le, p) -> out.add(le));
-        return out;
-    }
-
-    public static LivingEntity spawn(Location loc, SpawnStep step) {
-        return spawnMount(loc, step);
-    }
-
     private static void mountPassengerTree(LivingEntity carrier, List<PassengerSpawn> nodes,
                                            BiConsumer<LivingEntity, MobSpawnProfile> track,
                                            List<LivingEntity> directChildrenOut) {
@@ -94,6 +83,22 @@ public final class MobFactory {
         }
     }
 
+    /** 刷怪后统一配置：防卸载 → 系数 → 药水 → 视觉 → IM → 装备 → 名字锁定 → 名字再断言 → 挂载限制。 */
+    private static void configureSpawnedLiving(LivingEntity le, double hpMult, double dmgMult, double speedMult,
+                                               double scaleMult, double followRangeMult, List<String> affixes,
+                                               List<PotionSpec> potions, InfernalCfg infernal,
+                                               List<MobEquipment> equipment, String name) {
+        le.setRemoveWhenFarAway(false);
+        applyMobStats(le, hpMult, dmgMult, speedMult, scaleMult, followRangeMult);
+        applyAffixPotions(le, affixes, potions);
+        applyAffixVisuals(le, affixes);
+        InfernalMobsBridge.mechanize(le, infernal);
+        applyEquipment(le, equipment);
+        MobDisplayNames.lock(le, name);
+        scheduleNameReassert(le);
+        MountPassengerLimits.prepareMount(le);
+    }
+
     public static LivingEntity spawnDeathMob(Location loc, DeathSpawn ds) {
         if (loc.getWorld() == null) return null;
         try {
@@ -109,15 +114,8 @@ public final class MobFactory {
                 raw.remove();
                 return null;
             }
-            le.setRemoveWhenFarAway(false);
-            applyMobStats(le, ds.hpMult(), ds.dmgMult(), ds.speedMult(), ds.scaleMult(), ds.followRangeMult());
-            applyAffixPotions(le, ds.affixes(), ds.potions());
-            applyAffixVisuals(le, ds.affixes());
-            InfernalMobsBridge.mechanize(le, ds.infernal());
-            applyEquipment(le, ds.equipment());
-            MobDisplayNames.lock(le, ds.name());
-            scheduleNameReassert(le);
-            MountPassengerLimits.prepareMount(le);
+            configureSpawnedLiving(le, ds.hpMult(), ds.dmgMult(), ds.speedMult(), ds.scaleMult(),
+                    ds.followRangeMult(), ds.affixes(), ds.potions(), ds.infernal(), ds.equipment(), ds.name());
             if (le instanceof Mob m) m.setAware(true);
             return le;
         } catch (Exception e) {
@@ -147,16 +145,9 @@ public final class MobFactory {
                 raw.remove();
                 return null;
             }
-            le.setRemoveWhenFarAway(false);
-            applyMobStats(le, step.hpMult(), step.dmgMult(), step.speedMult(),
-                    step.scaleMult(), step.followRangeMult());
-            applyAffixPotions(le, step.affixes(), step.potions());
-            applyAffixVisuals(le, step.affixes());
-            InfernalMobsBridge.mechanize(le, step.infernal());
-            applyEquipment(le, step.equipment());
-            MobDisplayNames.lock(le, step.name());
-            scheduleNameReassert(le);
-            MountPassengerLimits.prepareMount(le);
+            configureSpawnedLiving(le, step.hpMult(), step.dmgMult(), step.speedMult(), step.scaleMult(),
+                    step.followRangeMult(), step.affixes(), step.potions(), step.infernal(), step.equipment(),
+                    step.name());
             return le;
         } catch (Exception e) {
             LOG.warning("生成怪物失败 " + step.type() + "：" + e.getMessage());
@@ -172,16 +163,8 @@ public final class MobFactory {
                 raw.remove();
                 return null;
             }
-            le.setRemoveWhenFarAway(false);
-            applyMobStats(le, ps.hpMult(), ps.dmgMult(), ps.speedMult(),
-                    ps.scaleMult(), ps.followRangeMult());
-            applyAffixPotions(le, ps.affixes(), ps.potions());
-            applyAffixVisuals(le, ps.affixes());
-            InfernalMobsBridge.mechanize(le, ps.infernal());
-            applyEquipment(le, ps.equipment());
-            MobDisplayNames.lock(le, ps.name());
-            scheduleNameReassert(le);
-            MountPassengerLimits.prepareMount(le);
+            configureSpawnedLiving(le, ps.hpMult(), ps.dmgMult(), ps.speedMult(), ps.scaleMult(),
+                    ps.followRangeMult(), ps.affixes(), ps.potions(), ps.infernal(), ps.equipment(), ps.name());
             if (le instanceof Mob m) m.setAware(true);
             return le;
         } catch (Exception e) {
@@ -196,7 +179,7 @@ public final class MobFactory {
                                              List<String> affixIds) {
         SpawnStep fake = new SpawnStep(
                 new Vec3(loc.getX(), loc.getY(), loc.getZ()),
-                type, 1, hpMult, dmgMult, spdMult, 1.0, 1.0, 1.0,
+                type, 1, hpMult, dmgMult, spdMult, 1.0, 1.0,
                 0, affixIds, List.of(), InfernalCfg.NONE, List.of(), List.of(), List.of());
         return spawnMount(loc, fake);
     }

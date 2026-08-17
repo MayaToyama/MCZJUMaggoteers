@@ -1,6 +1,7 @@
 package io.mczju.maggoteers.effect;
 
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.util.ItemYaml;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -50,16 +51,7 @@ public final class WeaponHeldRegistry {
     }
 
     private static void loadItemsDir(File dir) {
-        if (dir == null || !dir.isDirectory()) {
-            return;
-        }
-        File[] files = dir.listFiles((d, n) -> n.endsWith(".yml"));
-        if (files == null) {
-            return;
-        }
-        for (File f : files) {
-            parseYaml(YamlConfiguration.loadConfiguration(f));
-        }
+        ItemYaml.forEachYaml(dir, WeaponHeldRegistry::parseYaml);
     }
 
     private static void parseYaml(YamlConfiguration yaml) {
@@ -68,7 +60,7 @@ public final class WeaponHeldRegistry {
             if (itemSec == null) {
                 continue;
             }
-            String itemId = normalizeItemId(key);
+            String itemId = ItemYaml.normalizeItemId(key);
             List<?> rawList = itemSec.getList("held_effects");
             if (rawList == null || rawList.isEmpty()) {
                 continue;
@@ -152,12 +144,5 @@ public final class WeaponHeldRegistry {
             return;
         }
         out.add(new WeaponHeldEntry(effect, params, fireTrigger, stack));
-    }
-
-    private static String normalizeItemId(String key) {
-        if (key.contains(":")) {
-            return key;
-        }
-        return "maggoteers:" + key.replaceFirst("^maggoteers:", "");
     }
 }

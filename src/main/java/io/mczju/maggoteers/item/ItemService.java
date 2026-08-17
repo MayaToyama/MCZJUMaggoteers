@@ -1,6 +1,7 @@
 package io.mczju.maggoteers.item;
 
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.util.ItemYaml;
 import io.mczju.mczjuitemcreator.api.ItemCreatorApi;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -34,7 +35,7 @@ public final class ItemService {
 
     private ItemService() {}
 
-    private static NamespacedKey kindKey() {
+    static NamespacedKey kindKey() {
         return new NamespacedKey(MaggoteersPlugin.getInstance(), "kind");
     }
 
@@ -52,18 +53,17 @@ public final class ItemService {
         File dir = new File(plugin.getDataFolder(), "items");
         if (!dir.exists()) dir.mkdirs();
         copyDefaultItems(plugin, dir);
-        int total = 0;
-        File[] files = dir.listFiles((d, n) -> n.endsWith(".yml"));
-        if (files != null && api != null) {
-            for (File f : files) {
-                YamlConfiguration yaml = YamlConfiguration.loadConfiguration(f);
-                Map<String, ItemStack> parsed = api.parseYamlToItems(yaml);
-                for (var e : parsed.entrySet()) {
-                    if (!CACHE.containsKey(e.getKey())) CACHE.put(e.getKey(), e.getValue());
-                }
-                total += parsed.size();
+        int[] total = {0};
+        ItemYaml.forEachYaml(dir, yaml -> {
+            if (api == null) {
+                return;
             }
-        }
+            Map<String, ItemStack> parsed = api.parseYamlToItems(yaml);
+            for (var e : parsed.entrySet()) {
+                if (!CACHE.containsKey(e.getKey())) CACHE.put(e.getKey(), e.getValue());
+            }
+            total[0] += parsed.size();
+        });
         LOG.info("ItemService 已缓存 " + CACHE.size() + " 个物品（含 config 可配置券种）。");
     }
 
@@ -135,7 +135,7 @@ public final class ItemService {
         }
     }
 
-    public static String itemId(ItemKind kind) {
+    private static String itemId(ItemKind kind) {
         return switch (kind) {
             case CURRENCY_NORMAL -> idCurrencyNormal;
             case CURRENCY_BOSS -> idCurrencyBoss;
@@ -230,10 +230,11 @@ public final class ItemService {
         return countCurrency(player, kind.pdcValue());
     }
 
-    /** 统计背包中某类 PDC kind 数量（按件数）。 */
-    public static int countCurrency(Player player, String kindPdc) {
+    /** 统计背包中某类 PDC kind 数量（按件数，含副手，与 {@link #spendOne} 槽位范围一致，R13）。 */
+    private static int countCurrency(Player player, String kindPdc) {
         int n = 0;
-        for (ItemStack stack : player.getInventory().getContents()) {
+        for (int i = 0; i < player.getInventory().getSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
             if (stack == null || stack.getType().isAir()) continue;
             ItemKind k = readKind(stack);
             if (k != null && k.pdcValue().equals(kindPdc)) n += stack.getAmount();
@@ -246,7 +247,18 @@ public final class ItemService {
         return spendOne(player, kind.pdcValue());
     }
 
-    public static boolean spendOne(Player player, String kindPdc) {
+    /** 消耗主手 1 个（amount<=1 清槽，否则减 1）；魔法武器消耗/补给共用。 */
+    public static void spendOneFromMainHand(Player player) {
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand == null || hand.getType().isAir()) return;
+        if (hand.getAmount() <= 1) {
+            player.getInventory().setItemInMainHand(null);
+        } else {
+            hand.setAmount(hand.getAmount() - 1);
+        }
+    }
+
+    private static boolean spendOne(Player player, String kindPdc) {
         for (int i = 0; i < player.getInventory().getSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
             if (stack == null || stack.getType().isAir()) continue;
@@ -258,12 +270,6 @@ public final class ItemService {
         }
         return false;
     }
-
-    /** @deprecated 使用 {@link #countKind(Player, ItemKind)} */
-    @Deprecated
-    public static final String CURRENCY_NORMAL = ItemKind.CURRENCY_NORMAL.pdcValue();
-    @Deprecated
-    public static final String CURRENCY_BOSS = ItemKind.CURRENCY_BOSS.pdcValue();
 
     public static Map<String, ItemStack> cacheView() { return Collections.unmodifiableMap(CACHE); }
 }

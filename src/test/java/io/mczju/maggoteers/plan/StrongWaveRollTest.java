@@ -111,7 +111,7 @@ class StrongWaveRollTest {
     private static ScalingConfig scaling() {
         return ScalingConfig.forTesting(
                 new double[]{1, 1.3, 1.6, 2.0}, new double[]{1, 1.15, 1.3, 1.5},
-                new double[]{1, 1, 1, 1}, new double[]{1, 1.4, 1.8, 2.2}, new double[]{1, 1, 1.2, 1.5});
+                new double[]{1, 1, 1, 1}, new double[]{1, 1, 1.2, 1.5});
     }
 
     private static AffixService affixes() {
@@ -126,7 +126,7 @@ class StrongWaveRollTest {
         var sec = cfg.getConfigurationSection("affixes");
         if (sec != null) {
             for (String id : sec.getKeys(false)) {
-                map.put(id, new Affix(id, 1, 1, 1, 1, List.of(), id));
+                map.put(id, new Affix(id, 1, 1, 1, List.of(), id));
             }
         }
         return AffixService.forTesting(map);
@@ -154,6 +154,8 @@ class StrongWaveRollTest {
         for (var m : s.getMapList("clearReward")) {
             rewards.add(new RewardItemCfg((String) m.get("item"), m.get("amount") instanceof Number an ? an.intValue() : 1));
         }
-        return new SpawnStrategyCfg(id, steps, repeat, rewards);
+        String displayName = s.getString("关卡名称", "");
+        if (displayName == null) displayName = "";
+        return new SpawnStrategyCfg(id, displayName.strip(), steps, repeat, rewards);
     }
 }

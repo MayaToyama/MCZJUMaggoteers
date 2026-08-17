@@ -52,6 +52,8 @@ public class PickMenu extends Menu {
                 Player p = clicker.player();
                 boolean ok = RewardService.apply(p, opt, game, poolId);
                 if (ok) {
+                    // 购买成功 → 该池抽签缓存失效，下次重开重新抽（R10）
+                    RewardService.invalidateDraw(p.getUniqueId(), poolId);
                     // 成功后扣费（C4：原子性——先 apply 再扣）
                     if (currencyKind != null && cost > 0) {
                         for (int j = 0; j < cost; j++) {

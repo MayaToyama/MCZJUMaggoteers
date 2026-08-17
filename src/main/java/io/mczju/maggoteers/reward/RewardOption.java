@@ -268,7 +268,6 @@ public record RewardOption(
             Object v = e.getValue();
             switch (k) {
                 case "speed" -> proj.put(EffectKeys.PROJECTILE_SPEED, v instanceof Number n ? n.doubleValue() : 1.0);
-                case "toward" -> proj.put(EffectKeys.PROJECTILE_TOWARD, String.valueOf(v).toLowerCase());
                 default -> { }
             }
         }

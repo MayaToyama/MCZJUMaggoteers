@@ -108,7 +108,7 @@ public final class RunPlanner {
             List<DeathSpawn> onDeath = buildDeathSpawns(sc.onDeath(), affixes, snap, countRng);
             steps.add(new SpawnStep(
                     Coords.resolve(origin, rel), sc.type(), resolvedCount,
-                    ms.hp(), ms.dmg(), ms.speed(), ms.drop(),
+                    ms.hp(), ms.dmg(), ms.speed(),
                     ms.scale(), ms.followRange(),
                     sc.delaySec() * 20,
                     sc.affixes(),
@@ -123,7 +123,7 @@ public final class RunPlanner {
         }
         List<RewardItem> rewards = strat.clearReward().stream()
                 .map(r -> new RewardItem(r.item(), r.amount())).toList();
-        return new WaveSpec(pickedId, steps, strat.repeat(), rewards);
+        return new WaveSpec(pickedId, strat.displayName(), steps, strat.repeat(), rewards);
     }
 
     /** 全局剧本 seed 下每次池 roll 的唯一盐（含层序 / tier / 层内序号）。 */
@@ -151,7 +151,7 @@ public final class RunPlanner {
             List<DeathSpawn> onDeath = buildDeathSpawns(pc.onDeath(), affixes, snap, countRng);
             for (int i = 0; i < pcnt; i++) {
                 out.add(new PassengerSpawn(
-                        pc.type(), pms.hp(), pms.dmg(), pms.speed(), pms.drop(),
+                        pc.type(), pms.hp(), pms.dmg(), pms.speed(),
                         pms.scale(), pms.followRange(),
                         pc.affixes(),
                         pa.stream().flatMap(a -> a.potions().stream()).toList(),
@@ -180,8 +180,8 @@ public final class RunPlanner {
             List<DeathSpawn> nested = buildDeathSpawns(dc.onDeath(), affixes, snap, countRng);
             for (int i = 0; i < dcnt; i++) {
                 out.add(new DeathSpawn(
-                        dc.type(), 1,
-                        dms.hp(), dms.dmg(), dms.speed(), dms.drop(),
+                        dc.type(),
+                        dms.hp(), dms.dmg(), dms.speed(),
                         dms.scale(), dms.followRange(),
                         dc.affixes(),
                         da.stream().flatMap(a -> a.potions().stream()).toList(),

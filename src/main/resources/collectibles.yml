@@ -102,14 +102,6 @@ collectibles:
     item: maggoteers:charm_a1w_wave_bone
   a2b_atk225:
     item: maggoteers:charm_a2b_atk225
-  a3b_atk300:
-    item: maggoteers:charm_a2b_atk225
-  a3b_mag300:
-    item: maggoteers:charm_a2b_mag225
-  a3b_hp40:
-    item: maggoteers:charm_a2b_hp30
-  a3b_spd25:
-    item: maggoteers:charm_a2b_spd20
   a2b_frost_aura:
     item: maggoteers:charm_a2b_frost_aura
   a2b_hit_heal:

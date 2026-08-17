@@ -6,6 +6,7 @@ import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  * Paper 26.2：{@link AttributeModifier#getKey()} 为 Adventure {@link Key}，与 {@link NamespacedKey} 比较需统一。
@@ -59,6 +60,32 @@ public final class AttributeModifierKeys {
         return pluginKey(plugin, EFFECT_PATH_PREFIX + sanitizeKeyPath(rawEffectId));
     }
 
+    /**
+     * Effect {@code op} → {@link AttributeModifier.Operation}。
+     * <ul>
+     *   <li>{@code PERCENT}：百分比<b>加算</b>（{@link AttributeModifier.Operation#ADD_SCALAR}，
+     *       多个百分比先求和再乘 base）。</li>
+     *   <li>{@code MULTIPLY}：百分比<b>乘算</b>（{@link AttributeModifier.Operation#MULTIPLY_SCALAR_1}，
+     *       逐层连乘，会放大前面的 FLAT/PERCENT）。</li>
+     *   <li>其余（含 {@code FLAT}、null）：绝对值加算（{@link AttributeModifier.Operation#ADD_NUMBER}）。</li>
+     * </ul>
+     */
+    public static AttributeModifier.Operation attributeOperation(String op) {
+        if (op == null) return AttributeModifier.Operation.ADD_NUMBER;
+        return switch (op.trim().toUpperCase(Locale.ROOT)) {
+            case "PERCENT" -> AttributeModifier.Operation.ADD_SCALAR;
+            case "MULTIPLY" -> AttributeModifier.Operation.MULTIPLY_SCALAR_1;
+            default -> AttributeModifier.Operation.ADD_NUMBER;
+        };
+    }
+
+    /** op 是否为合法的属性操作符（{@code FLAT} / {@code PERCENT} / {@code MULTIPLY}）。 */
+    public static boolean isValidAttributeOp(String op) {
+        if (op == null) return false;
+        String u = op.trim().toUpperCase(Locale.ROOT);
+        return u.equals("FLAT") || u.equals("PERCENT") || u.equals("MULTIPLY");
+    }
+
     public static boolean matches(AttributeModifier modifier, NamespacedKey expected) {
         if (modifier == null || expected == null) return false;
         Key k = modifier.getKey();
@@ -67,12 +94,6 @@ public final class AttributeModifierKeys {
 
     public static boolean matchesPluginNamespace(AttributeModifier modifier, String pluginNamespace) {
         return modifier != null && modifier.getKey().namespace().equals(pluginNamespace);
-    }
-
-    /** Plugin-namespace AND {@link #isManagedEffectPath} (excludes item / aura modifiers). */
-    public static boolean matchesManagedEffect(AttributeModifier modifier, String pluginNamespace) {
-        return matchesPluginNamespace(modifier, pluginNamespace)
-                && isManagedEffectPath(modifier.getKey().value());
     }
 
     public static void removeIfMatches(AttributeInstance inst, NamespacedKey key) {

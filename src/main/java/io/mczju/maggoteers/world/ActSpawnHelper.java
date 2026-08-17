@@ -3,6 +3,7 @@ package io.mczju.maggoteers.world;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.plan.ActPlan;
+import io.mczju.maggoteers.state.PlayerStateManager;
 import io.mczju.maggoteers.world.MapRepository.MapEntry;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -29,7 +30,7 @@ public final class ActSpawnHelper {
         Location loc = new Location(w, spawn.x(), spawn.y(), spawn.z());
         game.getPlayers().forEach(pe -> {
             pe.player().teleport(loc);
-            pe.player().setFallDistance(0f);
+            PlayerStateManager.clearFallFire(pe.player());
         });
     }
 }

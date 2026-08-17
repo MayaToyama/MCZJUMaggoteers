@@ -7,7 +7,9 @@ import com.github.mczjuops.mczjugamecore.game.strategy.wait.DefaultGameWaitStrat
 import com.github.mczjuops.mczjugamecore.game.strategy.wait.GameWaitStrategy;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
+import com.github.mczjuops.mczjugamecore.player.party.Party;
 import com.github.mczjuops.mczjugamecore.player.strategy.AbstractPlayerDeathStrategy;
+import com.github.mczjuops.mczjugamecore.player.strategy.AbstractPlayerQuitStrategy;
 import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.item.ItemKind;
@@ -46,6 +48,8 @@ public class MaggoteersGame extends AbstractGame {
 
     private GameOutcome outcome = GameOutcome.IN_PROGRESS;
     private volatile boolean wavesStarted = false;
+    /** 本局是否已走完 cleanupRun（幂等 + 异步/延迟启动任务的存活信号）。 */
+    private volatile boolean cleanedUp = false;
 
     @Override public String getId() { return "maggoteers"; }
 
@@ -62,12 +66,29 @@ public class MaggoteersGame extends AbstractGame {
     @Override
     public GameWaitStrategy getGameWaitStrategy() {
         int min = MaggoteersPlugin.getInstance().getConfig().getInt("wait.min_players", 1);
-        return new DefaultGameWaitStrategy(this, 4, min);
+        return new DefaultGameWaitStrategy(this, 4, min) {
+            /** 清掉上局残留的 maggoteers profile 物品（joinGame 已把陈旧快照 apply 到身上）。 */
+            @Override
+            public boolean onPlayerJoin(PlayerExt player) {
+                player.player().getInventory().clear();
+                return super.onPlayerJoin(player);
+            }
+            @Override
+            public boolean onPartyJoin(Party party) {
+                party.getAllPlayer().forEach(p -> p.player().getInventory().clear());
+                return super.onPartyJoin(party);
+            }
+        };
     }
 
     @Override
     public AbstractPlayerDeathStrategy getPlayerDeathStrategy() {
         return new MaggoteersDeathStrategy(this);
+    }
+
+    @Override
+    public AbstractPlayerQuitStrategy getPlayerQuitStrategy() {
+        return new MaggoteersPlayerQuitStrategy(this);
     }
 
     public GameOutcome getOutcome() { return outcome; }
@@ -82,7 +103,7 @@ public class MaggoteersGame extends AbstractGame {
     public List<ActPlan> getPlannedActs() { return plannedActs; }
 
     public void win() {
-        if (outcome != GameOutcome.IN_PROGRESS) return;
+        if (cleanedUp || outcome != GameOutcome.IN_PROGRESS) return;
         outcome = GameOutcome.WIN;
         MaggoteersPlugin.getInstance().getLogger().info("对局胜利 endGame identity="
                 + System.identityHashCode(this));
@@ -90,9 +111,30 @@ public class MaggoteersGame extends AbstractGame {
     }
 
     public void fail() {
-        if (outcome != GameOutcome.IN_PROGRESS) return;
+        if (cleanedUp || outcome != GameOutcome.IN_PROGRESS) return;
         outcome = GameOutcome.FAIL;
         MaggoteersPlugin.getInstance().getLogger().info("对局失败 endGame identity="
+                + System.identityHashCode(this));
+        MCZJUGameCore.getGameManager().endGame(this);
+    }
+
+    /** 全员倒下：标记失败 + 停波清怪，但保留房间观战；真正结束等全员 leave（{@link #finishGame()}）。 */
+    public void markDefeated() {
+        if (cleanedUp || outcome != GameOutcome.IN_PROGRESS) return;
+        outcome = GameOutcome.FAIL;
+        MaggoteersPlugin.getInstance().getLogger().info("对局失败(观战) markDefeated identity="
+                + System.identityHashCode(this));
+        WaveScheduler.defeat(this);
+        sender().warn(MessageService.raw("game.defeat", Map.of()));
+    }
+
+    /** 全员 leave 后真正结束（中途全员退出视为失败）。 */
+    public void finishGame() {
+        if (cleanedUp) return;
+        if (outcome == GameOutcome.IN_PROGRESS) {
+            outcome = GameOutcome.FAIL;
+        }
+        MaggoteersPlugin.getInstance().getLogger().info("对局结束 finishGame identity="
                 + System.identityHashCode(this));
         MCZJUGameCore.getGameManager().endGame(this);
     }
@@ -110,6 +152,7 @@ public class MaggoteersGame extends AbstractGame {
     }
 
     private void startInWorld() {
+        if (cleanedUp) return;   // 开局前已被取消/中止：勿再建世界
         World w = WorldService.create(this);
         if (w == null) {
             sender().error(MessageService.raw("game.world_create_failed", Map.of()));
@@ -120,9 +163,10 @@ public class MaggoteersGame extends AbstractGame {
         int lives = MaggoteersPlugin.getInstance().getConfig().getInt("lives.default", 2);
         ClassSelectGate.reset(this);
         for (PlayerExt pe : getPlayers()) {
+            // 先清空再 switchProfile：让 capture 把空物品栏写进 maggoteers profile，从源头清除上局残留快照
+            pe.player().getInventory().clear();
             pe.switchProfile(this.getId());
             pe.player().setGameMode(GameMode.ADVENTURE);
-            pe.player().getInventory().clear();
             PlayerStateManager.init(this, pe.player().getUniqueId(), lives);
         }
 
@@ -142,6 +186,7 @@ public class MaggoteersGame extends AbstractGame {
         new BukkitRunnable() {
             int ticks = 0;
             @Override public void run() {
+                if (cleanedUp || outcome != GameOutcome.IN_PROGRESS) { cancel(); return; }
                 if (planReady) { cancel(); beginClassSelect(); }
                 else if (++ticks > 20 * 30) {
                     cancel();
@@ -171,6 +216,7 @@ public class MaggoteersGame extends AbstractGame {
 
         sender().info(MessageService.raw("game.enter_class_select", Map.of()));
         for (PlayerExt pe : getPlayers()) {
+            ItemService.giveInitialEquipment(pe.player());
             ItemService.giveKind(pe.player(), ItemKind.CLASS_TICKET, 1);
             ItemService.giveKind(pe.player(), ItemKind.SHOP_EMERALD, 1);
             MenuFacade.open("maggoteers-class", pe.player(), this);
@@ -179,7 +225,7 @@ public class MaggoteersGame extends AbstractGame {
         new BukkitRunnable() {
             int left = timeout;
             @Override public void run() {
-                if (outcome != GameOutcome.IN_PROGRESS) { cancel(); return; }
+                if (cleanedUp || outcome != GameOutcome.IN_PROGRESS) { cancel(); return; }
                 if (ClassSelectGate.allChosen(MaggoteersGame.this)) { cancel(); onAllClassesChosen(); return; }
                 if (--left <= 0) {
                     cancel();
@@ -192,7 +238,7 @@ public class MaggoteersGame extends AbstractGame {
 
     /** 全员职业选完（或超时兜底）后启动波次。 */
     public void onAllClassesChosen() {
-        if (plannedActs == null || outcome != GameOutcome.IN_PROGRESS || wavesStarted) return;
+        if (plannedActs == null || cleanedUp || outcome != GameOutcome.IN_PROGRESS || wavesStarted) return;
         wavesStarted = true;
         // 职业 STAT（含 MAX_HEALTH）应用后统一 resync + 回满，避免切武器/二次粘贴打乱血量
         for (PlayerExt pe : getPlayers()) {
@@ -223,7 +269,8 @@ public class MaggoteersGame extends AbstractGame {
     }
 
     private void cleanupRun() {
-        EffectService.fireTrigger(this, io.mczju.maggoteers.effect.Trigger.ON_GAME_END);
+        if (cleanedUp) return;
+        cleanedUp = true;
 
         // 结算：按 outcome 发账户货币（D4）
         {
@@ -252,6 +299,7 @@ public class MaggoteersGame extends AbstractGame {
             pl.getInventory().clear();
             EffectService.removeAll(pl);
             io.mczju.maggoteers.item.CooldownService.clear(pl.getUniqueId());
+            io.mczju.maggoteers.reward.RewardService.clearDraws(pl.getUniqueId());
             pe.switchProfile(null);
             pl.setGameMode(GameMode.SURVIVAL);
             resetLobbyVitality(pl);
@@ -268,15 +316,12 @@ public class MaggoteersGame extends AbstractGame {
         io.mczju.maggoteers.effect.AuraService.clearGame(this);
     }
 
-    /** 剥除局内效果后再复位；勿写死 20 血（MAX_HEALTH 加成可能尚未还原）。 */
-    private static void resetLobbyVitality(Player pl) {
-        var maxHp = pl.getAttribute(Attribute.MAX_HEALTH);
-        double max = maxHp != null ? maxHp.getValue() : 20.0;
-        pl.setHealth(max);
+    /** 剥除局内效果后再复位；勿写死 20 血（MAX_HEALTH 加成可能尚未还原）。quit 策略也会用。 */
+    static void resetLobbyVitality(Player pl) {
+        PlayerStateManager.healToMax(pl);
         pl.setFoodLevel(20);
         pl.setSaturation(5f);
-        pl.setFallDistance(0f);
-        pl.setFireTicks(0);
+        PlayerStateManager.clearFallFire(pl);
     }
 
     @Override protected void onGameCancel() { cleanupRun(); }

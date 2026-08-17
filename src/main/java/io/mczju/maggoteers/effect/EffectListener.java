@@ -1,9 +1,8 @@
 package io.mczju.maggoteers.effect;
 
-import com.github.mczjuops.mczjugamecore.game.AbstractGame;
-import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.game.MaggoteersGame;
+import io.mczju.maggoteers.state.PlayerStateManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -21,7 +20,13 @@ public final class EffectListener implements Listener {
     private static BukkitTask tickTask;
     private static int tickRef = 0;
 
-    /** 启动 ON_TICK_1S 心跳（引用计数：多个对局共享同一个心跳任务）。 */
+    /**
+     * 启动 ON_TICK_1S 心跳（引用计数：多个对局共享同一个心跳任务）。
+     * <p>本心跳只负责 {@link Trigger#ON_TICK_1S} 触发器分发（玩家触发型被动定时器）；
+     * 与 {@link io.mczju.maggoteers.listener.GameplayTickListener}（光环/常驻药水/满腹维护）
+     * 职责不同、枚举源不同（这里 {@code ActiveMaggoteersGames}，那边 {@code gamesWithState()}），
+     * 有意分开，勿合并——合并会改变两者各自的遍历与时机语义。
+     */
     public static void startTick() {
         if (++tickRef > 1) return;          // 已有心跳，只增引用计数
         tickTask = Bukkit.getScheduler().runTaskTimer(MaggoteersPlugin.getInstance(), () -> {
@@ -41,7 +46,7 @@ public final class EffectListener implements Listener {
     public void onKill(EntityDeathEvent e) {
         Player killer = e.getEntity().getKiller();
         if (killer == null) return;
-        MaggoteersGame g = gameOf(killer);
+        MaggoteersGame g = PlayerStateManager.gameOf(killer);
         if (g == null) return;
         LivingEntity victim = e.getEntity();
         TriggerContext ctx = new TriggerContext(Trigger.ON_KILL, victim, null);
@@ -52,7 +57,7 @@ public final class EffectListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDamageDealt(EntityDamageByEntityEvent e) {
         if (!(e.getDamager() instanceof Player p)) return;
-        MaggoteersGame g = gameOf(p);
+        MaggoteersGame g = PlayerStateManager.gameOf(p);
         if (g == null) return;
         if (MagicDamageContext.shouldSuppressOnDamageDealt(g, p.getUniqueId())) return;
         Entity damager = e.getDamager();
@@ -66,7 +71,7 @@ public final class EffectListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDamageTaken(EntityDamageByEntityEvent e) {
         if (!(e.getEntity() instanceof Player p)) return;
-        MaggoteersGame g = gameOf(p);
+        MaggoteersGame g = PlayerStateManager.gameOf(p);
         if (g == null) return;
         // Guardian spike reflect + thorns DAMAGE_AREA would recurse without this.
         if (MagicDamageContext.shouldSuppressOnDamageTaken(g, p.getUniqueId())) return;
@@ -76,10 +81,4 @@ public final class EffectListener implements Listener {
         EffectService.fireTriggerPlayer(g, p, Trigger.ON_DAMAGE_TAKEN, ctx);
     }
 
-    private static MaggoteersGame gameOf(Player p) {
-        PlayerExt pe = new PlayerExt(p);
-        if (!pe.isInGame()) return null;
-        AbstractGame g = pe.getGame();
-        return g instanceof MaggoteersGame mg ? mg : null;
-    }
 }

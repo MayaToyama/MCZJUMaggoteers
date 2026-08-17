@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class DeferredStackDefaultTest {
     @Test
     void omittedStackOnDeferredIsReplace() {
-        assertEquals(Stack.REPLACE, ItemAbilityRegistry.defaultStackForStep(null, true));
-        assertEquals(Stack.REPLACE, ItemAbilityRegistry.defaultStackForStep(Stack.REPLACE, true));
-        assertEquals(Stack.IGNORE, ItemAbilityRegistry.defaultStackForStep(Stack.IGNORE, true));
+        assertEquals(Stack.REPLACE, ItemAbilityRegistry.defaultStackForStep(null));
+        assertEquals(Stack.REPLACE, ItemAbilityRegistry.defaultStackForStep(Stack.REPLACE));
+        assertEquals(Stack.IGNORE, ItemAbilityRegistry.defaultStackForStep(Stack.IGNORE));
     }
 }

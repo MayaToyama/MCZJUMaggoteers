@@ -55,17 +55,19 @@ public final class WaveEngine {
         return PENDING_SPLIT_CANCEL.remove(uuid);
     }
 
-    /** 调试 spawnmob：登记进本局 livingMobs。 */
-    public static void trackDebugMob(AbstractGame game, LivingEntity le, List<String> affixIds) {
-        WaveRuntime rt = RUNTIMES.get(game);
-        if (rt == null || le == null) return;
-        trackSpawned(game, rt, null, le, new MobSpawnProfile(1.0, affixIds, io.mczju.maggoteers.config.InfernalCfg.NONE, List.of()));
+    /**
+     * 波次结束/败局时清空分裂取消标记。分裂事件只在死亡当 tick 触发，进入休整期/结算后无残留意义；
+     * 清空可防止「SlimeSplitEvent 先于 EntityDeathEvent / 被第三方取消」导致的集合无界增长（R2）。
+     */
+    public static void clearPendingSplitCancel() {
+        PENDING_SPLIT_CANCEL.clear();
     }
 
-    /** 查某怪 UUID 的 SpawnStep（Boss 条等）。无则 null。 */
-    public static SpawnStep entityStep(UUID uuid) {
-        WaveRuntime rt = BY_ENTITY.get(uuid);
-        return rt == null ? null : rt.mobSteps.get(uuid);
+    /** 调试 spawnmob：登记进本局 livingMobs。 */
+    public static void trackDebugMob(AbstractGame game, LivingEntity le) {
+        WaveRuntime rt = RUNTIMES.get(game);
+        if (rt == null || le == null) return;
+        trackSpawned(game, rt, null, le, new MobSpawnProfile(List.of()));
     }
 
     /**
@@ -81,7 +83,6 @@ public final class WaveEngine {
                                      LivingEntity le, MobSpawnProfile profile) {
         UUID uuid = le.getUniqueId();
         rt.livingMobs.add(uuid);
-        if (step != null) rt.mobSteps.put(uuid, step);
         rt.mobProfiles.put(uuid, profile);
         BY_ENTITY.put(uuid, rt);
         boolean wantBar = step != null ? step.bossBar() : (profile != null && profile.bossBar());
@@ -118,7 +119,6 @@ public final class WaveEngine {
             BY_ENTITY.remove(uuid);
         }
         rt.livingMobs.clear();
-        rt.mobSteps.clear();
         rt.mobProfiles.clear();
         clearBossBars(rt);
     }
@@ -148,9 +148,9 @@ public final class WaveEngine {
             MountedSquadRegistry.removeByRoot(uuid);
         }
         rt.livingMobs.clear();
-        rt.mobSteps.clear();
         rt.mobProfiles.clear();
         clearBossBars(rt);
+        PENDING_SPLIT_CANCEL.clear();
     }
 
     /** 死亡处理：移除追踪；死亡召唤计入本波 livingMobs。返回 true 表示是我们的怪。 */
@@ -164,7 +164,6 @@ public final class WaveEngine {
         }
         MobSpawnProfile profile = rt.mobProfiles.remove(uuid);
         rt.livingMobs.remove(uuid);
-        rt.mobSteps.remove(uuid);
         BY_ENTITY.remove(uuid);
         MountedSquadRegistry.removeByRoot(uuid);
         BossBar bar = rt.bossBars.remove(uuid);
@@ -178,16 +177,14 @@ public final class WaveEngine {
     private static void spawnOnDeath(WaveRuntime rt, Location loc, List<DeathSpawn> specs) {
         int spread = 0;
         for (DeathSpawn ds : specs) {
-            for (int c = 0; c < ds.count(); c++) {
-                Location at = MobFactory.spawnPadLocation(loc, spread).add(0, 0.15, 0);
-                spread++;
-                LivingEntity le = MobFactory.spawnDeathMob(at, ds);
-                if (le != null) {
-                    trackSpawned(rt.game, rt, null, le, MobSpawnProfile.fromDeathSpawn(ds));
-                    if (!ds.passengers().isEmpty()) {
-                        MobFactory.mountPassengersDelayed(le, ds.passengers(),
-                                (passenger, profile) -> trackSpawned(rt.game, rt, null, passenger, profile));
-                    }
+            Location at = MobFactory.spawnPadLocation(loc, spread).add(0, 0.15, 0);
+            spread++;
+            LivingEntity le = MobFactory.spawnDeathMob(at, ds);
+            if (le != null) {
+                trackSpawned(rt.game, rt, null, le, MobSpawnProfile.fromDeathSpawn(ds));
+                if (!ds.passengers().isEmpty()) {
+                    MobFactory.mountPassengersDelayed(le, ds.passengers(),
+                            (passenger, profile) -> trackSpawned(rt.game, rt, null, passenger, profile));
                 }
             }
         }

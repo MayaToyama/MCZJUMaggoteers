@@ -43,7 +43,6 @@ public final class EffectParamsParser {
                 }
                 case "immunity" -> ctx.put(EffectKeys.IMMUNITY, sec.getBoolean(k));
                 case "mark_fx" -> ctx.put(EffectKeys.MARK_FX, parseFxContext(sec.getConfigurationSection(k)));
-                case "mark_duration_sec" -> ctx.put(EffectKeys.MARK_DURATION_SEC, sec.getInt(k));
                 case "fx" -> ctx.put(EffectKeys.FX, parseFxContext(sec.getConfigurationSection(k)));
                 case "carrier_fx" -> ctx.put(EffectKeys.CARRIER_FX, parseFxContext(sec.getConfigurationSection(k)));
                 case "mark_on" -> ctx.put(EffectKeys.MARK_ON, String.valueOf(v).toLowerCase(Locale.ROOT));
@@ -168,7 +167,6 @@ public final class EffectParamsParser {
         EffectContext proj = new EffectContext();
         if (sec == null) return proj;
         if (sec.contains("speed")) proj.put(EffectKeys.PROJECTILE_SPEED, sec.getDouble("speed"));
-        if (sec.contains("toward")) proj.put(EffectKeys.PROJECTILE_TOWARD, sec.getString("toward", "look"));
         return proj;
     }
 

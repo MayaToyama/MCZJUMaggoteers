@@ -11,8 +11,4 @@ public final class BeamLogic {
         }
         return Math.min(maxRange, targetCenterDistance);
     }
-
-    public static int sampleSteps(double length) {
-        return Math.max(16, (int) (length * 2));
-    }
 }

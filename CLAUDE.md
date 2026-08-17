@@ -21,7 +21,7 @@
 ## 1. 项目概览
 
 ### 1.1 核心玩法循环
-玩家经 MGC 大厅加入 → 满员开局 → 为本局生成一个专属虚空世界 + 一份确定性的"剧本（RunPlan）"→ 玩家在 Act 1 清掉 `M+N+1` 波（弱怪×M、强怪×N、Boss×1）→ 波间休整 30s，可花货币开 3 选 1 强化 → 击杀 Act 1 Boss 传送到 Act 2 → … → 击杀 Act 3 Boss 通关结算。任意时刻**全员观察者**则失败结算。通关/失败都给**账户货币**（持久化），用于局外商店**解锁**更多局内奖励项。
+玩家经 MGC 大厅加入 → 满员开局 → 为本局生成一个专属虚空世界 + 一份确定性的"剧本"（RunPlanner 异步生成的 `List<ActPlan>`）→ 玩家在 Act 1 清掉 `M+N+1` 波（弱怪×M、强怪×N、Boss×1）→ 波间休整 30s，可花货币开 3 选 1 强化 → 击杀 Act 1 Boss 传送到 Act 2 → … → 击杀 Act 3 Boss 通关结算。任意时刻**全员观察者**则标记失败、停波清怪、**保留房间继续观战**，直到全员 `/mgc leave` 才结算删房；单人掉线**不**终止整局（该玩家标记倒下、其余人继续）。通关/失败都给**账户货币**（持久化），用于局外商店**解锁**更多局内奖励项。
 
 ### 1.2 技术栈
 | 项 | 值 |
@@ -73,21 +73,23 @@
 ```java
 MCZJUGameCore.getGameManager().registerGame(MaggoteersGame.class, MaggoteersRoom.class);
 MCZJUGameCore.getPlayerDataManager().registerPlayerData("maggoteers", MaggoteersPlayerData.class);
-MenuFacade.registerMenu("maggoteers_shop", ShopMenu.class);   // 供 /menu 或 NPC 打开商店
+MenuFacade.registerMenu("maggoteers-shop", UnlockShopMenu.class);   // 供 /menu 或 NPC 打开商店（menu 包）
 // + 各 Config 加载、Listener 注册、PluginCommand 注册
 ```
-> **Menu 子类写法（1.0.5，E4）**：`public ShopMenu(Player player, Object... args) { super(player, args); }`，重写 `getTitle()/getRows()(1~6)/getPermission()/setup()`（`setup()` 内 `setSlot(slot, item[, action])`）。`registerMenu` 反射要求子类有 `(Player, Object[])` 构造器。⚠️ **勿照抄**本地 1.0.0 `guide.md` 的 `super(XxxMenu.class, player)` 写法。
+> **Menu 子类写法（1.0.5，E4）**：`public UnlockShopMenu(Player player, Object... args) { super(player, args); }`，重写 `getTitle()/getRows()(1~6)/getPermission()/setup()`（`setup()` 内 `setSlot(slot, item[, action])`）。`registerMenu` 反射要求子类有 `(Player, Object[])` 构造器。⚠️ **勿照抄**本地 1.0.0 `guide.md` 的 `super(XxxMenu.class, player)` 写法。
 
 ### 2.3 生命周期 hook
 | Hook | 我们做什么 |
 |---|---|
 | `onGameInit()` | 第一个玩家加入等待时：**异步**启动 `RunPlanner`（生成剧本）+ **异步预读 NBT**。⚠️ **不在这里建世界**——`WorldCreator.createWorld()` 必须主线程，建世界的调度放在 `onGameStart` 的就绪门闩内（见下）。返回 true。 |
-| `onGameStart()` | ⚠️ **此方法返回 `void`、不能阻塞**（MGC 调完立即置 `RUNNING`）。故这里**只启动一个"就绪门闩"** `runTaskTimer`：轮询 `RunPlan` 是否就绪（异步产物）；**一旦就绪，由该门闩任务在主线程执行** `WorldService.createWorld()` + 粘贴 Act 1 的 `structure.nbt` → 传送玩家到 Act 1 `playerSpawn` → 初始化各 `PlayerState`（`reviveCount=config.lives.default`、冒险模式）→ `PoolBuilder` 合并解锁（含职业池）→ 发全员初始装备（§9.4）→ 为每人开 `ClassSelectMenu`，**全员选完（或倒计时兜底）后** → 启动 `WaveScheduler`。门闩未就绪期间玩家暂留等待点。**建世界的主线程责任唯一落在 onGameStart 门闩内（G4），避免 init/start 双触发。** |
+| `onGameStart()` | ⚠️ **此方法返回 `void`、不能阻塞**（MGC 调完立即置 `RUNNING`）。故这里**只启动一个"就绪门闩"** `runTaskTimer`：轮询异步剧本（`List<ActPlan>`）是否就绪（异步产物）；**一旦就绪，由该门闩任务在主线程执行** `WorldService.createWorld()` + 粘贴 Act 1 的 `structure.nbt` → 传送玩家到 Act 1 `playerSpawn` → 初始化各 `PlayerState`（`reviveCount=config.lives.default`、冒险模式）→ `UnlockRegistry` 合并解锁（含职业池）→ 发全员初始装备（§9.4）→ 为每人开 `ClassSelectMenu`，**全员选完（或倒计时兜底）后** → 启动 `WaveScheduler`。门闩未就绪期间玩家暂留等待点。**建世界的主线程责任唯一落在 onGameStart 门闩内（G4），避免 init/start 双触发。** |
 | `onGameEnd()` | 胜利：记通关时间榜 + 结算账户货币；失败：按进度结算（少额）。统一走 `cleanup()`。 |
-| `onGameAbort()` | 运行中全员退出：直接 `cleanup()`。 |
+| `onGameAbort()` | 仅 MGC 强制终止（如关服 `onDisable`）时 `cleanup()`。⚠️ **单人掉线不再走此路**（见下「中途退出 / 败局观战」）。 |
 | `onGameCancel()` | 等待阶段取消（未开局）：取消异步任务、删半成品世界。 |
 > `cleanup()`：清世界内实体/掉落物 → `Bukkit.unloadWorld(w, false)` → 异步删世界目录 → 玩家 profile 切回大厅。
 > **结束对局统一调** `MCZJUGameCore.getGameManager().endGame(game)`，不要直接调 `onGameEnd()`。
+
+> **中途退出 / 败局观战**：重写 `getPlayerQuitStrategy()`——单人掉线或 `/mgc leave` 时 `markDown`（标记倒下）**不整局终止**，其余人继续。全员倒下时 `markDefeated()`（`outcome=FAIL` + `WaveScheduler.defeat` 停波清怪、保留 cursor）→ **保留房间观战**；直到全员 leave 后 `finishGame()` 才真正 `endGame`。结算在 `cleanup` 用保留下来的 `progress` 计失败货币。⚠️ **退出玩家不在 `cleanupRun` 的 `getPlayers()` 里，MGC `leaveGame` 只切 profile（物品栏/XP）不碰游戏模式/血量/效果**——quit 策略内须补 per-player 清理（`EffectService.removeAllFor(pl, mg)` 显式传对局 + `setGameMode(SURVIVAL)` + `resetLobbyVitality`），否则观察者模式会带进大厅、MAX_HEALTH 加成跨局累积。**但绝不能清物品栏**（此时当前 profile 已是 lobby，清空会污染 lobby 存档）；残留 profile 物品靠 `onPlayerJoin` 钩子 + `startInWorld`「先清物品栏再 `switchProfile`」从源头清除。
 
 ### 2.4 常用 MGC API
 - `new PlayerExt(player)`：`isInGame(MaggoteersGame.class)`、`getGame()`、`getParty()`、`giveItem(id)`、`getData(MaggoteersPlayerData.class)`、`switchProfile(null)`、`resetState()`。
@@ -115,14 +117,14 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
 ### 4.1 数据流（一次对局骨架）
 ```
 玩家满员 → onGameStart
-  → 异步准备：RunPlanner 种子化生成 RunPlan + 预读 NBT
+  → 异步准备：RunPlanner 种子化生成 List<ActPlan> + 预读 NBT
   → 回主线程：WorldService.createWorld() + 粘贴 Act1（懒粘贴）
-  → （就绪门闩）→ 传送 → 初始化 PlayerState → PoolBuilder 合并解锁 → 发初始装备 → ClassSelectMenu（全员选完）
+  → （就绪门闩）→ 传送 → 初始化 PlayerState → UnlockRegistry 合并解锁 → 发初始装备 → ClassSelectMenu（全员选完）
   → WaveScheduler 循环：
        WaveEngine 执行当波（刷怪策略时间轴：按 delaySec 分批刷）
        → 清空：发通关奖励 → 30s 休整（升级菜单：普通/Boss奖励/跳过/延长）
        → Boss 死 → 下一层（粘贴 Act2，传送）… → Act3 Boss 死 → 胜利结算
-  → （任意点全员观察者）→ 失败结算
+  → （任意点全员观察者）→ 标记失败、停波清怪、保留房间观战 → 全员 /mgc leave 后失败结算
   → cleanup()：卸载+删世界
 ```
 
@@ -130,21 +132,23 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
 | 模块 | 职责 |
 |---|---|
 | `MaggoteersPlugin` | 主类；注册 + 生命周期总调度 |
-| `game/` | `MaggoteersGame`、`MaggoteersRoom`、`MaggoteersDeathStrategy` |
-| `world/` | `WorldService`（建/卸/删/清理孤立）、`MapRepository`（读图）、`StructurePaster`（粘贴单文件 `structure.nbt`）、`VoidGenerator` |
-| `plan/` | `RunPlanner`（异步种子化）、`RunPlan`、`SeededRng` |
+| `game/` | `MaggoteersGame`、`MaggoteersRoom`、`MaggoteersDeathStrategy`、`AllyTargeting` |
+| `world/` | `WorldService`（建/卸/删/清理孤立）、`MapRepository`（读图）、`StructurePaster`（粘贴单文件 `structure.nbt`）、`VoidGenerator`、`ActSpawnHelper` |
+| `plan/` | `RunPlanner`（异步种子化）、`ActPlan`、`RunConfig`、`SeededRng` |
 | `wave/` | `WaveEngine`、`WaveScheduler`（单可暂停状态机）、`WaveRuntime`、模型 `WaveSpec/SpawnStep` |
-| `mob/` | `MobFactory`（原版实体+系数+词缀+装备）、`AffixService` |
-| `reward/` | `RewardService`（3 选 1 抽取/扣费/应用）、`PickMenu`、`ClassSelectMenu`（开局职业选）、模型 `RewardPool/RewardOption` |
-| `currency/` | `CurrencyService`（普通/Boss 货币 PDC 识别 + 掉落） |
-| `shop/` | `ShopMenu`（局外商店） |
-| `state/` | `PlayerState`（本局真相源）、`PlayerStateManager`、`EffectService`（apply/resync/expire） |
-| `effect/` | `Trigger`、`Effect`、`PlayerEffect`、`EffectContext`、`EffectKey`、`ItemInteractRouter` |
-| `unlock/` | `UnlockRegistry`、`PoolBuilder`（开局把解锁并入每玩家个人池） |
-| `item/` | `ItemService`（ItemCreator 接入 + 本插件 parseYamlToItems 缓存）、`PdcKeys` |
-| `config/` | `ConfigManager` + 各 config POJO + 校验 |
+| `mob/` | `MobFactory`（原版实体+系数+词缀+装备）、`MobDisplayNames`、`MountedSquadRegistry` |
+| `menu/` | `RestMenu`（休整中枢）、`PickMenu`（3 选 1）、`ClassSelectMenu`（开局职业选）、`UnlockShopMenu`（局外商店）、`ReviveMenu`（复活币） |
+| `reward/` | `RewardService`（3 选 1 抽取/扣费/应用）、`RewardDrawVisibility`、模型 `RewardPool/RewardOption` |
+| `state/` | `PlayerState`（本局真相源）、`PlayerStateManager` |
+| `effect/` | `Trigger`、`Effect`、`PlayerEffect`、`EffectContext`、`EffectKey`、`EffectService`（apply/resync/expire）、`WeaponHeldRegistry` |
+| `unlock/` | `UnlockRegistry`（开局把解锁并入每玩家个人池） |
+| `item/` | `ItemService`（ItemCreator 接入 + 本插件 parseYamlToItems 缓存）、`ItemInteractRouter`（PDC 物品右键路由）、`RunItemTags` |
+| `config/` | 各 Config 加载类（`WavesConfig`/`ScalingConfig`/`MessageService`/`MapPoints`/`MobYamlParser`/`AffixService`）+ `ConfigParse` 校验工具 |
+| `listener/` | `GameplayTickListener`（光环/药水/满腹维护心跳）、`PurifyListener`、`RunItemGuardListener` 等事件监听 |
 | `command/` | Brigadier `/maggoteers ...` |
-| `util/` | 位置计算、日志、文件 |
+| `persist/` | `MaggoteersPlayerData`、`Settlement`、`MaggoteersTotalLeaderboard` |
+| `integration/` | `InfernalMobsBridge`（反射接入，可选） |
+| `util/` | `Coords`（相对→绝对）、`Origins`、`ParticleEffects`、`ItemYaml`、`GameRegistries` |
 
 ---
 
@@ -195,15 +199,14 @@ spawnPoints:
 
 - **时机**：`onGameInit`（等待阶段）/ 进入新层时；在**非主线程**跑（不碰 Bukkit API，只读配置算数据）。
 - **输入**：`seed`（= 世界名 hex）、`playerCount`（开局快照锁定，**不随中途变化**）。
-- **产出 `RunPlan`**（确定性、可重放/调试）：
+- **产出**：`RunPlanner.plan(seed, playerCount)` → `List<ActPlan>` + `RunConfig`（确定性、可重放/调试）：
 ```
-RunPlan { seed, playerCount, scalingSnapshot,
-  acts: [ { mapId, spawnPointAbs{id→{x,y,z}},        // 纯坐标：异步线程不持有 World（E8）；主线程绑定 World 时再构造 Location
-           waves:[ Wave{ steps:[Step…已解析绝对坐标&缩放后数值], clearReward } … ],  // M+N+1 波
-           bossPoolAct } … ×3 ] }
+List<ActPlan> { mapId, playerSpawn,        // playerSpawn 已叠层原点（绝对坐标；异步线程不持有 World，主线程绑定 World 时再构造 Location）
+                waves:[ Wave{ steps:[Step…已解析绝对坐标&缩放后数值], clearReward } … ] }   // M+N+1 波
+RunConfig { origins{act→Vec3}, wavesPerAct{act→[weak,strong]} }   // 层原点 + 每层波数（config.yml 静态）
 ```
 - **流程/层**：抽 1 图 → 并入地图专属波次 → weak roll M、strong roll N、boss roll 1（**加权随机**，地图专属波次权重更高）→ 每条 strategy 展开成 `Wave`（`steps × repeat`）→ 刷怪点编号解析成绝对坐标 → 数值叠 `coeff × affix × scaling`。
-- **主线程只消费 RunPlan**：战斗中零随机、零池查询。
+- **主线程只消费 ActPlan 列表**：战斗中零随机、零池查询。
 > **奖励 3 选 1 不在 RunPlanner 预 roll**——它发生在休整期（非战斗），开销极小，玩家点按钮时按需现抽。
 
 ---
@@ -229,6 +232,7 @@ RunPlan { seed, playerCount, scalingSnapshot,
 SPAWNING ──(按 delaySec 推进游标, 到点的 step 立即刷)──► ACTIVE
 ACTIVE   ──(livingMobs==0)──► CLEARED(发通关奖励) ──► REST(30s, 升级菜单; 全员同意可跳过/延长)
 REST     ──(到时/跳过)──► 下一波 | 本层 Boss 死 ► 进下一层 | Act3 Boss 清场后亦进 REST（粘滞 act3_boss）► 再 VICTORY
+(任意点全员观察者) ──► DEFEATED：停心跳 + 清怪 + 置失败相位（计分板 wave.phase_defeated），保留 cursor 观战；全员 leave → finishGame → 失败结算
 ```
 - **跨层**：本层 Boss 清除 → `WorldService` 粘贴下一层 `structure.nbt` → 全员传送新 `playerSpawn` → scheduler 从该层 wave 0 继续。
 
@@ -258,32 +262,42 @@ strategies:
 affixes:
   armored: { hp: 2.0, display: "<aqua>装甲" }
   berserk: { dmg: 1.5, speed: 1.2, display: "<red>狂暴" }
-  greedy:  { drop: 1.5, display: "<gold>贪婪" }
 ```
 
 **IM 战斗技能**不在 `affixes.yml`，而在 `waves.yml` 各刷怪节点的 `infernal:` 块（`level` 1–100 + 精确 `affixes` 列表；与原生 `affixes:` 命名空间独立、互不继承）。刷怪顺序：原生 stats/affixes → **IM mechanize** → 显式 `equipment`（覆盖 IM 自动装备）。IM 缺失或技能未知时跳过并 warning，实体仍为普通怪且受 WaveEngine 追踪。本插件 mechanize 的 IM 怪在 `EntityDeathEvent` **LOWEST** 提前 `unregisterMob`，**不**触发 IM 掉落/统计/广播/死亡技能。
 
 ### 7.6 config.yml（缩放 / 每层波数 / 全局）
 ```yaml
-scaling:
-  mob_hp:        [1.0, 1.3, 1.6, 2.0]   # 1–4 人
-  mob_damage:    [1.0, 1.15, 1.3, 1.5]
-  mob_count:     [1.0, 1.0, 1.2, 1.5]   # 向下取整 + 概率补 1；⚠️ 补 1 的随机必须走 RunPlanner 种子 RNG（D6，保确定性/可重放）
-  currency_drop: [1.0, 1.4, 1.8, 2.2]
-waves_per_act:
-  act1: { weak: 3, strong: 2 }          # M, N → 每层 M+N+1 波
-  act2: { weak: 4, strong: 3 }
-  act3: { weak: 4, strong: 3 }
+wait: { min_players: 1 }                # DefaultGameWaitStrategy(this, 4, min)
 lives: { default: 2 }                   # 复活次数
-initial_equipment: [maggoteers:wooden_sword, maggoteers:leather_helmet]  # 全员初始装备(ItemCreator id),开局发每人
-rest: { duration_sec: 30, extend_sec: 15, extend_max: 2 }
+debug: { enabled: true, announce: true }   # 内部测试开关（发布前改 enabled: false）
+mob_attributes: { scale: 1.0, follow_range: 10.0 }   # 全局怪物属性倍率
+initial_equipment: [maggoteers:detection_radar]       # 开局全员探测雷达；职业装由 class 池发放
+class_select: { timeout_sec: 45 }       # 职业选择超时兜底
+rewards: { upgrade_level_cap_default: 4 }   # UPGRADE_LEVEL 等级上限兜底
+items: { currency_normal, currency_boss, class_ticket, shop_emerald }   # 货币/券物品外观（材质/名称/光效）
+run_items: { drop_protection: false }   # 局内奖励物品丢弃保护
+act_origins: { act1: [0,64,0], act2: [1024,64,0], act3: [2048,64,0] }
+waves_per_act:
+  act1: { weak: 3, strong: 3 }          # M, N → 每层 M+N+1 波
+  act2: { weak: 3, strong: 3 }
+  act3: { weak: 1, strong: 4 }
+rest: { duration_sec: 60 }
+map: { fallback_platform: true }        # 缺 structure.nbt 时铺玻璃平台兜底
+world: { time_lock: night }             # night | day | midnight | none
+player: { night_vision: true }          # 进层夜视（配合 time_lock）
+act_enter: { prep_sec: 10 }             # 每层粘贴后、开波前准备倒计时
+aura: { carrier_fx: { default_interval_sec: 3, by_preset: {...} } }   # AURA 携带者粒子间隔
+magic_fx: { defaults, templates, weapons }   # 魔法武器右键 FX 预设
+scaling:
+  mob_hp:        [1.0, 2.3, 3.6, 5.0]   # 1–4 人
+  mob_damage:    [1.0, 1.4, 1.8, 2.2]
+  mob_count:     [1.0, 1.0, 1.2, 1.5]   # 向下取整 + 概率补 1；⚠️ 补 1 的随机必须走 RunPlanner 种子 RNG（D6，保确定性/可重放）
 settlement:
   win_flat: 100
   fail_per_act: 25
   fail_per_wave: 5
-act_origins: { act1: [0,64,0], act2: [1024,64,0], act3: [2048,64,0] }
-wait: { min_players: 1 }                # DefaultGameWaitStrategy(this, 4, min)
-world: { cleanup_orphans_on_enable: true }
+messages: { game, wave, death, menu, pick, class, revive, shop, item, reward, scoreboard, leaderboard, command }   # 玩家面文案（§config.yml 全文）
 ```
 
 ---
@@ -303,18 +317,18 @@ world: { cleanup_orphans_on_enable: true }
 ## 9. 休整 / 升级菜单 / 3 选 1
 
 ### 9.1 升级菜单（单 GUI，MGC `Menu`）
-按钮：`[普通奖励] [Boss奖励] [跳过休整] [延长休整]`（结构可扩展）。
+按钮：`[普通奖励] [Boss奖励] [跳过休整]`（结构可扩展）。
 - 点 `普通奖励`/`Boss奖励`：扣对应货币 → 弹 3 选 1（从对应池抽 **3 个不同**选项）→ 选 1 应用 → 回主菜单，**可反复**直到货币不足/休整结束。
 - **抽池可见性**（`RewardDrawVisibility`）：**SUPPLY** 可重复；**WEAPON** 每 `id` 一次（`acquiredUnique`）；**STAT** 每 `id` 一次（看 `PlayerState.effects`；**UPGRADE_LEVEL** 未满级仍可抽）；与 `unique:`  YAML 字段解耦（STAT 仍建议写 `unique: true` 便于内容校验）。
 - **STAT 护符**：选中 STAT 时除写入 `PlayerState` 外，按 `collectibles.yml` 映射发放绑定 **护符**（ItemCreator **RECOVERY_COMPASS（追溯指针）** 底材等；勿用兔子脚——右键骆驼尸壳会被吃掉；PDC `kind=collectible` + `reward_id` + `reward_level`）；GUI 图标来自 ItemCreator 预览，**不再**使用 `rewards.yml` 的 `icon:`。
 - **右键手持货币** = 打开本菜单的快捷方式（与点按钮殊途同归）。
 
-### 9.2 池选择规则（RunPlan 预定）
+### 9.2 池选择规则（RunPlanner 预定）
 - **普通池**（看刚清的波类型）：弱怪波 → `actN_weak`；强怪波 / Boss 波 → `actN_strong`。
 - **Boss 池**（**粘滞**）= 最近一次击杀 Boss 所在层的 `actN_boss`；新层未杀 Boss 前仍用上一层 Boss 池，杀掉本层 Boss 后才更新。
 
-### 9.3 跳过 / 延长 = 投票
-需**全员（冒险模式的玩家）同意**才生效；延长每次 `rest.extend_sec` 秒，上限 `rest.extend_max` 次。投票状态实时显示。
+### 9.3 跳过 = 投票
+需**全员（冒险模式的玩家）同意**才生效；投票状态实时显示。
 
 ### 9.4 开局职业选择（复用奖励池 + 解锁系统）
 玩家进图时**无装备**。`onGameStart` 门闩就绪后：先发**全员相同初始装备**（`config.yml` `initial_equipment`，ItemCreator id 列表，走 `ItemService` + `giveItem(ItemStack)`）；再为每人开 `ClassSelectMenu`——从**职业池**（`rewards.yml` 里 `reward_pools.class`，`cost: 0` 免费）**随机抽 3 个**（同样走可见性过滤 `requires_unlock`/`unique`，**解锁系统原样复用**）→ 选 1 → 应用（属性/武器/补给，与普通奖励同路径）；**等全员选完**（倒计时兜底，超时随机自动选）→ 启动 `WaveScheduler`。
@@ -330,11 +344,10 @@ world: { cleanup_orphans_on_enable: true }
 ### 10.1 触发目录（v1 全部实现）
 | 类别 | Trigger |
 |---|---|
-| 生命周期 | `ON_WAVE_CLEAR` / `ON_ACT_ENTER` / `ON_GAME_END` |
+| 生命周期 | `ON_WAVE_CLEAR` / `ON_ACT_ENTER` |
 | 战斗 | `ON_KILL` / `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN`（**TAKEN = 仅敌人近战/箭矢攻击**，环境/友军伤害不触发） |
 | 休整/进层 | `ON_WAVE_CLEAR` / `ON_ACT_ENTER`（**GRANT_ITEM/SUMMON STAT 专用**） |
 | 玩家状态 | `ON_REVIVE` / `ON_DEATH` / `ON_TICK_1S` |
-| 物品交互 | `ON_INTERACT`（含 UseType：右/左键 × 空气/方块/实体/攻击） |
 
 ### 10.2 Effect 目录
 
@@ -375,7 +388,7 @@ PlayerEffect {
 |---|---|
 | `revive_coin` | 开复活菜单（玩家头像 GUI） |
 | `currency_normal` / `currency_boss` | 开升级菜单（快捷入口） |
-| 未来魔法武器 | 触发其 `ON_INTERACT` 效果 |
+| 未来魔法武器 | 触发其 `use_ability` 效果 |
 
 ---
 
@@ -384,7 +397,7 @@ PlayerEffect {
 - `reviveCount`（开局 = `config.lives.default`，默认 2）= **剩余可自动复活次数**。
 - 玩家死亡：若 `reviveCount > 0` → `reviveCount--` 并复活（含 `1→0` 这次仍复活，回 `respawnLoc`、短暂无敌、维持冒险模式）；**若已为 0** → 转**观察者模式**（仍占座，可被复活币救）。
 - **复活币**（仅 Boss 池产出；ItemCreator 物品 + PDC `maggoteers:revive_coin`）：右键 → 开**当局玩家头像 GUI**：对**死者**用 = 仅复活（不加次数）；对**活者**用 = `reviveCount +1`。
-- **失败判定**：每次死亡/模式切换后检查——**场上无冒险模式玩家** → `getGameManager().endGame(game)`（走失败结算）。
+- **失败判定**：每次死亡/退出后检查——**场上无冒险模式玩家** → `markDefeated()`（`outcome=FAIL` + 停波清怪、保留房间观战），**不立即结束**；直到全员 `/mgc leave`（quit 策略 → `finishGame()`）才 `endGame` 走失败结算。单人掉线/`/mgc leave` 仅 `markDown` 该玩家，不终止整局。
 
 ---
 
@@ -392,9 +405,8 @@ PlayerEffect {
 
 ```yaml
 reward_pools:
-  act1_weak:
-    currency: normal            # normal | boss
-    cost: 3                     # 每次 3 选 1 消耗
+  act1_weak:                      # 币种无配置：RestMenu 按波次层级推导（RewardService.normalShopTier）
+    cost: 1                       # 每次 3 选 1 消耗（现统一为 1）
     options:
       - { id: dmg10,   category: STAT, effect: ADD_ATTRIBUTE, params: {attr: ATTACK_DAMAGE, op: PERCENT, value: 0.10},
           unique: true, stack: ADD, display: "<red>+10% 伤害" }
@@ -408,8 +420,8 @@ reward_pools:
           requires_unlock: true, unlock_cost: 30, display: "<gold>扳手" }
       - { id: heal_potion, category: SUPPLY, item: maggoteers:healing_potion, amount: 2,
           display: "<red>治疗药剂×2" }
-  act1_strong: { currency: normal, cost: 5, options: [...] }
-  act1_boss:   { currency: boss,   cost: 1, options: [...] }
+  act1_strong: { cost: 1, options: [...] }
+  act1_boss:   { cost: 1, options: [...] }
 ```
 
 ### 12.1 选项字段
@@ -458,12 +470,12 @@ public class MaggoteersPlayerData extends JsonPlayerData {
 - 失败：`grant = fail_per_act × 已过层数 + fail_per_wave × 当前层已过波数`。
 - `balance += grant; totalEarned += grant; setModified(true)`。
 
-### 13.3 商店（`ShopMenu`，局外）
+### 13.3 商店（`UnlockShopMenu`，局外）
 - 商品 = 所有池里 `requires_unlock: true` 的选项（自动派生），显示 `unlock_cost` + 图标 + 锁定/已拥有。
 - 点击锁定且付得起 → MGC `AlertMenu` 二次确认 → 扣 `balance` → `unlocks.add(id)` → `setModified(true)`。
-- 入口：`/maggoteers shop`，并已 `MenuFacade.registerMenu("maggoteers_shop", ...)`（NPC/命令方块可开）。
+- 入口：`/maggoteers shop`，并已 `MenuFacade.registerMenu("maggoteers-shop", ...)`（NPC/命令方块可开）。
 
-### 13.4 解锁回流局内（`UnlockRegistry` + `PoolBuilder`）
+### 13.4 解锁回流局内（`UnlockRegistry`）
 - **开局**（`onGameStart`）：对每个玩家，把其 `unlocks` 对应的选项并入该玩家个人奖励池。
 - 3 选 1 在休整期**按需现抽**（非战斗，开销极小）。
 
@@ -537,7 +549,7 @@ held_effects:   # 主手持有期间生效；禁止 expiry
 
 **Escape hatch**：仅当 Effect 系统表达不了的多段/投射物技能时，才写 `ItemUseHandler` 并 `registerHandler`。
 
-奖励侧法术强度：`rewards.yml` 用 `ADD_ATTRIBUTE` + `attr: MAGIC_DAMAGE` + `op: PERCENT` + `stack: ADD`（虚拟 stat，不写 Bukkit）。奖励 `fireTrigger` 白名单：`ON_WAVE_CLEAR` / `ON_ACT_ENTER` / `ON_KILL` / `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN` / **`ON_DEATH`** 或省略（常驻）；**禁止** `ON_TICK_1S`、`ON_INTERACT`、`ON_GAME_END`、`ON_REVIVE`。`GRANT_ITEM`/`SUMMON` **必须**显式 `trigger`（不可省略）。`ON_DEATH` 区域/SUMMON 以**死亡地点**为原点（`eventLocation` / `anchor: death_site`）。
+奖励侧法术强度：`rewards.yml` 用 `ADD_ATTRIBUTE` + `attr: MAGIC_DAMAGE` + `op: PERCENT` + `stack: ADD`（虚拟 stat，不写 Bukkit）。奖励 `fireTrigger` 白名单：`ON_WAVE_CLEAR` / `ON_ACT_ENTER` / `ON_KILL` / `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN` / **`ON_DEATH`** 或省略（常驻）；**禁止** `ON_TICK_1S`、`ON_REVIVE`（`ON_GAME_END` 已从 Trigger 删除）。`GRANT_ITEM`/`SUMMON` **必须**显式 `trigger`（不可省略）。`ON_DEATH` 区域/SUMMON 以**死亡地点**为原点（`eventLocation` / `anchor: death_site`）。
 
 ---
 
@@ -592,7 +604,7 @@ held_effects:   # 主手持有期间生效；禁止 expiry
 | 术语 | 含义 |
 |---|---|
 | Act（层/阶段） | 三阶段地图之一（Act1/2/3），类杀戮尖塔三层 |
-| RunPlan（剧本） | 开局异步种子化预生成的本局全部波次/地图/缩放，主线程只消费 |
+| ActPlan（单层剧本） | RunPlanner 异步种子化预生成的该层波次/地图/出生点（叠好绝对坐标），主线程只消费 |
 | 刷怪策略（SpawnStrategy） | 池内一条；按时序（steps + delay + repeat）定义一波如何刷怪 |
 | 刷怪点 | points.yml 里编号化的相对坐标（如"刷怪点9"），进层叠层原点变绝对 |
 | 词缀（Affix） | 挂在原版实体上的强化层（hp/dmg/speed/potion/drop），纯配置 |

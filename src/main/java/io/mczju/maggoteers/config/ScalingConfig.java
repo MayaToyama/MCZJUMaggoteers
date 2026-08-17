@@ -7,17 +7,16 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class ScalingConfig {
 
     /** 某人数下的缩放快照。 */
-    public record Scaling(double mobHp, double mobDamage, double mobSpeed, double currencyDrop, double mobCount) {}
+    public record Scaling(double mobHp, double mobDamage, double mobSpeed, double mobCount) {}
 
     private static ScalingConfig INSTANCE;
-    private final double[] mobHp, mobDamage, mobSpeed, currencyDrop, mobCount;
+    private final double[] mobHp, mobDamage, mobSpeed, mobCount;
 
     public static void load(JavaPlugin plugin) {
         INSTANCE = new ScalingConfig(
                 read(plugin, "scaling.mob_hp",        new double[]{1.0, 1.3, 1.6, 2.0}),
                 read(plugin, "scaling.mob_damage",   new double[]{1.0, 1.15, 1.3, 1.5}),
                 read(plugin, "scaling.mob_speed",    new double[]{1.0, 1.0, 1.0, 1.0}),
-                read(plugin, "scaling.currency_drop",new double[]{1.0, 1.4, 1.8, 2.2}),
                 read(plugin, "scaling.mob_count",    new double[]{1.0, 1.0, 1.2, 1.5}));
         plugin.getLogger().info("ScalingConfig 已加载。");
     }
@@ -36,7 +35,7 @@ public final class ScalingConfig {
     public Scaling scaleFor(int playerCount) {
         return new Scaling(
                 at(mobHp, playerCount), at(mobDamage, playerCount), at(mobSpeed, playerCount),
-                at(currencyDrop, playerCount), at(mobCount, playerCount));
+                at(mobCount, playerCount));
     }
 
     private static double at(double[] arr, int playerCount) {
@@ -56,16 +55,14 @@ public final class ScalingConfig {
     }
 
     /** 测试用：直接构造（绕过 Bukkit）。 */
-    public static ScalingConfig forTesting(double[] hp, double[] dmg, double[] spd, double[] drop, double[] count) {
-        return new ScalingConfig(hp, dmg, spd, drop, count);
+    public static ScalingConfig forTesting(double[] hp, double[] dmg, double[] spd, double[] count) {
+        return new ScalingConfig(hp, dmg, spd, count);
     }
 
-    private ScalingConfig(double[] mobHp, double[] mobDamage, double[] mobSpeed,
-                          double[] currencyDrop, double[] mobCount) {
+    private ScalingConfig(double[] mobHp, double[] mobDamage, double[] mobSpeed, double[] mobCount) {
         this.mobHp = mobHp;
         this.mobDamage = mobDamage;
         this.mobSpeed = mobSpeed;
-        this.currencyDrop = currencyDrop;
         this.mobCount = mobCount;
     }
 }

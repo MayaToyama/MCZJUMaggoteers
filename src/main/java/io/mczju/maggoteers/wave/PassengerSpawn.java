@@ -7,7 +7,7 @@ import java.util.List;
 
 /** 已解析的乘客怪树节点（coeff×affix×scaling）。 */
 public record PassengerSpawn(EntityType type,
-                             double hpMult, double dmgMult, double speedMult, double dropMult,
+                             double hpMult, double dmgMult, double speedMult,
                              double scaleMult, double followRangeMult,
                              List<String> affixes, List<PotionSpec> potions,
                              InfernalCfg infernal,
@@ -28,20 +28,20 @@ public record PassengerSpawn(EntityType type,
     }
 
     /** 无嵌套乘客（兼容旧构造）。 */
-    public PassengerSpawn(EntityType type, double hpMult, double dmgMult, double speedMult, double dropMult,
+    public PassengerSpawn(EntityType type, double hpMult, double dmgMult, double speedMult,
                           List<String> affixes, List<PotionSpec> potions) {
-        this(type, hpMult, dmgMult, speedMult, dropMult, 1.0, 1.0,
+        this(type, hpMult, dmgMult, speedMult, 1.0, 1.0,
                 affixes, potions, InfernalCfg.NONE, List.of(), List.of(), List.of(), null, false);
     }
 
     public PassengerSpawn(EntityType type,
-                          double hpMult, double dmgMult, double speedMult, double dropMult,
+                          double hpMult, double dmgMult, double speedMult,
                           double scaleMult, double followRangeMult,
                           List<String> affixes, List<PotionSpec> potions,
                           InfernalCfg infernal,
                           List<MobEquipment> equipment, List<DeathSpawn> onDeath,
                           List<PassengerSpawn> passengers) {
-        this(type, hpMult, dmgMult, speedMult, dropMult, scaleMult, followRangeMult,
+        this(type, hpMult, dmgMult, speedMult, scaleMult, followRangeMult,
                 affixes, potions, infernal, equipment, onDeath, passengers, null, false);
     }
 }

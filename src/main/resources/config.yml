@@ -14,7 +14,8 @@ debug:
 mob_attributes:
   scale: 1.0
   follow_range: 10.0
-initial_equipment: []   # 职业选择后由 reward 发放；如需全员基础装可在此列出 item_id
+initial_equipment:
+  - maggoteers:detection_radar   # 开局全员探测雷达；职业装仍由 class 池发放
 class_select:
   timeout_sec: 45
 
@@ -74,13 +75,10 @@ waves_per_act:
   act3: { weak: 1, strong: 4 }  
 rest:
   duration_sec: 60
-  extend_sec: 15
-  extend_max: 2
 map:
   fallback_platform: true
 world:
   time_lock: night   # night | day | midnight | none
-  cleanup_orphans_on_enable: true
 player:
   night_vision: true   # 进层冒险模式玩家夜视（配合 time_lock: night）
 act_enter:
@@ -153,7 +151,7 @@ scaling:
   mob_hp:        [1.0, 2.3, 3.6, 5.0]
   mob_damage:    [1.0, 1.4, 1.8, 2.2]
   mob_count:     [1.0, 1.0, 1.2, 1.5]
-  currency_drop: [1.0, 1.4, 1.8, 2.2]
+  # mob_speed:    [1.0, 1.0, 1.0, 1.0]   # 预留：未来 affix 速度扩展；当前速度缩放不生效，取消注释即启用
 settlement:
   win_flat: 100
   fail_per_act: 25
@@ -170,9 +168,10 @@ messages:
     plan_timeout: "<yellow>剧本生成超时(30s)，终止。"
     plan_failed: "<red>剧本生成失败{detail}，对局终止。"
     enter_class_select: "<yellow>已进入游戏 · 请选择职业（右键职业选择券可重新打开菜单）"
-    prep_clause: " 地图准备 {prep} 秒后开战。"
-    ready: "<green>卫戍协议 已就绪！{prep_clause} 三层共 {waves} 波。每人复活 {lives} 次。"
+    prep_clause: "  {prep} 秒后开始生成怪物，"
+    ready: "<green>地图已就绪！{prep_clause} 你拥有 {lives} 次复活机会。"
     settlement_grant: "<yellow>{player} 结算获得 {grant} 点数。"
+    defeat: "<red>全员倒下！本局失败。可继续观战，或输入 /mgc leave 离开房间。"
   wave:
     skip_vote: "<yellow>⏭ 跳过休整投票 {voted}/{total}（{player} 已投）"
     skip_passed: "<green>⏭ 全员同意，跳过休整！"
@@ -180,20 +179,21 @@ messages:
     prep: "<yellow>⏳ 地图准备 {prep} 秒…"
     begin: "<red>▶ 第 {wave} / {wave_count} 波 · {tier}{strategy_clause}"
     strategy_clause: " · {strategy}"
-    cleared: "<green>✔ 本波清除！"
-    cleared_rewarded: "<green>✔ 本波清除！奖励已发放。"
-    final_rest: "<gold>🏆 终局 Boss 已清除 · 通关前休整"
+    cleared: "<green>✔ 威胁已清除！"
+    cleared_rewarded: "<green>✔ 威胁已清除！"
+    final_rest: "<gold>🏆 终局 Boss关卡 已清除 · "
     victory: "<gold>🏆 通关 卫戍协议！"
     phase_prep: "正在准备"
     phase_spawning: "正在生成怪物"
     phase_active: "正在战斗"
-    phase_cleared: "怪物已全部生成"
     phase_rest: "休整期"
     phase_done: "游戏结束"
+    phase_defeated: "失败"
   death:
     missing_state: "<red>{player} 死亡时无 PlayerState（已强制复活）。请回报此日志。"
     auto_revive: "<yellow>{player} 力竭了！（剩余 {remaining} 复活次数）"
     to_spectator: "<red>{player} 力竭了！（可用复活币救援）。"
+    to_down_quit: "<red>{player} 退出了对局（标记为倒下，其余人继续）。"
   menu:
     rest:
       title: "休整 · 升级"
@@ -251,6 +251,7 @@ messages:
     line_act: "<yellow>层 {act} · <white>{map}"
     line_wave: "<aqua>波 {wave}/{wave_count} · {phase}"
     line_wave_resting: "<aqua>波 {wave}/{wave_count} · {phase} <gray>({rest}s)"
+    line_strategy: "<white>关卡 · {strategy}"
     line_mobs: "<red>剩余怪物: {mobs}"
     separator: "<dark_gray>────────"
     status_fight: "<green>[战]"

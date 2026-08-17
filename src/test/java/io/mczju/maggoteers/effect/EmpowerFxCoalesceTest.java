@@ -19,13 +19,6 @@ class EmpowerFxCoalesceTest {
     }
 
     @Test
-    void resolvePrefersEmpowerThenCastThenNull() {
-        assertEquals("EMP", EmpowerFxCoalesce.pickFxLabel("EMP", "CAST"));
-        assertEquals("CAST", EmpowerFxCoalesce.pickFxLabel(null, "CAST"));
-        assertNull(EmpowerFxCoalesce.pickFxLabel(null, null));
-    }
-
-    @Test
     void deferredOnlyWithoutVisibleCastUsesStrike() {
         assertEquals(EmpowerFxCoalesce.Choice.STRIKE,
                 EmpowerFxCoalesce.choose(false, true, false));

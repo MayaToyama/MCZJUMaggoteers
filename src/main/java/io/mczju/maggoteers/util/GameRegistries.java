@@ -112,23 +112,12 @@ public final class GameRegistries {
         }
     }
 
-    private static final java.util.Set<Particle> PARTICLE_ALLOWLIST = java.util.Set.of(
-            Particle.FLAME, Particle.SOUL_FIRE_FLAME, Particle.CRIT, Particle.ENCHANT,
-            Particle.DUST, Particle.ELECTRIC_SPARK, Particle.WITCH, Particle.DRAGON_BREATH,
-            Particle.END_ROD, Particle.TOTEM_OF_UNDYING, Particle.HAPPY_VILLAGER, Particle.INSTANT_EFFECT,
-            Particle.HEART, Particle.SNOWFLAKE
-    );
-
     /** 解析 Particle；失败时返回 null（调用方保留默认）。 */
     public static Particle particle(String name) {
         if (name == null || name.isBlank()) return null;
-        String u = name.trim().toUpperCase(Locale.ROOT);
         try {
-            return Particle.valueOf(u);
+            return Particle.valueOf(name.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            for (Particle p : PARTICLE_ALLOWLIST) {
-                if (p.name().equalsIgnoreCase(u)) return p;
-            }
             return null;
         }
     }

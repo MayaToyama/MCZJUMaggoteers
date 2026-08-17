@@ -89,12 +89,7 @@ public final class SummonExecutor {
         SummonParams.ProjectileParams proj = params.projectile();
         if (!(entity instanceof Projectile projectile)) return;
         projectile.setShooter(caster);
-        Vector dir;
-        if ("look".equalsIgnoreCase(proj.toward())) {
-            dir = caster.getLocation().getDirection().normalize().multiply(proj.speed());
-        } else {
-            dir = caster.getLocation().getDirection().normalize().multiply(proj.speed());
-        }
+        Vector dir = caster.getLocation().getDirection().normalize().multiply(proj.speed());
         projectile.setVelocity(dir);
     }
 }

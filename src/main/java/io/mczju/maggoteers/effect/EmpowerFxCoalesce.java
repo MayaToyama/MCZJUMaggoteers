@@ -46,13 +46,4 @@ public final class EmpowerFxCoalesce {
         }
         return castVisible ? Choice.CAST : Choice.NONE;
     }
-
-    /** @deprecated use {@link #choose(boolean, boolean, boolean)} */
-    @Deprecated
-    public static String pickFxLabel(String empower, String cast) {
-        if (empower != null) {
-            return empower;
-        }
-        return cast;
-    }
 }

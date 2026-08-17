@@ -1,5 +1,6 @@
 package io.mczju.maggoteers.menu;
 
+import com.github.mczjuops.mczjugamecore.menu.AlertMenu;
 import com.github.mczjuops.mczjugamecore.menu.Menu;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
@@ -64,16 +65,25 @@ public class UnlockShopMenu extends Menu {
                             "display", o.displayPlain())));
                     return;
                 }
-                if (!data.spend(o.unlockCost())) {
+                if (data.balance < o.unlockCost()) {
                     p.sendMessage(MessageService.component("menu.shop.not_enough", Map.of(
                             "cost", String.valueOf(o.unlockCost()))));
                     return;
                 }
-                data.unlock(o.id());
-                p.sendMessage(MessageService.component("menu.shop.unlocked", Map.of(
-                        "display", o.displayPlain())));
-                p.closeInventory();
-                MenuFacade.open("maggoteers-shop", p);   // 刷新
+                // 二次确认（§13.3，R14）：确认后才扣费解锁
+                new AlertMenu(p, () -> {
+                    if (data.unlocks.contains(o.id())) return;
+                    if (!data.spend(o.unlockCost())) {
+                        p.sendMessage(MessageService.component("menu.shop.not_enough", Map.of(
+                                "cost", String.valueOf(o.unlockCost()))));
+                        return;
+                    }
+                    data.unlock(o.id());
+                    p.sendMessage(MessageService.component("menu.shop.unlocked", Map.of(
+                            "display", o.displayPlain())));
+                    p.closeInventory();
+                    MenuFacade.open("maggoteers-shop", p);   // 刷新
+                }).open();
             });
         }
     }

@@ -75,6 +75,10 @@ public final class RunScoreboard {
                             "wave_count", String.valueOf(snap.waveCount()),
                             "phase", phase));
             obj.getScore(waveLine).setScore(line--);
+            if (snap.strategyDisplayName() != null && !snap.strategyDisplayName().isBlank()) {
+                obj.getScore(MessageService.legacy("scoreboard.line_strategy", Map.of(
+                        "strategy", snap.strategyDisplayName()))).setScore(line--);
+            }
             obj.getScore(MessageService.legacy("scoreboard.line_mobs", Map.of(
                     "mobs", String.valueOf(mobs)))).setScore(line--);
             obj.getScore(MessageService.legacy("scoreboard.separator", Map.of())).setScore(line--);

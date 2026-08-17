@@ -26,7 +26,9 @@ public final class RewardDrawVisibility {
     private static boolean isVisibleStat(RewardOption opt, PlayerState ps, Set<String> acquiredIds,
                                          RewardPool pool) {
         if (opt.isBundle()) {
-            return opt.grants().stream().allMatch(g -> isVisibleStat(g, ps, acquiredIds, pool));
+            // bundle 以自身 id 的 acquiredUnique 判定一次性（R11）：含 WEAPON/SUPPLY grant 的
+            // bundle 不会因 grant 不进 acquiredUnique 而恒可见、无限重复发放。
+            return acquiredIds == null || !acquiredIds.contains(opt.id());
         }
         if (ps == null) return true;
         PlayerEffect pe = ps.effects().stream().filter(e -> e.id().equals(opt.id())).findFirst().orElse(null);

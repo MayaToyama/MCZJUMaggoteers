@@ -25,7 +25,12 @@ public final class GameplayTickListener implements Listener {
 
     private static BukkitTask task;
 
-    /** 启动全局心跳（幂等）。 */
+    /**
+     * 启动全局心跳（幂等）。
+     * <p>本心跳只做光环/常驻药水/满腹维护，枚举源 {@code gamesWithState()}；
+     * 与 {@link io.mczju.maggoteers.effect.EffectListener#startTick()}（ON_TICK_1S 触发器分发）
+     * 职责不同，有意分开，勿合并——合并会改变两者各自的遍历与时机语义。
+     */
     public static void start() {
         if (task != null) return;
         task = org.bukkit.Bukkit.getScheduler().runTaskTimer(MaggoteersPlugin.getInstance(), () -> {

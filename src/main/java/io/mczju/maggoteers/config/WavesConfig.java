@@ -45,7 +45,7 @@ public final class WavesConfig {
                     List<PoolEntry> entries = new ArrayList<>();
                     for (var m : tierList) {
                         entries.add(new PoolEntry((String) m.get("strategy"),
-                                num(m.get("weight"), 1).doubleValue()));
+                                ConfigParse.num(m.get("weight"), 1).doubleValue()));
                     }
                     tierMap.put(tier, entries);
                 }
@@ -87,10 +87,10 @@ public final class WavesConfig {
         for (var m : s.getMapList("steps")) {
             String point = String.valueOf(m.get("point"));
             EntityType type = io.mczju.maggoteers.util.GameRegistries.entityType(String.valueOf(m.get("type")));
-            int count = num(m.get("count"), 1).intValue();
+            int count = ConfigParse.num(m.get("count"), 1).intValue();
             CoeffCfg coeff = MobYamlParser.parseCoeff(m);
-            int delay = num(m.get("delay"), 0).intValue();
-            int stepRepeat = num(m.get("repeat"), 1).intValue();
+            int delay = ConfigParse.num(m.get("delay"), 0).intValue();
+            int stepRepeat = ConfigParse.num(m.get("repeat"), 1).intValue();
             List<String> affixes = MobYamlParser.parseAffixes(m);
             InfernalCfg infernal = MobYamlParser.parseInfernal(m);
             List<PassengerCfg> passengers = MobYamlParser.parsePassengers(m.get("passengers"));
@@ -104,9 +104,11 @@ public final class WavesConfig {
         }
         List<RewardItemCfg> rewards = new ArrayList<>();
         for (var m : s.getMapList("clearReward")) {
-            rewards.add(new RewardItemCfg((String) m.get("item"), num(m.get("amount"), 1).intValue()));
+            rewards.add(new RewardItemCfg((String) m.get("item"), ConfigParse.num(m.get("amount"), 1).intValue()));
         }
-        return new SpawnStrategyCfg(id, steps, repeat, rewards);
+        String displayName = s.getString("关卡名称", "");
+        if (displayName == null) displayName = "";
+        return new SpawnStrategyCfg(id, displayName.strip(), steps, repeat, rewards);
     }
 
     public static WavesConfig getInstance() {
@@ -114,18 +116,8 @@ public final class WavesConfig {
         return INSTANCE;
     }
 
-    public SpawnStrategyCfg getStrategy(String id) { return strategies.get(id); }
-
-    public List<PoolEntry> getPool(String act, String tier) {
-        return pools.getOrDefault(act, Map.of()).getOrDefault(tier, List.of());
-    }
-
     public WaveDefinitions definitions() {
         return new WaveDefinitions(strategies, pools);
-    }
-
-    private static Number num(Object v, Number fallback) {
-        return v instanceof Number n ? n : fallback;
     }
 
     private WavesConfig() {}

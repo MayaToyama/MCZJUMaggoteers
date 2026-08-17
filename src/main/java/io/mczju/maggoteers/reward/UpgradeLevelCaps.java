@@ -13,10 +13,6 @@ public final class UpgradeLevelCaps {
         defaultCap = Math.max(1, plugin.getConfig().getInt("rewards.upgrade_level_cap_default", 4));
     }
 
-    public static int defaultCap() {
-        return defaultCap;
-    }
-
     /** Test hook (same package). */
     static void resetDefaultCap(int cap) {
         defaultCap = Math.max(1, cap);

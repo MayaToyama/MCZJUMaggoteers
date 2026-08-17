@@ -3,6 +3,7 @@ package io.mczju.maggoteers.effect;
 import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.item.fx.MagicFxConfig;
 import io.mczju.maggoteers.item.fx.MagicUseFx;
+import io.mczju.maggoteers.util.ItemYaml;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -53,12 +54,13 @@ public final class ItemAbilityRegistry {
         return Optional.ofNullable(BY_ITEM_ID.get(itemId));
     }
 
-    public static Map<String, ItemAbility> snapshot() {
-        return Map.copyOf(BY_ITEM_ID);
-    }
-
-    /** Package-visible for unit tests: omitted stack defaults to REPLACE. */
-    static Stack defaultStackForStep(Stack parsed, boolean deferred) {
+    /**
+     * Package-visible for unit tests: omitted stack defaults to REPLACE.
+     * <p>有意不一致：本 helper 只服务武器 {@code use_ability} 路径（deferred 默认 REPLACE）；
+     * {@code held_effects} 路径在 WeaponHeldRegistry 有自己默认（常驻 ADD_ATTRIBUTE → ADD）。
+     * 两条路径语义不同，不要统一（会改变行为）。
+     */
+    static Stack defaultStackForStep(Stack parsed) {
         if (parsed != null) {
             return parsed;
         }
@@ -71,16 +73,7 @@ public final class ItemAbilityRegistry {
     }
 
     private static void loadItemsDir(MaggoteersPlugin plugin, File dir) {
-        if (dir == null || !dir.isDirectory()) {
-            return;
-        }
-        File[] files = dir.listFiles((d, n) -> n.endsWith(".yml"));
-        if (files == null) {
-            return;
-        }
-        for (File f : files) {
-            parseYaml(plugin, YamlConfiguration.loadConfiguration(f));
-        }
+        ItemYaml.forEachYaml(dir, yaml -> parseYaml(plugin, yaml));
     }
 
     private static void parseYaml(MaggoteersPlugin plugin, YamlConfiguration yaml) {
@@ -89,7 +82,7 @@ public final class ItemAbilityRegistry {
             if (itemSec == null) {
                 continue;
             }
-            String itemId = normalizeItemId(key);
+            String itemId = ItemYaml.normalizeItemId(key);
             ConfigurationSection abilitySec = itemSec.getConfigurationSection("use_ability");
             if (abilitySec == null) {
                 continue;
@@ -456,7 +449,7 @@ public final class ItemAbilityRegistry {
             }
         }
 
-        Stack stack = defaultStackForStep(parsedStack, deferred);
+        Stack stack = defaultStackForStep(parsedStack);
         return new AbilityStep(effect, params, expiryTrigger, expiryCharges, stack);
     }
 
@@ -469,12 +462,5 @@ public final class ItemAbilityRegistry {
         }
         String name = params.get(EffectKeys.POTION_NAME);
         return name != null && !name.isBlank();
-    }
-
-    private static String normalizeItemId(String key) {
-        if (key.contains(":")) {
-            return key;
-        }
-        return "maggoteers:" + key.replaceFirst("^maggoteers:", "");
     }
 }

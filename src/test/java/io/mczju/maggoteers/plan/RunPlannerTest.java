@@ -24,7 +24,7 @@ class RunPlannerTest {
                     new CoeffCfg(boss ? 8 : 1, boss ? 1.5 : 1, 1),
                     0,
                     boss ? List.of("armored") : List.of()));
-            strat.put(id, new SpawnStrategyCfg(id, steps, 1,
+            strat.put(id, new SpawnStrategyCfg(id, id, steps, 1,
                     List.of(new RewardItemCfg("cur", boss ? 1 : 2))));
         }
         Map<String, Map<String, List<WavesConfig.PoolEntry>>> pools = new HashMap<>();
@@ -68,11 +68,11 @@ class RunPlannerTest {
     private ScalingConfig scaling() {
         return ScalingConfig.forTesting(
                 new double[]{1, 1.3, 1.6, 2.0}, new double[]{1, 1.15, 1.3, 1.5},
-                new double[]{1, 1, 1, 1}, new double[]{1, 1.4, 1.8, 2.2}, new double[]{1, 1, 1.2, 1.5});
+                new double[]{1, 1, 1, 1}, new double[]{1, 1, 1.2, 1.5});
     }
 
     private AffixService affixes() {
-        Affix armored = new Affix("armored", 2, 1, 1, 1, List.of(), "装甲");
+        Affix armored = new Affix("armored", 2, 1, 1, List.of(), "装甲");
         return AffixService.forTesting(Map.of("armored", armored));
     }
 
@@ -159,7 +159,7 @@ class RunPlannerTest {
 
     @Test
     void missingSpawnFallsBackToBossWhenFewerThanNineNonBoss() {
-        SpawnStrategyCfg bad = new SpawnStrategyCfg("bad",
+        SpawnStrategyCfg bad = new SpawnStrategyCfg("bad", "bad",
                 List.of(new StepCfg("9", EntityType.ZOMBIE, 1, new CoeffCfg(1, 1, 1), 0, List.of())), 1, List.of());
         Map<String, SpawnStrategyCfg> strat = new HashMap<>(simpleDefs().strategies());
         strat.put("bad", bad);
@@ -186,7 +186,7 @@ class RunPlannerTest {
         Map<String, List<MapEntry>> byAct = new HashMap<>();
         for (String act : List.of("act1", "act2", "act3")) byAct.put(act, List.of(entry));
 
-        SpawnStrategyCfg bad = new SpawnStrategyCfg("bad",
+        SpawnStrategyCfg bad = new SpawnStrategyCfg("bad", "bad",
                 List.of(new StepCfg("missing", EntityType.ZOMBIE, 1, new CoeffCfg(1, 1, 1), 0, List.of())),
                 1, List.of());
         Map<String, SpawnStrategyCfg> strat = new HashMap<>(simpleDefs().strategies());
@@ -204,7 +204,7 @@ class RunPlannerTest {
 
     @Test
     void specialWavesMergedIntoPool() {
-        SpawnStrategyCfg special = new SpawnStrategyCfg("s_special",
+        SpawnStrategyCfg special = new SpawnStrategyCfg("s_special", "s_special",
                 List.of(new StepCfg("1", EntityType.SKELETON, 3, new CoeffCfg(1, 1, 1), 0, List.of())), 1, List.of());
         Map<String, SpawnStrategyCfg> strat = new HashMap<>(simpleDefs().strategies());
         strat.put("s_special", special);
@@ -240,7 +240,7 @@ class RunPlannerTest {
                 "1", EntityType.ZOMBIE, 1, new CoeffCfg(1, 1, 1), 0, List.of(),
                 new InfernalCfg(3, List.of("sprint")),
                 List.of(), List.of(death), List.of(passenger));
-        SpawnStrategyCfg im = new SpawnStrategyCfg("w_im", List.of(root), 1, List.of());
+        SpawnStrategyCfg im = new SpawnStrategyCfg("w_im", "w_im", List.of(root), 1, List.of());
 
         Map<String, SpawnStrategyCfg> strategies = new HashMap<>(simpleDefs().strategies());
         strategies.put("w_im", im);
@@ -275,7 +275,7 @@ class RunPlannerTest {
         StepCfg root = new StepCfg(
                 "1", EntityType.SLIME, 1, new CoeffCfg(1, 1, 1), 0, List.of(),
                 InfernalCfg.NONE, List.of(), List.of(camel), List.of());
-        SpawnStrategyCfg strat = new SpawnStrategyCfg("w_rhine", List.of(root), 1, List.of());
+        SpawnStrategyCfg strat = new SpawnStrategyCfg("w_rhine", "w_rhine", List.of(root), 1, List.of());
 
         Map<String, SpawnStrategyCfg> strategies = new HashMap<>(simpleDefs().strategies());
         strategies.put("w_rhine", strat);

@@ -78,12 +78,4 @@ public final class TriggeredGrantAttribute {
         }
         return needsResync;
     }
-
-    public static boolean isRevokeOp(String op) {
-        return op != null && OP_REVOKE.equalsIgnoreCase(op.trim());
-    }
-
-    public static String normalizeOp(String op) {
-        return op == null ? "" : op.toUpperCase(Locale.ROOT);
-    }
 }

@@ -51,7 +51,7 @@ class RewardDrawVisibilityTest {
     }
 
     private static RewardPool poolWithCap(int cap) {
-        return new RewardPool("act1_weak", 1, "normal", cap, List.of());
+        return new RewardPool("act1_weak", 1, cap, List.of());
     }
 
     @Test

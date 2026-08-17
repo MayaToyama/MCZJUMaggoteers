@@ -18,7 +18,7 @@ class WaveSpecTest {
 
         return new SpawnStep(new Vec3(0, 64, 0), EntityType.ZOMBIE, 5,
 
-                1.0, 1.0, 1.0, 1.0, delay, List.of(), List.of());
+                1.0, 1.0, 1.0, delay, List.of(), List.of());
 
     }
 
@@ -85,10 +85,10 @@ class WaveSpecTest {
     @Test
     void expandPreservesPassengers() {
         PassengerSpawn child = new PassengerSpawn(
-                EntityType.SKELETON, 1.0, 1.0, 1.0, 1.0, List.of(), List.of());
+                EntityType.SKELETON, 1.0, 1.0, 1.0, List.of(), List.of());
         SpawnStep mount = new SpawnStep(
                 new Vec3(0, 64, 0), EntityType.STRIDER, 1,
-                1.0, 1.0, 1.0, 1.0, 0, List.of(), List.of(), List.of(child));
+                1.0, 1.0, 1.0, 0, List.of(), List.of(), List.of(child));
         WaveSpec w = new WaveSpec(List.of(mount), 1, List.of());
         List<SpawnStep> exp = w.expand();
         assertEquals(1, exp.size());
@@ -99,10 +99,10 @@ class WaveSpecTest {
     @Test
     void expandPreservesPassengersAcrossRepeat() {
         PassengerSpawn child = new PassengerSpawn(
-                EntityType.ZOMBIE, 1.0, 1.0, 1.0, 1.0, List.of(), List.of());
+                EntityType.ZOMBIE, 1.0, 1.0, 1.0, List.of(), List.of());
         SpawnStep mount = new SpawnStep(
                 new Vec3(0, 64, 0), EntityType.ZOMBIE_HORSE, 1,
-                1.0, 1.0, 1.0, 1.0, 0, List.of(), List.of(), List.of(child));
+                1.0, 1.0, 1.0, 0, List.of(), List.of(), List.of(child));
         WaveSpec w = new WaveSpec(List.of(mount), 2, List.of());
         List<SpawnStep> exp = w.expand();
         assertEquals(2, exp.size());
@@ -112,7 +112,7 @@ class WaveSpecTest {
 
     private static SpawnStep stepWithRepeat(int delayTicks, int stepRepeat) {
         return new SpawnStep(new Vec3(0, 64, 0), EntityType.CREEPER, 1,
-                1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                1.0, 1.0, 1.0, 1.0, 1.0,
                 delayTicks, List.of(), List.of(),
                 io.mczju.maggoteers.config.InfernalCfg.NONE,
                 List.of(), List.of(), List.of(), stepRepeat);
@@ -152,7 +152,7 @@ class WaveSpecTest {
 
     private static SpawnStep atPoint(Vec3 point, int delayTicks, int stepRepeat) {
         return new SpawnStep(point, EntityType.ZOMBIE, 1,
-                1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+                1.0, 1.0, 1.0, 1.0, 1.0,
                 delayTicks, List.of(), List.of(),
                 io.mczju.maggoteers.config.InfernalCfg.NONE,
                 List.of(), List.of(), List.of(), stepRepeat);

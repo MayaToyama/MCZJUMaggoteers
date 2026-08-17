@@ -5,8 +5,8 @@ import org.bukkit.entity.EntityType;
 
 import java.util.List;
 
-public record DeathSpawn(EntityType type, int count,
-                         double hpMult, double dmgMult, double speedMult, double dropMult,
+public record DeathSpawn(EntityType type,
+                         double hpMult, double dmgMult, double speedMult,
                          double scaleMult, double followRangeMult,
                          List<String> affixes, List<PotionSpec> potions,
                          InfernalCfg infernal,
@@ -20,21 +20,20 @@ public record DeathSpawn(EntityType type, int count,
         equipment = equipment == null ? List.of() : List.copyOf(equipment);
         passengers = passengers == null ? List.of() : List.copyOf(passengers);
         onDeath = onDeath == null ? List.of() : List.copyOf(onDeath);
-        if (count < 1) count = 1;
         if (name != null) {
             name = name.trim();
             if (name.isEmpty()) name = null;
         }
     }
 
-    public DeathSpawn(EntityType type, int count,
-                      double hpMult, double dmgMult, double speedMult, double dropMult,
+    public DeathSpawn(EntityType type,
+                      double hpMult, double dmgMult, double speedMult,
                       double scaleMult, double followRangeMult,
                       List<String> affixes, List<PotionSpec> potions,
                       InfernalCfg infernal,
                       List<MobEquipment> equipment, List<PassengerSpawn> passengers,
                       List<DeathSpawn> onDeath) {
-        this(type, count, hpMult, dmgMult, speedMult, dropMult, scaleMult, followRangeMult,
+        this(type, hpMult, dmgMult, speedMult, scaleMult, followRangeMult,
                 affixes, potions, infernal, equipment, passengers, onDeath, null, false);
     }
 }

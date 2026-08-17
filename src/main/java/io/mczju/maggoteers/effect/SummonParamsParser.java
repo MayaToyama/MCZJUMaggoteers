@@ -100,7 +100,7 @@ public final class SummonParamsParser {
         boolean tamed = Boolean.TRUE.equals(p.get(EffectKeys.TAMED));
         boolean friendlyFire = Boolean.TRUE.equals(p.get(EffectKeys.FRIENDLY_FIRE));
         Map<Attribute, Double> attrs = parseAttributes(p.get(EffectKeys.ATTRIBUTES), type);
-        SummonParams.ProjectileParams projectile = parseProjectile(p.get(EffectKeys.PROJECTILE), weaponPath);
+        SummonParams.ProjectileParams projectile = parseProjectile(p.get(EffectKeys.PROJECTILE));
 
         return Optional.of(new SummonParams(
                 type, anchor, count, offsetY, cleanup, durationSec, attrs, tamed, friendlyFire, projectile));
@@ -156,11 +156,9 @@ public final class SummonParamsParser {
         return Map.copyOf(out);
     }
 
-    static SummonParams.ProjectileParams parseProjectile(EffectContext sec, boolean weaponPath) {
+    static SummonParams.ProjectileParams parseProjectile(EffectContext sec) {
         if (sec == null) return SummonParams.ProjectileParams.defaults();
         double speed = sec.getOrDefault(EffectKeys.PROJECTILE_SPEED, 1.0);
-        String toward = sec.getOrDefault(EffectKeys.PROJECTILE_TOWARD, "look");
-        if (weaponPath) toward = "look";
-        return new SummonParams.ProjectileParams(speed, toward.toLowerCase(Locale.ROOT));
+        return new SummonParams.ProjectileParams(speed);
     }
 }

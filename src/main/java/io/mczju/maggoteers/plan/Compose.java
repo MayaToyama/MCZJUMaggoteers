@@ -12,22 +12,21 @@ import java.util.List;
  */
 public final class Compose {
 
-    /** 一只怪的最终倍率（hp/dmg/speed/drop/scale/follow_range）。 */
-    public record MobScale(double hp, double dmg, double speed, double drop, double scale, double followRange) {}
+    /** 一只怪的最终倍率（hp/dmg/speed/scale/follow_range）。 */
+    public record MobScale(double hp, double dmg, double speed, double scale, double followRange) {}
 
     public static MobScale compose(CoeffCfg coeff, List<Affix> affixes, ScalingConfig.Scaling snap) {
-        double hp = coeff.hp(), dmg = coeff.dmg(), speed = coeff.speed(), drop = 1.0;
+        double hp = coeff.hp(), dmg = coeff.dmg(), speed = coeff.speed();
         double scale = coeff.scale(), follow = coeff.followRange();
         for (Affix a : affixes) {
             hp *= a.hp();
             dmg *= a.dmg();
             speed *= a.speed();
-            drop *= a.drop();
             scale *= a.scale();
             follow *= a.followRange();
         }
         return new MobScale(
-                hp * snap.mobHp(), dmg * snap.mobDamage(), speed * snap.mobSpeed(), drop * snap.currencyDrop(),
+                hp * snap.mobHp(), dmg * snap.mobDamage(), speed * snap.mobSpeed(),
                 scale, follow);
     }
 

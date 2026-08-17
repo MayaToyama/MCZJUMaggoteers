@@ -4,7 +4,6 @@ import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.util.ParticleEffects;
 import org.bukkit.Location;
 import org.bukkit.Particle;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -37,25 +36,6 @@ public final class MagicFxPresets {
             org.bukkit.Location pt = eye.clone().add(d.clone().multiply(step * i));
             eye.getWorld().spawnParticle(p, pt, 10, 0.12, 0.12, 0.12, 0.02);
         }
-    }
-
-    /** 在实体上方周期性播放 mark 粒子，持续 {@code durationSec} 秒。 */
-    public static void followMarkAbove(LivingEntity entity, MagicUseFx fx, int durationSec) {
-        if (entity == null || fx == null || durationSec <= 0) return;
-        int maxTicks = durationSec * 20;
-        new BukkitRunnable() {
-            int elapsed = 0;
-
-            @Override
-            public void run() {
-                if (!entity.isValid() || entity.isDead() || elapsed >= maxTicks) {
-                    cancel();
-                    return;
-                }
-                dotAbove(entity.getLocation(), fx);
-                elapsed += 4;
-            }
-        }.runTaskTimer(MaggoteersPlugin.getInstance(), 0L, 4L);
     }
 
     /** 实体正上方约 1 格：加粗圆点。 */

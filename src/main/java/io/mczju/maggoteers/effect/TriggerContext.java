@@ -38,8 +38,4 @@ public record TriggerContext(
     public TriggerContext withFired(Trigger fired) {
         return new TriggerContext(fired, hitTarget, attacker, eventLocation);
     }
-
-    public TriggerContext withAttacker(LivingEntity attacker) {
-        return new TriggerContext(fired, hitTarget, attacker, eventLocation);
-    }
 }

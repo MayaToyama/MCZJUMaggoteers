@@ -16,11 +16,11 @@ public final class MobYamlParser {
     public static CoeffCfg parseCoeff(Map<?, ?> m) {
         Map<?, ?> c = m.get("coeff") instanceof Map<?, ?> cm ? cm : Map.of();
         return new CoeffCfg(
-                num(c.get("hp"), 1.0).doubleValue(),
-                num(c.get("dmg"), 1.0).doubleValue(),
-                num(c.get("speed"), 1.0).doubleValue(),
-                num(c.get("scale"), 1.0).doubleValue(),
-                num(c.get("follow_range"), 1.0).doubleValue());
+                ConfigParse.num(c.get("hp"), 1.0).doubleValue(),
+                ConfigParse.num(c.get("dmg"), 1.0).doubleValue(),
+                ConfigParse.num(c.get("speed"), 1.0).doubleValue(),
+                ConfigParse.num(c.get("scale"), 1.0).doubleValue(),
+                ConfigParse.num(c.get("follow_range"), 1.0).doubleValue());
     }
 
     public static List<String> parseAffixes(Map<?, ?> m) {
@@ -34,7 +34,7 @@ public final class MobYamlParser {
 
     public static InfernalCfg parseInfernal(Map<?, ?> m) {
         if (!(m.get("infernal") instanceof Map<?, ?> raw)) return InfernalCfg.NONE;
-        int level = num(raw.get("level"), 1).intValue();
+        int level = ConfigParse.num(raw.get("level"), 1).intValue();
         List<String> ids = new ArrayList<>();
         if (raw.get("affixes") instanceof List<?> list) {
             for (Object value : list) ids.add(String.valueOf(value));
@@ -53,8 +53,7 @@ public final class MobYamlParser {
         if (!(raw instanceof String s)) {
             throw new IllegalStateException("name must be string (" + context + ")");
         }
-        String t = s.trim();
-        return t.isEmpty() ? null : t;
+        return ConfigParse.trimToNull(s);
     }
 
     /** Opt-in Maggoteers boss bar. Omitted → false. Non-boolean (incl. string "true") → hard-fail. */
@@ -88,6 +87,26 @@ public final class MobYamlParser {
         return parseOnDeathDepth(raw, 1, "on_death");
     }
 
+    /** passengers / on_death 两类节点共享的节点级解析结果（字段 + 两层嵌套 + name/bossBar）。 */
+    private record MobNode(EntityType type, int count, CoeffCfg coeff, List<String> affixes,
+                           InfernalCfg infernal, List<MobEquipment> equipment,
+                           List<PassengerCfg> passengers, List<DeathSpawnCfg> onDeath,
+                           String name, boolean bossBar) {}
+
+    private static MobNode parseMobNode(Map<?, ?> m, int depth, String context) {
+        EntityType type = GameRegistries.entityType(String.valueOf(m.get("type")));
+        int count = ConfigParse.num(m.get("count"), 1).intValue();
+        CoeffCfg coeff = parseCoeff(m);
+        List<String> affixes = parseAffixes(m);
+        InfernalCfg infernal = parseInfernal(m);
+        List<MobEquipment> equipment = parseEquipment(m.get("equipment"));
+        List<PassengerCfg> passengers = parsePassengersDepth(m.get("passengers"), depth + 1, type.name());
+        List<DeathSpawnCfg> onDeath = parseOnDeathDepth(m.get("on_death"), depth + 1, type.name());
+        String name = parseName(m, context + "/" + type.name());
+        boolean bossBar = parseBossBar(m, context + "/" + type.name());
+        return new MobNode(type, count, coeff, affixes, infernal, equipment, passengers, onDeath, name, bossBar);
+    }
+
     private static List<PassengerCfg> parsePassengersDepth(Object raw, int depth, String context) {
         if (!(raw instanceof List<?> list) || list.isEmpty()) return List.of();
         if (depth > MAX_NEST_DEPTH) {
@@ -96,18 +115,9 @@ public final class MobYamlParser {
         List<PassengerCfg> out = new ArrayList<>();
         for (Object o : list) {
             if (!(o instanceof Map<?, ?> m)) continue;
-            EntityType type = GameRegistries.entityType(String.valueOf(m.get("type")));
-            int count = num(m.get("count"), 1).intValue();
-            CoeffCfg coeff = parseCoeff(m);
-            List<String> affixes = parseAffixes(m);
-            InfernalCfg infernal = parseInfernal(m);
-            List<MobEquipment> equipment = parseEquipment(m.get("equipment"));
-            List<PassengerCfg> nested = parsePassengersDepth(m.get("passengers"), depth + 1, type.name());
-            List<DeathSpawnCfg> onDeath = parseOnDeathDepth(m.get("on_death"), depth + 1, type.name());
-            String name = parseName(m, context + "/" + type.name());
-            boolean bossBar = parseBossBar(m, context + "/" + type.name());
-            out.add(new PassengerCfg(type, count, coeff, affixes, infernal, equipment, onDeath, nested,
-                    name, bossBar));
+            MobNode n = parseMobNode(m, depth, context);
+            out.add(new PassengerCfg(n.type(), n.count(), n.coeff(), n.affixes(), n.infernal(), n.equipment(),
+                    n.onDeath(), n.passengers(), n.name(), n.bossBar()));
         }
         return out;
     }
@@ -120,23 +130,10 @@ public final class MobYamlParser {
         List<DeathSpawnCfg> out = new ArrayList<>();
         for (Object o : list) {
             if (!(o instanceof Map<?, ?> m)) continue;
-            EntityType type = GameRegistries.entityType(String.valueOf(m.get("type")));
-            int count = num(m.get("count"), 1).intValue();
-            CoeffCfg coeff = parseCoeff(m);
-            List<String> affixes = parseAffixes(m);
-            InfernalCfg infernal = parseInfernal(m);
-            List<MobEquipment> equipment = parseEquipment(m.get("equipment"));
-            List<PassengerCfg> passengers = parsePassengersDepth(m.get("passengers"), depth + 1, type.name());
-            List<DeathSpawnCfg> nested = parseOnDeathDepth(m.get("on_death"), depth + 1, type.name());
-            String name = parseName(m, context + "/" + type.name());
-            boolean bossBar = parseBossBar(m, context + "/" + type.name());
-            out.add(new DeathSpawnCfg(type, count, coeff, affixes, infernal, equipment, passengers, nested,
-                    name, bossBar));
+            MobNode n = parseMobNode(m, depth, context);
+            out.add(new DeathSpawnCfg(n.type(), n.count(), n.coeff(), n.affixes(), n.infernal(), n.equipment(),
+                    n.passengers(), n.onDeath(), n.name(), n.bossBar()));
         }
         return out;
-    }
-
-    private static Number num(Object v, Number fallback) {
-        return v instanceof Number n ? n : fallback;
     }
 }

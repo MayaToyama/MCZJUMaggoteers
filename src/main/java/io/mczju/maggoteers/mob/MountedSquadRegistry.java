@@ -23,10 +23,6 @@ public final class MountedSquadRegistry {
         return rootUuid == null ? null : BY_ROOT.remove(rootUuid);
     }
 
-    public static void clearAll() {
-        BY_ROOT.clear();
-    }
-
     public static Map<UUID, Squad> snapshot() {
         return Map.copyOf(BY_ROOT);
     }

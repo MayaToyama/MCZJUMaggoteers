@@ -54,7 +54,7 @@ public final class ConfigMagicHandler implements ItemUseHandler {
         }
         MagicFxService.play(player, resolveCastFx(ability), areaRing);
         if (ability.consume()) {
-            spendOneFromMainHand(player);
+            ItemService.spendOneFromMainHand(player);
         }
     }
 
@@ -76,15 +76,5 @@ public final class ConfigMagicHandler implements ItemUseHandler {
             }
         }
         return fx;
-    }
-
-    private static void spendOneFromMainHand(Player player) {
-        var hand = player.getInventory().getItemInMainHand();
-        if (hand == null || hand.getType().isAir()) return;
-        if (hand.getAmount() <= 1) {
-            player.getInventory().setItemInMainHand(null);
-        } else {
-            hand.setAmount(hand.getAmount() - 1);
-        }
     }
 }

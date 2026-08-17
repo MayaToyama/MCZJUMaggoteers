@@ -13,9 +13,16 @@ import java.util.Map;
  * 不同点并行。strategy-{@code repeat} 每一轮内各点时钟从本轮起点归零，
  * 下一轮起点 = 上一轮最晚刷怪时刻。
  */
-public record WaveSpec(String strategyId, List<SpawnStep> steps, int repeat, List<RewardItem> clearReward) {
+public record WaveSpec(
+        String strategyId,
+        String displayName,
+        List<SpawnStep> steps,
+        int repeat,
+        List<RewardItem> clearReward
+) {
     public WaveSpec {
         strategyId = strategyId == null ? "" : strategyId;
+        displayName = displayName == null ? "" : displayName;
         steps = List.copyOf(steps);
         clearReward = clearReward == null ? List.of() : List.copyOf(clearReward);
         repeat = Math.max(1, repeat);
@@ -23,7 +30,12 @@ public record WaveSpec(String strategyId, List<SpawnStep> steps, int repeat, Lis
 
     /** 测试/占位：无 strategy id。 */
     public WaveSpec(List<SpawnStep> steps, int repeat, List<RewardItem> clearReward) {
-        this("", steps, repeat, clearReward);
+        this("", "", steps, repeat, clearReward);
+    }
+
+    /** 关卡显示名；缺省回落 strategy id。 */
+    public String displayNameOrId() {
+        return displayName.isBlank() ? strategyId : displayName;
     }
 
     /**
@@ -47,7 +59,7 @@ public record WaveSpec(String strategyId, List<SpawnStep> steps, int repeat, Lis
                     if (at > roundEnd) roundEnd = at;
                     out.add(new SpawnStep(
                             s.point(), s.type(), s.count(),
-                            s.hpMult(), s.dmgMult(), s.speedMult(), s.dropMult(),
+                            s.hpMult(), s.dmgMult(), s.speedMult(),
                             s.scaleMult(), s.followRangeMult(),
                             at, s.affixes(), s.potions(), s.infernal(),
                             s.equipment(), s.onDeath(), s.passengers(), 1,

@@ -181,9 +181,7 @@ public final class AuraService {
                 int pulse = AuraParams.grantPulseSec(params);
                 if (tickSec % pulse != 0) return;
                 double amount = gp.getOrDefault(EffectKeys.AMOUNT, 0.0);
-                var hp = receiver.getAttribute(Attribute.MAX_HEALTH);
-                double max = hp != null ? hp.getValue() : 20.0;
-                receiver.setHealth(Math.min(max, receiver.getHealth() + amount));
+                EffectService.heal(receiver, amount);
             }
             default -> { }
         }
@@ -209,9 +207,7 @@ public final class AuraService {
         if (inst == null) return;
         String op = gp.getOrDefault(EffectKeys.OP, "FLAT");
         double value = gp.getOrDefault(EffectKeys.VALUE, 0.0) * level;
-        AttributeModifier.Operation operation = "PERCENT".equalsIgnoreCase(op)
-                ? AttributeModifier.Operation.MULTIPLY_SCALAR_1
-                : AttributeModifier.Operation.ADD_NUMBER;
+        AttributeModifier.Operation operation = AttributeModifierKeys.attributeOperation(op);
         NamespacedKey key = auraKey(sourceId, instanceKey, "attr/" + attr.getKey().getKey());
         double maxBefore = attr == Attribute.MAX_HEALTH ? inst.getValue() : 0;
         AttributeModifierKeys.replace(inst, key, value, operation);

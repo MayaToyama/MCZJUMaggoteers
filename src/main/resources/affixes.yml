@@ -23,7 +23,7 @@ affixes:
     potions: [ { effect: WITHER, amp: 255, dur: 99999}]
     display: "<red>狂暴宿主"
   shield:
-    potions: [ { effect: ABSORPTION, amp: 255, dur: 19 } ]
+    potions: [ { effect: ABSORPTION, amp: 19, dur: 99999 } ]
     display: "<yellow>护盾"
   exoskeleton:
     potions: [ { effect: RESISTANCE, amp: 1, dur: 99999}]
@@ -38,5 +38,3 @@ affixes:
       - { effect: SLOWNESS, amp: 255, dur: 10 }
     display: "<dark_gray>永恒诅咒"
 
-  greedy:  { drop: 1.5, display: "<gold>贪婪" }
-  fortuned: { drop: 2.0, display: "<gold>鸿运" }

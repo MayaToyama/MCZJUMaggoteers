@@ -16,13 +16,6 @@ public final class WeaponAbilityIds {
         return PREFIX + itemId + ":" + stepIndex;
     }
 
-    public static boolean isPackMember(String effectId, String itemId) {
-        if (effectId == null || itemId == null) return false;
-        String exact = effectId(itemId);
-        if (effectId.equals(exact)) return true;
-        return effectId.startsWith(exact + ":");
-    }
-
     public static Optional<String> itemIdOf(String effectId) {
         if (effectId == null || !effectId.startsWith(PREFIX)) return Optional.empty();
         String rest = effectId.substring(PREFIX.length());

@@ -29,22 +29,18 @@ public final class AffixService {
     }
 
     private static Affix parse(String id, ConfigurationSection s) {
-        if (s == null) return new Affix(id, 1, 1, 1, 1, List.of(), id);
+        if (s == null) return new Affix(id, 1, 1, 1, List.of(), id);
         List<PotionSpec> pots = new ArrayList<>();
         for (var m : s.getMapList("potions")) {
             pots.add(new PotionSpec((String) m.get("effect"),
-                    num(m.get("amp"), 0).intValue(),
-                    num(m.get("dur"), 0).intValue()));
+                    ConfigParse.num(m.get("amp"), 0).intValue(),
+                    ConfigParse.num(m.get("dur"), 0).intValue()));
         }
         return new Affix(id,
                 s.getDouble("hp", 1.0), s.getDouble("dmg", 1.0),
-                s.getDouble("speed", 1.0), s.getDouble("drop", 1.0),
+                s.getDouble("speed", 1.0),
                 s.getDouble("scale", 1.0), s.getDouble("follow_range", 1.0),
                 pots, s.getString("display", id));
-    }
-
-    private static Number num(Object v, Number fallback) {
-        return v instanceof Number n ? n : fallback;
     }
 
     public static AffixService getInstance() {

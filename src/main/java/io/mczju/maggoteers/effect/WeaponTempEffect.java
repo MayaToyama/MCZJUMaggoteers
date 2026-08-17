@@ -6,13 +6,7 @@ import java.util.Optional;
 /** Validation for weapon use_ability temporary / deferred steps (PlayerState + expiry). */
 public final class WeaponTempEffect {
 
-    public static final String EFFECT_ID_PREFIX = WeaponAbilityIds.PREFIX;
-
     private WeaponTempEffect() {}
-
-    public static String effectId(String itemId) {
-        return WeaponAbilityIds.effectId(itemId);
-    }
 
     /**
      * @return empty if valid; otherwise a short reason for load-time skip

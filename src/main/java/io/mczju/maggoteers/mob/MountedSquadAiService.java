@@ -43,10 +43,7 @@ public final class MountedSquadAiService {
     }
 
     private static double movementSpeed(Mob mob) {
-        AttributeInstance spd = mob.getAttribute(Attribute.MOVEMENT_SPEED);
-        if (spd == null) return 0.25;
-        // Pathfinder#moveTo 的 speed 与实体移速属性同量级；勿 ×20（会导致蜘蛛骑士异常冲刺）
-        return Math.max(0.05, spd.getValue());
+        return 1.0;
     }
 
     private static Player nearestParticipant(AbstractGame game, Location from) {

@@ -1,6 +1,7 @@
 package io.mczju.maggoteers.mob;
 
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.config.ConfigParse;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -32,9 +33,7 @@ public final class MobDisplayNames {
 
     /** Trim; empty → null. */
     public static String normalizeConfiguredName(String raw) {
-        if (raw == null) return null;
-        String t = raw.trim();
-        return t.isEmpty() ? null : t;
+        return ConfigParse.trimToNull(raw);
     }
 
     public static Component resolveTitle(String lockedMmOrNull, EntityType type) {

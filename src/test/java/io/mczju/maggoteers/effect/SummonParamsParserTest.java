@@ -37,11 +37,11 @@ class SummonParamsParserTest {
     }
 
     @Test
-    void weaponPathProjectileForcesLook() {
+    void parseProjectilePreservesSpeed() {
         EffectContext proj = new EffectContext();
-        proj.put(EffectKeys.PROJECTILE_TOWARD, "hit_target");
-        SummonParams.ProjectileParams p = SummonParamsParser.parseProjectile(proj, true);
-        assertEquals("look", p.toward());
+        proj.put(EffectKeys.PROJECTILE_SPEED, 1.2);
+        SummonParams.ProjectileParams p = SummonParamsParser.parseProjectile(proj);
+        assertEquals(1.2, p.speed(), 1e-6);
     }
 
     @Test

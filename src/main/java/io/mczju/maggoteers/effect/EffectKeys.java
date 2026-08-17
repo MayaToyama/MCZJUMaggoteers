@@ -11,7 +11,7 @@ public final class EffectKeys {
     /** YAML 原始属性名（onEnable 解析失败时 refresh 再解析）。 */
     public static final EffectKey<String> ATTR_NAME = new EffectKey<>("attr_name");
     public static final EffectKey<String> POTION_NAME = new EffectKey<>("potion_name");
-    public static final EffectKey<String> OP = new EffectKey<>("op");           // "PERCENT" | "FLAT" | "REVOKE_GRANTS"
+    public static final EffectKey<String> OP = new EffectKey<>("op");           // "PERCENT" | "FLAT" | "MULTIPLY" | "REVOKE_GRANTS"
     /** REVOKE_GRANTS: template id whose {@code :grant} layers to remove. */
     public static final EffectKey<String> SOURCE_ID = new EffectKey<>("source_id");
     public static final EffectKey<Double> VALUE = new EffectKey<>("value");
@@ -26,7 +26,6 @@ public final class EffectKeys {
     public static final EffectKey<Integer> COUNT = new EffectKey<>("count");    // GRANT_REVIVE / SUMMON
     public static final EffectKey<Double> OFFSET_Y = new EffectKey<>("offset_y");
     public static final EffectKey<Double> PROJECTILE_SPEED = new EffectKey<>("projectile_speed");
-    public static final EffectKey<String> PROJECTILE_TOWARD = new EffectKey<>("projectile_toward");
     public static final EffectKey<String> TARGETS = new EffectKey<>("targets");           // AURA
     public static final EffectKey<String> ENEMY_SCOPE = new EffectKey<>("enemy_scope");     // AURA
     public static final EffectKey<Boolean> INCLUDE_SELF = new EffectKey<>("include_self");  // AURA
@@ -37,8 +36,6 @@ public final class EffectKeys {
     /** 携带者脚下每秒播放的粒子（preset/particle/radius/density 等）。 */
     public static final EffectKey<EffectContext> CARRIER_FX = new EffectKey<>("carrier_fx");
     public static final EffectKey<EffectContext> MARK_FX = new EffectKey<>("mark_fx");
-    /** mark_fx 跟随目标播放的秒数（DAMAGE_AREA 等）。 */
-    public static final EffectKey<Integer> MARK_DURATION_SEC = new EffectKey<>("mark_duration_sec");
     public static final EffectKey<EffectContext> FX = new EffectKey<>("fx");
     public static final EffectKey<String> MARK_ON = new EffectKey<>("mark_on");
     public static final EffectKey<java.util.List<BuffPotionSpec>> POTIONS = new EffectKey<>("potions");

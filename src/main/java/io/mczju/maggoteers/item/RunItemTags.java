@@ -43,7 +43,7 @@ public final class RunItemTags {
     public static void setCollectiblePdc(ItemMeta meta, String rewardId, int level) {
         if (meta == null) return;
         var pdc = meta.getPersistentDataContainer();
-        pdc.set(new NamespacedKey(MaggoteersPlugin.getInstance(), "kind"),
+        pdc.set(ItemService.kindKey(),
                 PersistentDataType.STRING, ItemKind.COLLECTIBLE.pdcValue());
         pdc.set(rewardIdKey(), PersistentDataType.STRING, rewardId);
         pdc.set(rewardLevelKey(), PersistentDataType.INTEGER, level);
@@ -52,7 +52,7 @@ public final class RunItemTags {
     public static void setBoundEquipPdc(ItemMeta meta, String rewardId, int level) {
         if (meta == null) return;
         var pdc = meta.getPersistentDataContainer();
-        pdc.set(new NamespacedKey(MaggoteersPlugin.getInstance(), "kind"),
+        pdc.set(ItemService.kindKey(),
                 PersistentDataType.STRING, ItemKind.BOUND_EQUIP.pdcValue());
         pdc.set(rewardIdKey(), PersistentDataType.STRING, rewardId);
         pdc.set(rewardLevelKey(), PersistentDataType.INTEGER, level);
