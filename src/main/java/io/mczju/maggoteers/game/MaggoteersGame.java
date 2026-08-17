@@ -71,12 +71,19 @@ public class MaggoteersGame extends AbstractGame {
             @Override
             public boolean onPlayerJoin(PlayerExt player) {
                 player.player().getInventory().clear();
-                return super.onPlayerJoin(player);
+                boolean ok = super.onPlayerJoin(player);
+                if (ok) MaggoteersRoom.teleportWait(MaggoteersGame.this, player.player());
+                return ok;
             }
             @Override
             public boolean onPartyJoin(Party party) {
                 party.getAllPlayer().forEach(p -> p.player().getInventory().clear());
-                return super.onPartyJoin(party);
+                boolean ok = super.onPartyJoin(party);
+                if (ok) {
+                    party.getAllPlayer().forEach(p ->
+                            MaggoteersRoom.teleportWait(MaggoteersGame.this, p.player()));
+                }
+                return ok;
             }
         };
     }
@@ -303,6 +310,7 @@ public class MaggoteersGame extends AbstractGame {
             pe.switchProfile(null);
             pl.setGameMode(GameMode.SURVIVAL);
             resetLobbyVitality(pl);
+            MaggoteersRoom.teleportReturn(this, pl);
         }
 
         io.mczju.maggoteers.effect.SummonRegistry.clearAll(this);

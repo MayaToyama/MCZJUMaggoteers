@@ -5,6 +5,25 @@
 
 ---
 
+## 2026-08-17 — 版本去掉内部测试 rc 标记 → `1.0.0`
+
+- **做了什么**：`pom.xml` / jar 最终名由 `1.0.0-rc.1` 改为 `1.0.0`；`config.debug.enabled/announce` 保持 `false`。
+- **决策**：包体不再带内部测试版标识；正式服部署产物为 `Maggoteers-1.0.0.jar`。
+- **遗留**：测试服需删旧 `Maggoteers-1.0.0-rc.1.jar`（部署脚本会清同前缀旧 jar）。
+
+## 2026-08-17 — leave 清计分板 / 药水；复活剥临时效果再 resync
+
+- **根因**：`/mgc leave` 时玩家已不在 `getPlayers()`，`RunScoreboard.stop` 清不到；`removeAllFor` 只剥常驻 ADD_POTION，光环/临时药水残留。死亡 `cancel` 后原版也不清药水。
+- **修复**：`RunScoreboard.clear(player)` 在 quit 策略调用；`removeAllFor` 清全部活跃药水 + `AuraService.stripAllFromReceiver/Source`；自动复活与复活币路径先 `clearAllActivePotions` 再 `resync` 常驻。
+- **遗留**：无。
+
+## 2026-08-17 — MGC 房间字段：等待点 / 回程点
+
+
+- **做了什么**：`MaggoteersRoom` 增加 `waitLocation`、`returnLocation`（public Location）。join 成功后传到等待点；`cleanupRun` 在卸图前把仍在局内的玩家传到回程点。注册方式不变：`registerGame(MaggoteersGame.class, MaggoteersRoom.class)`。
+- **决策**：本仓库 MGC **1.0.7** 没有图中的 `@FieldDescription`，编辑菜单只显示字段名；类型须 Location / 包装类。绝对坐标放 MGC 房间 JSON，不进本插件 YAML。
+- **遗留**：已有 `default.json` 为 `{}` 时两字段为 null（不传送），须运维 `/mgcop room edit maggoteers default` 点地保存。
+
 ## 2026-08-17 — 复活不再补齐护符 / 绑定装备
 
 - **做了什么**：自动复活与复活币救回后，不再扫描背包并补发缺失的收藏品（护符）和 `BOUND_EQUIP` 绑定装备。`EffectService.resync` 只重施加 held 被动与属性/药水派生视图；`CollectibleService.resync` / `BoundEquipService.resync` 仍用于对局结束剥离。

@@ -101,13 +101,26 @@ public final class AuraService {
         LAST_CARRIER_FX_SEC.remove(game);
     }
 
-    /** 剥除某来源玩家的全部光环派生（死亡/观察者）。 */
+    /** 剥除某来源玩家的全部光环派生（死亡/观察者/离开）。 */
     public static void stripAllFromSource(AbstractGame game, UUID sourceUuid) {
         Set<String> prev = ACTIVE_LINKS.get(game);
         if (prev == null) return;
         Set<String> next = new HashSet<>();
         for (String link : prev) {
             if (linkContainsSource(link, sourceUuid)) revertLink(game, link);
+            else next.add(link);
+        }
+        ACTIVE_LINKS.put(game, next);
+    }
+
+    /** 剥除施加到某接收者身上的全部光环派生（该玩家 leave）。 */
+    public static void stripAllFromReceiver(AbstractGame game, UUID receiverUuid) {
+        Set<String> prev = ACTIVE_LINKS.get(game);
+        if (prev == null) return;
+        Set<String> next = new HashSet<>();
+        String prefix = "p:" + receiverUuid + "|";
+        for (String link : prev) {
+            if (link.startsWith(prefix)) revertLink(game, link);
             else next.add(link);
         }
         ACTIVE_LINKS.put(game, next);

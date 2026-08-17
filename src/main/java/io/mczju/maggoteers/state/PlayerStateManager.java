@@ -130,6 +130,7 @@ public final class PlayerStateManager {
         applyAdventure(p);
         MaggoteersGame mg = game instanceof MaggoteersGame g ? g : gameForPlayer(uuid);
         if (mg != null) {
+            EffectService.clearAllActivePotions(p);
             EffectService.fireTriggerPlayer(mg, p, Trigger.ON_REVIVE,
                     TriggerContext.atEvent(Trigger.ON_REVIVE, p.getLocation()));
             EffectService.resync(p);

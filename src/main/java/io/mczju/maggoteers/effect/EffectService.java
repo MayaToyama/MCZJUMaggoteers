@@ -161,15 +161,29 @@ public final class EffectService {
     /**
      * 按显式对局清理单个玩家的派生效果。中途退出玩家已不在 MGC game map（{@code currentGame} 查不到），
      * 必须把对局对象显式传进来才能拿到 PlayerState 并剥除 MAX_HEALTH 等属性加成/常驻药水。
+     * <p>离开对局时额外清掉全部活跃药水（含光环/临时技能残留）；局内复活勿调本方法。
      */
     public static void removeAllFor(Player p, MaggoteersGame game) {
         PlayerState st = PlayerStateManager.get(game, p.getUniqueId());
-        if (st == null) return;
-        stripDerived(p, st.effects());
-        st.clearEffects();
+        if (st != null) {
+            stripDerived(p, st.effects());
+            st.clearEffects();
+        }
+        // 光环药水、临时 use_ability 药水、夜视等均不保证在 effects 列表里可逐条剥除
+        clearAllActivePotions(p);
         if (game != null) {
+            AuraService.stripAllFromReceiver(game, p.getUniqueId());
+            AuraService.stripAllFromSource(game, p.getUniqueId());
             io.mczju.maggoteers.reward.CollectibleService.resync(p, game);
             BoundEquipService.resync(p, game);
+        }
+    }
+
+    /** 清除玩家身上全部药水效果（回大厅 / leave）。 */
+    public static void clearAllActivePotions(Player p) {
+        if (p == null) return;
+        for (PotionEffect pe : new ArrayList<>(p.getActivePotionEffects())) {
+            p.removePotionEffect(pe.getType());
         }
     }
 

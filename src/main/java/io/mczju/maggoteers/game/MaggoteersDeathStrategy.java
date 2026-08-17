@@ -104,6 +104,8 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
             p.setGameMode(GameMode.ADVENTURE);
             stabilizeAlive(p);
             try {
+                // 死亡已 cancel，原版不会清药水；先剥临时药水，再 resync 常驻（PlayerState 真相源）
+                EffectService.clearAllActivePotions(p);
                 EffectService.fireTriggerPlayer(mg, p, Trigger.ON_REVIVE,
                         TriggerContext.atEvent(Trigger.ON_REVIVE, deathLoc));
                 EffectService.resync(p);

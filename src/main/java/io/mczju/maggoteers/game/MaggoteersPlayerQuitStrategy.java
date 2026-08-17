@@ -5,7 +5,6 @@ import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import com.github.mczjuops.mczjugamecore.player.strategy.AbstractPlayerQuitStrategy;
 import com.github.mczjuops.mczjugamecore.player.strategy.PlayerQuitReason;
 import io.mczju.maggoteers.config.MessageService;
-import io.mczju.maggoteers.effect.AuraService;
 import io.mczju.maggoteers.effect.EffectService;
 import io.mczju.maggoteers.state.PlayerState;
 import io.mczju.maggoteers.state.PlayerStateManager;
@@ -39,6 +38,7 @@ public class MaggoteersPlayerQuitStrategy extends AbstractPlayerQuitStrategy {
         // 退出玩家不参与 cleanupRun 的 getPlayers() 清理，须在此清 CD、奖励抽签缓存与派生效果，防跨局泄漏（R9/R10/R11）
         io.mczju.maggoteers.item.CooldownService.clear(uuid);
         io.mczju.maggoteers.reward.RewardService.clearDraws(uuid);
+        io.mczju.maggoteers.ui.RunScoreboard.clear(pl);
         // 显式传对局：退出玩家已不在 game map，EffectService.currentGame() 查不到 PlayerState
         EffectService.removeAllFor(pl, mg);
         pl.setGameMode(GameMode.SURVIVAL);   // 死亡转观察者后退出仍处于观察者模式
@@ -49,7 +49,6 @@ public class MaggoteersPlayerQuitStrategy extends AbstractPlayerQuitStrategy {
             st.markDown();
             mg.sender().warn(MessageService.raw("death.to_down_quit", Map.of("player", pl.getName())));
         }
-        AuraService.stripAllFromSource(mg, uuid);
 
         // 已无人（含 STATING 窗口 world/PlayerState 尚未初始化的极端情况）→ 真正结束 + 删房
         if (mg.getPlayers().isEmpty()) {

@@ -35,9 +35,14 @@ public final class RunScoreboard {
         BukkitTask t = TASKS.remove(game);
         if (t != null) t.cancel();
         for (PlayerExt pe : game.getPlayers()) {
-            Player p = pe.player();
-            if (p != null) p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
+            clear(pe.player());
         }
+    }
+
+    /** 单人离开对局时复位 sidebar（此时已不在 {@code game.getPlayers()}）。 */
+    public static void clear(Player p) {
+        if (p == null) return;
+        p.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
     }
 
     private static void refresh(AbstractGame game) {
