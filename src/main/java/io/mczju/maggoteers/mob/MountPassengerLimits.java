@@ -1,23 +1,26 @@
 package io.mczju.maggoteers.mob;
 
 import org.bukkit.entity.AbstractHorse;
-import org.bukkit.entity.Camel;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.MagmaCube;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Slime;
-import org.bukkit.entity.Strider;
 
 /** 坐骑族：直接乘客上限与 spawn 后处理。 */
 public final class MountPassengerLimits {
 
     private MountPassengerLimits() {}
 
-    public static int directPassengerLimit(LivingEntity carrier) {
-        if (carrier instanceof Camel) return 2;
-        if (carrier instanceof AbstractHorse) return 1;
-        if (carrier instanceof Strider) return 1;
+    public static int directPassengerLimit(EntityType type) {
+        // Camel 族座位 2（CAMEL_HUSK 是 Camel 子类，须随族）；其余含全部 AbstractHorse 子类/Strider 默认 1。
+        // 未来新增 Camel 族实体类型须同步加入本分支与 MountPassengerLimitsTest（spec §8）。
+        if (type == EntityType.CAMEL || type == EntityType.CAMEL_HUSK) return 2;
         return 1;
+    }
+
+    public static int directPassengerLimit(LivingEntity carrier) {
+        return carrier == null ? 0 : directPassengerLimit(carrier.getType());
     }
 
     public static void prepareMount(LivingEntity le) {
@@ -27,7 +30,7 @@ public final class MountPassengerLimits {
         }
         if (le instanceof AbstractHorse horse) {
             horse.setAdult();
-            horse.setTamed(true);
+            // 不再 setTamed(true)：原版僵尸骑士/骆驼队为未驯服态；车辆由 AiService moveTo 驱动（R4）
         }
         if (le instanceof Slime slime && !(le instanceof MagmaCube)) {
             if (slime.getSize() < 2) slime.setSize(2);
