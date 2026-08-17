@@ -1,5 +1,6 @@
 package io.mczju.maggoteers.mob;
 
+import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.config.InfernalCfg;
 import io.mczju.maggoteers.integration.InfernalMobsBridge;
@@ -39,7 +40,7 @@ public final class MobFactory {
     }
 
     /** 生成一步的全部根坐骑；乘客 tick+1 挂载，每实体 {@code track} 回调。 */
-    public static void spawnStepGroup(Location baseLoc, SpawnStep step,
+    public static void spawnStepGroup(AbstractGame game, Location baseLoc, SpawnStep step,
                                       BiConsumer<LivingEntity, MobSpawnProfile> track) {
         for (int i = 0; i < step.count(); i++) {
             Location loc = spawnPadLocation(baseLoc, i);
@@ -53,7 +54,7 @@ public final class MobFactory {
                     List<LivingEntity> direct = new ArrayList<>();
                     mountPassengerTree(mount, passengerTree, track, direct);
                     LivingEntity controller = MountControllerResolver.resolve(mount, direct, passengerTree);
-                    MountedSquadRegistry.register(mount, controller);
+                    MountedSquadRegistry.register(game, mount, controller);
                 }, 1L);
             }
         }
@@ -74,6 +75,7 @@ public final class MobFactory {
             track.accept(child, MobSpawnProfile.fromPassenger(node));
             mountPassengerTree(child, node.passengers(), track, null);
             if (!carrier.addPassenger(child)) {
+                // L1：child 已 remove 但仍被 livingMobs 追踪，由 5-tick 扫描回收；孙乘客随 child 移除弹飞成散怪
                 LOG.warning("addPassenger 失败：" + carrier.getType() + " <- " + child.getType());
                 child.remove();
                 continue;
@@ -125,7 +127,7 @@ public final class MobFactory {
     }
 
     /** 亡语生成物延迟挂载乘客（与 {@link #spawnStepGroup} 同 tick+1 语义）。 */
-    public static void mountPassengersDelayed(LivingEntity mount, List<PassengerSpawn> passengers,
+    public static void mountPassengersDelayed(AbstractGame game, LivingEntity mount, List<PassengerSpawn> passengers,
                                               BiConsumer<LivingEntity, MobSpawnProfile> track) {
         if (mount == null || passengers == null || passengers.isEmpty()) return;
         Bukkit.getScheduler().runTaskLater(MaggoteersPlugin.getInstance(), () -> {
@@ -133,7 +135,7 @@ public final class MobFactory {
             List<LivingEntity> direct = new ArrayList<>();
             mountPassengerTree(mount, passengers, track, direct);
             LivingEntity controller = MountControllerResolver.resolve(mount, direct, passengers);
-            MountedSquadRegistry.register(mount, controller);
+            MountedSquadRegistry.register(game, mount, controller);
         }, 1L);
     }
 

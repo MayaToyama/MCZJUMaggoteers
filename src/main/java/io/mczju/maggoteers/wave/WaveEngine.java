@@ -76,7 +76,7 @@ public final class WaveEngine {
      */
     public static void spawnStep(AbstractGame game, WaveRuntime rt, SpawnStep step, World world) {
         Location base = new Location(world, step.point().x(), step.point().y(), step.point().z());
-        MobFactory.spawnStepGroup(base, step, (le, profile) -> trackSpawned(game, rt, step, le, profile));
+        MobFactory.spawnStepGroup(game, base, step, (le, profile) -> trackSpawned(game, rt, step, le, profile));
     }
 
     private static void trackSpawned(AbstractGame game, WaveRuntime rt, SpawnStep step,
@@ -145,7 +145,7 @@ public final class WaveEngine {
             if (e != null) e.remove();
             InfernalMobsBridge.unregisterManaged(uuid);
             BY_ENTITY.remove(uuid);
-            MountedSquadRegistry.removeByRoot(uuid);
+            MountedSquadRegistry.removeByRoot(game, uuid);
         }
         rt.livingMobs.clear();
         rt.mobProfiles.clear();
@@ -165,7 +165,7 @@ public final class WaveEngine {
         MobSpawnProfile profile = rt.mobProfiles.remove(uuid);
         rt.livingMobs.remove(uuid);
         BY_ENTITY.remove(uuid);
-        MountedSquadRegistry.removeByRoot(uuid);
+        MountedSquadRegistry.removeByRoot(rt.game, uuid);
         BossBar bar = rt.bossBars.remove(uuid);
         hideBossBar(rt.game, bar);
         if (loc != null && profile != null && !profile.onDeath().isEmpty()) {
@@ -183,7 +183,7 @@ public final class WaveEngine {
             if (le != null) {
                 trackSpawned(rt.game, rt, null, le, MobSpawnProfile.fromDeathSpawn(ds));
                 if (!ds.passengers().isEmpty()) {
-                    MobFactory.mountPassengersDelayed(le, ds.passengers(),
+                    MobFactory.mountPassengersDelayed(rt.game, le, ds.passengers(),
                             (passenger, profile) -> trackSpawned(rt.game, rt, null, passenger, profile));
                 }
             }

@@ -22,15 +22,15 @@ public final class MountedSquadAiService {
 
     public static void tick(AbstractGame game) {
         if (!(game instanceof MaggoteersGame)) return;
-        for (MountedSquadRegistry.Squad squad : MountedSquadRegistry.snapshot().values()) {
+        for (MountedSquadRegistry.Squad squad : MountedSquadRegistry.squadsFor(game)) {
             var rootEnt = Bukkit.getEntity(squad.rootUuid());
             var ctrlEnt = Bukkit.getEntity(squad.controllerUuid());
             if (!(rootEnt instanceof LivingEntity root) || root.isDead() || !root.isValid()) {
-                MountedSquadRegistry.removeByRoot(squad.rootUuid());
+                MountedSquadRegistry.removeByRoot(game, squad.rootUuid());
                 continue;
             }
             if (!(ctrlEnt instanceof Mob controller) || controller.isDead() || !controller.isValid()) {
-                MountedSquadRegistry.removeByRoot(squad.rootUuid());
+                MountedSquadRegistry.removeByRoot(game, squad.rootUuid());
                 continue;
             }
             Player target = nearestParticipant(game, root.getLocation());
