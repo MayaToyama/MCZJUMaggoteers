@@ -7,8 +7,8 @@ lives:
 # enabled=true：有 maggoteers.play 即可用 /maggoteers debug（无需 OP）
 # enabled=false：仅 maggoteers.admin（默认 OP）可用 debug
 debug:
-  enabled: true
-  announce: true
+  enabled: false
+  announce: false
 
 # 全局怪物属性倍率（再叠 waves.yml coeff / affixes）
 mob_attributes:

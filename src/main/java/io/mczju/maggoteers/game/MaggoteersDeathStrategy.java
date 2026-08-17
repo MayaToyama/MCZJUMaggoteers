@@ -107,8 +107,6 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
                 EffectService.fireTriggerPlayer(mg, p, Trigger.ON_REVIVE,
                         TriggerContext.atEvent(Trigger.ON_REVIVE, deathLoc));
                 EffectService.resync(p);
-                io.mczju.maggoteers.reward.CollectibleService.resync(p, mg);
-                io.mczju.maggoteers.effect.BoundEquipService.resync(p, mg);
             } catch (RuntimeException ex) {
                 MaggoteersPluginLog.warn("ON_REVIVE/resync 异常: " + ex.getMessage());
             } finally {

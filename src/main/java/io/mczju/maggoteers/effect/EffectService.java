@@ -77,7 +77,7 @@ public final class EffectService {
         }
     }
 
-    /** 复活后重施加（幂等）：held 武器被动 + 派生视图 + 护符。 */
+    /** 复活/开局后重施加（幂等）：held 武器被动 + 派生视图。不补发背包护符/绑定装备。 */
     public static void resync(Player p) {
         MaggoteersGame game = currentGame(p);
         PlayerState st = PlayerStateManager.get(game, p.getUniqueId());
@@ -87,10 +87,6 @@ public final class EffectService {
             WeaponHeldService.sync(p, game);
         }
         resyncDerived(p, st);
-        if (game != null) {
-            io.mczju.maggoteers.reward.CollectibleService.resync(p, game);
-            BoundEquipService.resync(p, game);
-        }
     }
 
     private static final ThreadLocal<Boolean> BULK_RESYNC = ThreadLocal.withInitial(() -> false);

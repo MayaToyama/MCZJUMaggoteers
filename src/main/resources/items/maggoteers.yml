@@ -786,8 +786,9 @@ maggoteers:glass_blade:
   lore:
     - "<dark_gray>接下来的一击将会很疯狂"
   maxStackSize: 1
+  maxDurability: 1
+  remainingDurability: 1
   enchantments:
-    - minecraft:unbreaking: 10
     - minecraft:sharpness: 100
   pdc:
     -

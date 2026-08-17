@@ -86,18 +86,16 @@ strategies:
     steps:
       - point: "1"
         type: SPIDER
-        repeat: 3
+        repeat: 2
         count: 1
         delay: 10
-        coeff: { speed: 1.2 }
         passengers:
           - { type: SKELETON, count: 1 }
       - point: "3"
         type: SPIDER
-        repeat: 3
+        repeat: 2
         count: 1
         delay: 10
-        coeff: { speed: 1.2 }
         passengers:
           - { type: SKELETON, count: 1 }
 
@@ -367,7 +365,7 @@ strategies:
   # 卡兹瀑布（s1_jungle_spider_falls）
   s1_jungle_spider_falls:
     关卡名称: "卡兹瀑布"
-    repeat: 20
+    repeat: 10
     clearReward: [ { item: maggoteers:currency_normal, amount: 2 } ]
     steps:
       - { point: "1", type: CAVE_SPIDER, coeff: { hp:0.1 }, count: 1, delay: 1 }
@@ -435,18 +433,18 @@ strategies:
       - { point: "2", type: PILLAGER, count: 5, delay: 5 }
       - { point: "5", type: VINDICATOR, count: 2, delay: 10 }
       - point: boss
-        type: STRIDER
+        type: MAGMA_CUBE
         name: "塑料坐骑"
         count: 1
         affixes: [plastic]
         delay: 5
         passengers:
-          - type: STRIDER
+          - type: MAGMA_CUBE
             name: "塑料坐骑"
             count: 1
             affixes: [plastic]
             passengers:
-              - type: STRIDER
+              - type: MAGMA_CUBE
                 name: "塑料坐骑"
                 count: 1
                 affixes: [plastic]

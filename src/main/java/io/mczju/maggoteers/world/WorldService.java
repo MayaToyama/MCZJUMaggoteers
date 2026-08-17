@@ -5,10 +5,8 @@ import io.mczju.maggoteers.MaggoteersPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Difficulty;
 import org.bukkit.GameRules;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
-import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
@@ -78,18 +76,29 @@ public final class WorldService {
         return s == null ? 0L : s;
     }
 
-    /** 传送玩家回主世界 → 卸载 → 异步删目录。 */
+    /**
+     * 卸载并异步删目录。约定：仅在世界内已无玩家时调用（由 MGC leave / 大厅流程保证）。
+     */
     public static void cleanup(AbstractGame game) {
-        World w = worlds.remove(game);
-        SEEDS.remove(game);
-        if (w == null) return;
-        Location hub = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().get(0).getSpawnLocation();
-        for (Player p : new ArrayList<>(w.getPlayers())) {
-            if (hub != null) p.teleport(hub);
+        World w = worlds.get(game);
+        if (w == null) {
+            SEEDS.remove(game);
+            worlds.remove(game);
+            return;
+        }
+        if (!w.getPlayers().isEmpty()) {
+            LOG.warning("cleanup 时世界仍有玩家，跳过卸载与删目录: " + w.getName()
+                    + " players=" + w.getPlayers().size());
+            return;
         }
         File folder = w.getWorldFolder();
         String name = w.getName();
-        Bukkit.unloadWorld(w, false);
+        if (!Bukkit.unloadWorld(w, false)) {
+            LOG.warning("unloadWorld 失败，跳过删目录: " + name);
+            return;
+        }
+        worlds.remove(game);
+        SEEDS.remove(game);
         new BukkitRunnable() {
             @Override public void run() { deleteDir(folder); }
         }.runTaskAsynchronously(MaggoteersPlugin.getInstance());

@@ -5,6 +5,12 @@
 
 ---
 
+## 2026-08-17 — 复活不再补齐护符 / 绑定装备
+
+- **做了什么**：自动复活与复活币救回后，不再扫描背包并补发缺失的收藏品（护符）和 `BOUND_EQUIP` 绑定装备。`EffectService.resync` 只重施加 held 被动与属性/药水派生视图；`CollectibleService.resync` / `BoundEquipService.resync` 仍用于对局结束剥离。
+- **决策**：死亡已 `setCancelled`，物品栏本应保留；补发会把玩家主动丢掉或消耗掉的物品又塞回来。选中奖励时的 `grant`/`sync` 不变。
+- **遗留**：无。
+
 ## 2026-08-17 — Mounted Squad Hardening（骑乘小队加固，SDD 六任务 @ 9487c0a..2bccf18）
 
 - **做了什么**：分支 `feat/mounted-squad-hardening`，6 个任务全部经 task review（Approved）与 whole-branch final review（opus，无 Critical/无 Important，13 个 Minor 全部分流 FALSE-POSITIVE/DEFER）。全量 `mvn -o test` = **329 pass / 0 fail / 5 skip**；`package` 产出 `Maggoteers-1.0.0-rc.1.jar`。

@@ -133,8 +133,6 @@ public final class PlayerStateManager {
             EffectService.fireTriggerPlayer(mg, p, Trigger.ON_REVIVE,
                     TriggerContext.atEvent(Trigger.ON_REVIVE, p.getLocation()));
             EffectService.resync(p);
-            io.mczju.maggoteers.reward.CollectibleService.resync(p, mg);
-            io.mczju.maggoteers.effect.BoundEquipService.resync(p, mg);
         }
         restoreFullHealth(p);
         return true;
