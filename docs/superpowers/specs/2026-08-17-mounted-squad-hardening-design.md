@@ -19,7 +19,7 @@
 | R1 | `MountedSquadRegistry` 静态全局表，不按对局作用域；`MountedSquadAiService.tick(game)` 遍历**所有**对局的 squad | 中高 |
 | R2 | squad 清理分散 4 处且不一致：`stop` 清、`clearTracking`（被 `killAllTracked` 用）**不清**，靠 5-tick 扫描碰巧自愈 | 中 |
 | R3 | controller 选择是隐式位置依赖（Camel 取首位 / 最深 Mob），无配置字段可声明，内容作者调整乘客顺序即改变控制器 | 中高 |
-| M1 | 小队索敌距离 `TARGET_RANGE=32.0` 与驱动速度 `1.0` 硬编码，与可配置 `follow_range` 脱节 | 中 |
+| M1 | 小队索敌距离 `TARGET_RANGE=32.0` 与驱动速度 `1.0` 硬编码，无法调（与 `follow_range` 有意解耦，§3） | 中 |
 | L1 | `addPassenger` 失败后 child 已 remove 但仍 tracked，≤5 tick 扫描回收；孙乘客弹飞成散怪（行为可接受，需文档化） | 低 |
 | L3 | root 坐骑死亡 → squad 移除、乘客弹飞成独立追踪怪（行为可接受，需文档化） | 低 |
 | L4 | 骑乘机械零单测（最复杂递归无覆盖） | 低 |
@@ -82,12 +82,15 @@ for (var squad : MountedSquadRegistry.squadsFor(game)) { ... }
 // 纯函数（无 Bukkit 依赖，可单测）：
 //   返回「候选路径」列表（按优先级降序），每个路径 = 孩子索引序列（如 [0,1] = 直接乘客0 的 乘客1）
 static List<List<Integer>> controllerCandidates(List<PassengerSpawn> spec, boolean rootIsCamel)
-//   规则（与既有 §1.7 行为对齐，不做静默改写）：
-//   1) 任意节点 controller()==true → 第一候选 = 该路径（DFS 序首个）；其余候选仍保留（回落链）
-//   2) rootIsCamel && size==2 && 双叶 → [ [0] ]
-//   2.5) rootIsCamel && 有乘客 → [ 第一棵子树最深叶路径, 整棵树最深叶路径 ]   // 对齐现代码：先前座子树，非 Mob 再落整树
-//   3) 非 camel → [ 整棵树最深叶路径 ]
-//   4) 空 spec → []
+//   候选列表 = 显式段 + 默认回落段，整体去重（与既有 §1.7 行为对齐，不做静默改写）：
+//   ① 显式段：所有 controller()==true 的节点路径，按 DFS 序全部加入
+//      （第一个即可用；后续显式节点仍留在回落链，与「非 Mob 自然落到下一候选」一致）
+//   ② 默认回落段（显式段之后追加，去重后继续）：
+//      2)  rootIsCamel && size==2 && 双叶 → [ [0] ]（短路，不进入 2.5）
+//      2.5) rootIsCamel && 有乘客（非规则 2 的双叶情形）→ [ 第一棵子树最深叶路径, 整棵树最深叶路径 ]
+//           // 对齐现代码：先前座子树，非 Mob 再落整树；顺序上必须排在规则 2 之后
+//      3)  非 camel → [ 整棵树最深叶路径 ]
+//      4)  空 spec → []
 
 // 运行时薄封装（现有 resolve 签名不变）：
 //   rootIsCamel = root instanceof Camel
@@ -130,7 +133,7 @@ mob_attributes:
 - **L3**：`WaveEngine.handleMobDeath` 补注释：「坐骑死 → squad 移除、乘客弹飞成独立追踪怪继续战斗（原版 AI 索敌）」。
 - **L4 单测**（JUnit 5，无 Mockito，纯逻辑）：
   - `MountControllerResolverTest`：`controllerCandidates` 覆盖——显式 controller（含嵌套、多个 controller 取首个）、Camel 双叶 `[[0]]`、Camel 嵌套（先前座子树、非 Mob 落整树）、非 camel 最深叶、空 spec。
-  - `MountPassengerLimitsTest`：`directPassengerLimit(EntityType)`（见 §5.2，生产实方法）。
+  - `MountPassengerLimitsTest`：`directPassengerLimit(EntityType)`（见 §5.5，生产实方法）——**CAMEL→2、CAMEL_HUSK→2**（Camel 族两边都断言）、HORSE→1、STRIDER→1、未知类型默认 1。
   - `MountedSquadRegistry` 薄 map 封装依赖 `AbstractGame` 构造不可测，不单测；靠 R2 两处显式调用 + 构建验证。
 
 ---
@@ -168,13 +171,13 @@ mob_attributes:
 
 ```java
 public static int directPassengerLimit(EntityType type) {
-    if (type == EntityType.CAMEL) return 2;   // 唯一例外
+    if (type == EntityType.CAMEL || type == EntityType.CAMEL_HUSK) return 2;  // Camel 族（CAMEL_HUSK 是 Camel 子类，座位须随族）
     return 1;                                  // 其余含全部 AbstractHorse 子类/Strider，默认 1
 }
 public static int directPassengerLimit(LivingEntity le) { return le == null ? 0 : directPassengerLimit(le.getType()); }
 ```
 
-生产方法（`carrier.getType()` 调用），纯可单测，且把既有 `instanceof Camel/AbstractHorse/Strider` 分支收敛成「仅 Camel 例外」的封闭映射。
+生产方法（`carrier.getType()` 调用），纯可单测，且把既有 `instanceof Camel/AbstractHorse/Strider` 分支收敛成封闭映射。**Camel 族必须显式列全 `CAMEL || CAMEL_HUSK`**——只写 `EntityType.CAMEL` 会把 `s1_desert_four_camels` 的 CAMEL_HUSK 打成 1、第二乘客被跳过，破坏「现有内容零改动」。若未来内容新增 Camel 族实体类型，须同步加入本分支与单测（见 §8）。
 
 ---
 
@@ -203,7 +206,7 @@ public static int directPassengerLimit(LivingEntity le) { return le == null ? 0 
 | `mob/MountedSquadAiService.java` | 只遍历本局 squad + 读配置参数 + 冲刺驱动（`instanceof AbstractHorse`）|
 | `mob/MobFactory.java` | `spawnStepGroup`/`mountPassengersDelayed` 加 game 参数 + L1 注释 |
 | `mob/MountControllerResolver.java` | 拆纯 `controllerCandidates` + 薄运行时；删三递归 |
-| `mob/MountPassengerLimits.java` | `directPassengerLimit(EntityType)` 生产实现 + 去 `setTamed` |
+| `mob/MountPassengerLimits.java` | `directPassengerLimit(EntityType)` 生产实现（**Camel 族 CAMEL/CAMEL_HUSK→2**）+ 去 `setTamed` |
 | `wave/WaveEngine.java` | `clearTracking` 与 `stop` 各加 `removeGame`；`stop` 删逐根 removeByRoot；L3 注释 |
 | `wave/PassengerSpawn.java` | 加 `controller` 字段（**所有构造**） |
 | `config/PassengerCfg.java` | 加 `controller` 字段（**所有构造**） |
@@ -226,3 +229,4 @@ public static int directPassengerLimit(LivingEntity le) { return le == null ? 0 
 - **Stretch ④（贴脸挥矛）**：依赖原版乘客骑乘时近战是否出手，若失败记 follow-up（自定义近战驱动）不挡合入。
 - **root 不 setTarget**：若测试服发现车辆不转向或原版骑手近战依赖车辆 target，另行评估「仅冲刺坐骑 setTarget」局部例外（§5.2）。
 - **`CAMEL_HUSK`/`PARCHED` 实体类型**：默认 `waves.yml` 使用，须在 Paper 26.2 存在且 `CAMEL_HUSK` 落 `AbstractHorse` 族（M4 已排除，不改解析行为，仅记录 + 测试服确认）。
+- **座位上限按 Camel 族**：`directPassengerLimit` 显式列出 `CAMEL || CAMEL_HUSK → 2`。若未来内容新增 Camel 族实体类型，**必须**同步加入该分支与 `MountPassengerLimitsTest`，否则误打成 1、第二直接乘客被跳过（违反「现有内容零改动」）。
