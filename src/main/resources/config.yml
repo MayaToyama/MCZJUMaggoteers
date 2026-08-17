@@ -14,6 +14,9 @@ debug:
 mob_attributes:
   scale: 1.0
   follow_range: 10.0
+  squad_target_range: 32.0
+  squad_move_speed: 1.0
+  squad_charge_speed: 4.0
 initial_equipment:
   - maggoteers:detection_radar   # 开局全员探测雷达；职业装仍由 class 池发放
 class_select:
