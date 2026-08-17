@@ -56,4 +56,17 @@ class MobYamlParserTest {
         assertThrows(IllegalStateException.class,
                 () -> MobYamlParser.parseName(Map.of("name", 1), "t"));
     }
+
+    @Test
+    void parsesControllerBoolean() {
+        assertTrue(MobYamlParser.parseController(Map.of("controller", true), "t"));
+        assertFalse(MobYamlParser.parseController(Map.of("controller", false), "t"));
+        assertFalse(MobYamlParser.parseController(Map.of(), "t"));
+    }
+
+    @Test
+    void controllerStringFails() {
+        assertThrows(IllegalStateException.class,
+                () -> MobYamlParser.parseController(Map.of("controller", "true"), "t"));
+    }
 }

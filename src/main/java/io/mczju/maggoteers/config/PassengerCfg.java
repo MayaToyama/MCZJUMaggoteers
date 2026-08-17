@@ -10,7 +10,7 @@ public record PassengerCfg(EntityType type, int count, CoeffCfg coeff, List<Stri
                            InfernalCfg infernal,
                            List<MobEquipment> equipment, List<DeathSpawnCfg> onDeath,
                            List<PassengerCfg> passengers,
-                           String name, boolean bossBar) {
+                           String name, boolean bossBar, boolean controller) {
     public PassengerCfg {
         affixes = affixes == null ? List.of() : List.copyOf(affixes);
         infernal = infernal == null ? InfernalCfg.NONE : infernal;
@@ -27,7 +27,7 @@ public record PassengerCfg(EntityType type, int count, CoeffCfg coeff, List<Stri
     /** 扁平条目（无嵌套）。 */
     public PassengerCfg(EntityType type, int count, CoeffCfg coeff, List<String> affixes) {
         this(type, count, coeff, affixes, InfernalCfg.NONE,
-                List.of(), List.of(), List.of(), null, false);
+                List.of(), List.of(), List.of(), null, false, false);
     }
 
     /** 兼容旧 8 参构造。 */
@@ -35,6 +35,6 @@ public record PassengerCfg(EntityType type, int count, CoeffCfg coeff, List<Stri
                         InfernalCfg infernal,
                         List<MobEquipment> equipment, List<DeathSpawnCfg> onDeath,
                         List<PassengerCfg> passengers) {
-        this(type, count, coeff, affixes, infernal, equipment, onDeath, passengers, null, false);
+        this(type, count, coeff, affixes, infernal, equipment, onDeath, passengers, null, false, false);
     }
 }

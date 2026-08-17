@@ -160,7 +160,8 @@ public final class RunPlanner {
                         onDeath,
                         nested,
                         pc.name(),
-                        pc.bossBar()));
+                        pc.bossBar(),
+                        pc.controller()));
             }
         }
         return out;

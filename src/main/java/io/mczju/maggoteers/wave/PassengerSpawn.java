@@ -13,7 +13,7 @@ public record PassengerSpawn(EntityType type,
                              InfernalCfg infernal,
                              List<MobEquipment> equipment, List<DeathSpawn> onDeath,
                              List<PassengerSpawn> passengers,
-                             String name, boolean bossBar) {
+                             String name, boolean bossBar, boolean controller) {
     public PassengerSpawn {
         affixes = affixes == null ? List.of() : List.copyOf(affixes);
         potions = potions == null ? List.of() : List.copyOf(potions);
@@ -31,7 +31,7 @@ public record PassengerSpawn(EntityType type,
     public PassengerSpawn(EntityType type, double hpMult, double dmgMult, double speedMult,
                           List<String> affixes, List<PotionSpec> potions) {
         this(type, hpMult, dmgMult, speedMult, 1.0, 1.0,
-                affixes, potions, InfernalCfg.NONE, List.of(), List.of(), List.of(), null, false);
+                affixes, potions, InfernalCfg.NONE, List.of(), List.of(), List.of(), null, false, false);
     }
 
     public PassengerSpawn(EntityType type,
@@ -42,6 +42,6 @@ public record PassengerSpawn(EntityType type,
                           List<MobEquipment> equipment, List<DeathSpawn> onDeath,
                           List<PassengerSpawn> passengers) {
         this(type, hpMult, dmgMult, speedMult, scaleMult, followRangeMult,
-                affixes, potions, infernal, equipment, onDeath, passengers, null, false);
+                affixes, potions, infernal, equipment, onDeath, passengers, null, false, false);
     }
 }

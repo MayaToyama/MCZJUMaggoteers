@@ -7,6 +7,7 @@ import org.bukkit.entity.EntityType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public final class MobYamlParser {
     private static final int MAX_NEST_DEPTH = 8;
@@ -66,6 +67,16 @@ public final class MobYamlParser {
         return b;
     }
 
+    /** Opt-in 骑乘控制器。Omitted → false. Non-boolean → hard-fail. */
+    public static boolean parseController(Map<?, ?> m, String context) {
+        if (!m.containsKey("controller") || m.get("controller") == null) return false;
+        Object raw = m.get("controller");
+        if (!(raw instanceof Boolean b)) {
+            throw new IllegalStateException("controller must be boolean (" + context + ")");
+        }
+        return b;
+    }
+
     public static List<MobEquipment> parseEquipment(Object raw) {
         if (!(raw instanceof List<?> list) || list.isEmpty()) return List.of();
         List<MobEquipment> out = new ArrayList<>();
@@ -80,18 +91,39 @@ public final class MobYamlParser {
     }
 
     public static List<PassengerCfg> parsePassengers(Object raw) {
-        return parsePassengersDepth(raw, 1, "step");
+        List<PassengerCfg> out = parsePassengersDepth(raw, 1, "step");
+        warnOnMultipleControllers(out, "step");
+        return out;
     }
 
     public static List<DeathSpawnCfg> parseOnDeath(Object raw) {
-        return parseOnDeathDepth(raw, 1, "on_death");
+        List<DeathSpawnCfg> out = parseOnDeathDepth(raw, 1, "on_death");
+        for (DeathSpawnCfg dc : out) warnOnMultipleControllers(dc.passengers(), "on_death");
+        return out;
     }
 
-    /** passengers / on_death 两类节点共享的节点级解析结果（字段 + 两层嵌套 + name/bossBar）。 */
+    private static void warnOnMultipleControllers(List<PassengerCfg> nodes, String context) {
+        int n = countControllers(nodes);
+        if (n > 1) {
+            Logger.getLogger("Maggoteers")
+                    .warning(context + " 乘客树声明了 " + n + " 个 controller（首个生效）");
+        }
+    }
+
+    private static int countControllers(List<PassengerCfg> nodes) {
+        int n = 0;
+        for (PassengerCfg pc : nodes) {
+            if (pc.controller()) n++;
+            n += countControllers(pc.passengers());
+        }
+        return n;
+    }
+
+    /** passengers / on_death 两类节点共享的节点级解析结果（字段 + 两层嵌套 + name/bossBar/controller）。 */
     private record MobNode(EntityType type, int count, CoeffCfg coeff, List<String> affixes,
                            InfernalCfg infernal, List<MobEquipment> equipment,
                            List<PassengerCfg> passengers, List<DeathSpawnCfg> onDeath,
-                           String name, boolean bossBar) {}
+                           String name, boolean bossBar, boolean controller) {}
 
     private static MobNode parseMobNode(Map<?, ?> m, int depth, String context) {
         EntityType type = GameRegistries.entityType(String.valueOf(m.get("type")));
@@ -104,7 +136,8 @@ public final class MobYamlParser {
         List<DeathSpawnCfg> onDeath = parseOnDeathDepth(m.get("on_death"), depth + 1, type.name());
         String name = parseName(m, context + "/" + type.name());
         boolean bossBar = parseBossBar(m, context + "/" + type.name());
-        return new MobNode(type, count, coeff, affixes, infernal, equipment, passengers, onDeath, name, bossBar);
+        boolean controller = parseController(m, context + "/" + type.name());
+        return new MobNode(type, count, coeff, affixes, infernal, equipment, passengers, onDeath, name, bossBar, controller);
     }
 
     private static List<PassengerCfg> parsePassengersDepth(Object raw, int depth, String context) {
@@ -117,7 +150,7 @@ public final class MobYamlParser {
             if (!(o instanceof Map<?, ?> m)) continue;
             MobNode n = parseMobNode(m, depth, context);
             out.add(new PassengerCfg(n.type(), n.count(), n.coeff(), n.affixes(), n.infernal(), n.equipment(),
-                    n.onDeath(), n.passengers(), n.name(), n.bossBar()));
+                    n.onDeath(), n.passengers(), n.name(), n.bossBar(), n.controller()));
         }
         return out;
     }
