@@ -2217,8 +2217,7 @@ maggoteers:paragon:
 
 # ── 怪物专用装备（waves.yml equipment 引用，不给玩家）────────────────
 maggoteers:mob_iron_spear:
-  material: IRON_SWORD
-  itemModel: IRON_SPEAR
+  material: IRON_SPEAR
   customName: "<gray>铁矛"
   lore:
     - "<dark_gray>"
@@ -2238,8 +2237,7 @@ maggoteers:mob_iron_spear:
       operation: ADD_NUMBER
       slot: mainhand
 maggoteers:mob_gold_spear:
-  material: GOLDEN_SWORD
-  itemModel: GOLDEN_SPEAR
+  material: GOLDEN_SPEAR
   customName: "<gold>金矛"
   lore:
     - "<dark_gray>"
