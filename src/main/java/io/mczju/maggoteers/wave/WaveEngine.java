@@ -121,6 +121,7 @@ public final class WaveEngine {
         rt.livingMobs.clear();
         rt.mobProfiles.clear();
         clearBossBars(rt);
+        MountedSquadRegistry.removeGame(game);
     }
 
     /** 移除当前波次追踪的所有实体。 */
@@ -145,12 +146,12 @@ public final class WaveEngine {
             if (e != null) e.remove();
             InfernalMobsBridge.unregisterManaged(uuid);
             BY_ENTITY.remove(uuid);
-            MountedSquadRegistry.removeByRoot(game, uuid);
         }
         rt.livingMobs.clear();
         rt.mobProfiles.clear();
         clearBossBars(rt);
         PENDING_SPLIT_CANCEL.clear();
+        MountedSquadRegistry.removeGame(game);
     }
 
     /** 死亡处理：移除追踪；死亡召唤计入本波 livingMobs。返回 true 表示是我们的怪。 */
@@ -165,6 +166,7 @@ public final class WaveEngine {
         MobSpawnProfile profile = rt.mobProfiles.remove(uuid);
         rt.livingMobs.remove(uuid);
         BY_ENTITY.remove(uuid);
+        // L3：坐骑死 → squad 移除；其乘客随根实体死亡/删除弹飞，成独立追踪怪继续战斗（原版索敌）
         MountedSquadRegistry.removeByRoot(rt.game, uuid);
         BossBar bar = rt.bossBars.remove(uuid);
         hideBossBar(rt.game, bar);
