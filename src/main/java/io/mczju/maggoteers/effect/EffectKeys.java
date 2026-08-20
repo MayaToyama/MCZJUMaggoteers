@@ -59,6 +59,6 @@ public final class EffectKeys {
             new EffectKey<>("items_by_level");
     /** 计数器 id（ON_COUNTER 信号的来源；绑定被动的 params.counter.id 与之匹配）。 */
     public static final EffectKey<String> COUNTER_ID = new EffectKey<>("counter_id");
-    // COUNTER_SPEC 在 Task 2 引入（CounterSpec 类型定义后）
+    public static final EffectKey<CounterSpec> COUNTER_SPEC = new EffectKey<>("counter_spec");
     private EffectKeys() {}
 }

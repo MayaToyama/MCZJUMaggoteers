@@ -1,10 +1,13 @@
 package io.mczju.maggoteers.state;
 
+import io.mczju.maggoteers.effect.CounterState;
 import io.mczju.maggoteers.effect.PlayerEffect;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -18,6 +21,7 @@ public final class PlayerState {
     private boolean alive;
     private final List<PlayerEffect> effects = new ArrayList<>();
     private final Set<String> acquiredUnique = new HashSet<>();
+    private final Map<String, CounterState> counters = new HashMap<>();
 
     public PlayerState(UUID uuid, int reviveCount) {
         this.uuid = uuid;
@@ -38,6 +42,8 @@ public final class PlayerState {
 
     public Set<String> acquiredUnique() { return acquiredUnique; }
     public void addAcquiredUnique(String id) { acquiredUnique.add(id); }
+
+    public Map<String, CounterState> counters() { return counters; }
 
     /** 死亡时调：有复活次数则消耗一次、保持存活，返回 true；否则返回 false（调用方再 markDown）。 */
     public boolean tryAutoRevive() {
