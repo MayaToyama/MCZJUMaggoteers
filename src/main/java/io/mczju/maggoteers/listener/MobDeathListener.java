@@ -23,7 +23,7 @@ public class MobDeathListener implements Listener {
 
     /**
      * 苦力怕等爆炸前清掉追踪怪身上的药水。原版会把存活药水打成 AreaEffectCloud；
-     * affix 常用极大 dur（隐身/致盲/凋零），玩家踩到会挂数小时 buff。
+     * 技能/旧词缀常用极大 dur（隐身/致盲/凋零），玩家踩到会挂数小时 buff。
      */
     @EventHandler(priority = EventPriority.LOWEST)
     public void beforeTrackedExplode(ExplosionPrimeEvent e) {
@@ -34,7 +34,8 @@ public class MobDeathListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    // ignoreCancelled：1up 复活技能 cancel 的死亡不 untrack（复活怪保留波次追踪）
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDeath(EntityDeathEvent e) {
         if (WaveEngine.handleMobDeath(e.getEntity().getUniqueId(), e.getEntity().getLocation())) {
             e.getDrops().clear();

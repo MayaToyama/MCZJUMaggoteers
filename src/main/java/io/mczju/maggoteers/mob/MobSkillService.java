@@ -2,6 +2,7 @@ package io.mczju.maggoteers.mob;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import io.mczju.maggoteers.MaggoteersPlugin;
+import io.mczju.maggoteers.effect.EffectKeys;
 import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.wave.WaveEngine;
 import org.bukkit.Bukkit;
@@ -63,6 +64,27 @@ public final class MobSkillService {
     public static List<MobSkillSpec> skillsOf(UUID uuid) {
         List<MobSkillSpec> s = BY_ENTITY.get(uuid);
         return s == null ? List.of() : s;
+    }
+
+    /**
+     * 该实体是否有 KILLED 自我复活技能（trigger==KILLED + HEALTH 自疗 amount>0）。
+     * 调用方（MobSkillListener.onKilled）据此 cancel 死亡事件，随后 fire 执行 setHealth 复活。
+     */
+    public static boolean wantsRevive(LivingEntity le) {
+        if (le == null) return false;
+        List<MobSkillSpec> specs = BY_ENTITY.get(le.getUniqueId());
+        if (specs == null || specs.isEmpty()) return false;
+        for (MobSkillSpec spec : specs) {
+            if (spec.trigger() != MobTrigger.KILLED) continue;
+            for (MobEffectSpec es : spec.effects()) {
+                if (es.effect() != MobEffect.HEALTH) continue;
+                String t = es.params().get(EffectKeys.TARGETS);
+                if (t != null && !"self".equalsIgnoreCase(t.trim())) continue;   // 只认 self/null
+                Double amount = es.params().get(EffectKeys.AMOUNT);
+                if (amount != null && amount > 0) return true;
+            }
+        }
+        return false;
     }
 
     /** 事件分发：先推进计数器（计满 id 触发对应 COUNTER 技能），再匹配普通 trigger。 */

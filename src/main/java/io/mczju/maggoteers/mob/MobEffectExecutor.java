@@ -5,8 +5,11 @@ import io.mczju.maggoteers.effect.EffectContext;
 import io.mczju.maggoteers.effect.EffectKeys;
 import io.mczju.maggoteers.effect.SummonParams;
 import io.mczju.maggoteers.game.MaggoteersGame;
+import io.mczju.maggoteers.plan.ActPlan;
 import io.mczju.maggoteers.util.GameRegistries;
+import io.mczju.maggoteers.wave.Vec3;
 import io.mczju.maggoteers.wave.WaveEngine;
+import io.mczju.maggoteers.wave.WaveScheduler;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -81,8 +84,22 @@ public final class MobEffectExecutor {
         boolean toTarget = t != null && "target".equalsIgnoreCase(t.trim());
         LivingEntity anchor = toTarget && target != null ? target : mob;
         double offsetY = p.getOrDefault(EffectKeys.OFFSET_Y, 2.0);
-        Location dest = TeleportSafety.safeTarget(anchor, offsetY);
+        Vec3 origin = layerOrigin(mob);
+        Location dest = TeleportSafety.safeTarget(anchor, offsetY, origin.x(), origin.z());
         if (dest != null) mob.teleport(dest);
+    }
+
+    /** 当前层原点（ActPlan.playerSpawn 已叠层原点绝对坐标，Act2/3 非 (0,0)）；无对局/越界回落 (0,0)。 */
+    private static Vec3 layerOrigin(LivingEntity mob) {
+        MaggoteersGame game = gameOf(mob.getUniqueId());
+        if (game != null) {
+            int[] prog = WaveScheduler.progress(game);
+            List<ActPlan> acts = game.getPlannedActs();
+            if (acts != null && prog[0] >= 0 && prog[0] < acts.size()) {
+                return acts.get(prog[0]).playerSpawn();
+            }
+        }
+        return new Vec3(0, 0, 0);
     }
 
     private static MaggoteersGame gameOf(UUID uuid) {
@@ -105,7 +122,13 @@ public final class MobEffectExecutor {
     }
 
     private static void applySingle(LivingEntity victim, Double amount, Double damage) {
-        if (victim == null || victim.isDead()) return;
+        if (victim == null) return;
+        // 复活路径（1up 等 KILLED 自疗）：死亡事件已 cancel，实体仍可 setHealth 拉满复活
+        if (amount != null && amount > 0 && victim.isDead()) {
+            victim.setHealth(Math.min(victim.getMaxHealth(), victim.getHealth() + amount));
+            return;
+        }
+        if (victim.isDead()) return;
         if (amount != null) {
             if (amount > 0) victim.setHealth(Math.min(victim.getMaxHealth(), victim.getHealth() + amount));
             else victim.damage(-amount, victim);
@@ -135,7 +158,7 @@ public final class MobEffectExecutor {
         if (type == null) return;
         int amp = p.getOrDefault(EffectKeys.AMP, 0);
         int dur = p.getOrDefault(EffectKeys.DURATION_TICKS, 0);
-        if (dur <= 0) dur = 20 * 60 * 60;   // 旧 affix dur 0 语义=常驻；用 1 小时近似
+        if (dur <= 0) dur = 20 * 60 * 60;   // 旧词缀 dur 0 语义=常驻；用 1 小时近似
         victim.addPotionEffect(new PotionEffect(type, dur, amp));
     }
 

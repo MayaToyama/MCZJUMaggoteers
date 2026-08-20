@@ -67,11 +67,17 @@ public final class TeleportSafety {
         return t != null && t != Material.BEDROCK && !NON_SOLID_GROUND.contains(t);
     }
 
-    /** 在 anchor 上方 offsetY 找安全点：向下扫描找实心地面上的空位；越界/虚空则 null。 */
+    /** 在 anchor 上方 offsetY 找安全点：向下扫描找实心地面上的空位；越界/虚空则 null。默认以 (0,0) 为层原点。 */
     public static Location safeTarget(LivingEntity anchor, double offsetY) {
+        return safeTarget(anchor, offsetY, 0, 0);
+    }
+
+    /** 以层原点 (originX, originZ) 为中心的安全落点（Act2/3 层原点非 (0,0)，须显式传入）。 */
+    public static Location safeTarget(LivingEntity anchor, double offsetY,
+                                      double originX, double originZ) {
         if (anchor == null || anchor.getWorld() == null) return null;
         Location base = anchor.getLocation().clone().add(0, offsetY, 0);
-        if (outsideMap(base.getX(), base.getZ())) return null;
+        if (outsideMap(base.getX() - originX, base.getZ() - originZ)) return null;
         // 向下扫 6 格：找"脚下实心 + 自身方块可站立"
         for (int dy = 0; dy >= -6; dy--) {
             Location cand = base.clone().add(0, dy, 0);

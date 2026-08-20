@@ -17,8 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 怪物计数器生命周期：出生加载、死亡卸载；输入信号推进，计满触发 COUNTER 技能。
  * <p>与玩家 CounterService 对称但独立：count 用 {@link MobTrigger}，条件以怪物为中心。
- * <p>串联语义：本 tick 计满的 id 作为 {@code COUNTER} 信号继续驱动 count==COUNTER 的其它计数器
- *（防自环：跳过自身 id），用队列迭代直到没有新计满。
+ * <p>串联语义：本 tick 计满的 id 作为 {@code COUNTER} 信号继续驱动 count==COUNTER 的其它计数器，
+ * 用队列迭代直到没有新计满（防自环：跳过自身 id；防 ping-pong：每条链内每个计数器最多触发一次）。
  */
 public final class MobCounterRegistry {
 
@@ -69,12 +69,11 @@ public final class MobCounterRegistry {
      */
     public static List<String> signal(LivingEntity mob, MobTrigger t,
                                       LivingEntity target, LivingEntity source) {
-        List<String> fired = new ArrayList<>();
-        if (mob == null) return fired;
+        if (mob == null) return List.of();
         Map<String, MobCounterState> counters = BY_ENTITY.get(mob.getUniqueId());
-        if (counters == null || counters.isEmpty()) return fired;
+        if (counters == null || counters.isEmpty()) return List.of();
 
-        Deque<String> queue = new ArrayDeque<>();
+        Deque<String> initial = new ArrayDeque<>();
         // 初筛：count==t（非 COUNTER 信号，避免自环）且计满者入队
         for (var e : counters.entrySet()) {
             MobCounterState st = e.getValue();
@@ -82,20 +81,35 @@ public final class MobCounterRegistry {
             if (!passesCondition(mob, st.spec(), target, source)) continue;
             e.setValue(new MobCounterState(st.spec(), advanceCount(st.spec(), t, st.current())));
             if (fullAt(st.spec(), t, st.current())) {
-                queue.add(st.spec().id());
+                initial.add(st.spec().id());
             }
         }
-        // 串联：COUNTER 信号驱动其它计数器（跳过自身）
+        return resolveChain(counters, initial,
+                (spec, st) -> passesCondition(mob, spec, target, source));
+    }
+
+    /**
+     * 纯逻辑：驱动串联计数器链（count==COUNTER）。visited 集合防两个计数器互 ping-pong；
+     * 每个计数器在一条信号链中最多触发一次。返回本链应触发的 counter id（含 initial）。
+     */
+    static List<String> resolveChain(Map<String, MobCounterState> counters,
+                                     java.util.Deque<String> initial,
+                                     java.util.function.BiPredicate<MobCounterSpec, MobCounterState> allowed) {
+        List<String> fired = new ArrayList<>();
+        java.util.Set<String> enqueued = new java.util.HashSet<>(initial);
+        Deque<String> queue = new ArrayDeque<>(initial);
         while (!queue.isEmpty()) {
             String cid = queue.poll();
             fired.add(cid);
             for (var e : counters.entrySet()) {
                 MobCounterState st = e.getValue();
                 if (!st.spec().triggeredBy(MobTrigger.COUNTER) || cid.equals(st.spec().id())) continue;
-                if (!passesCondition(mob, st.spec(), target, source)) continue;
+                if (enqueued.contains(st.spec().id())) continue;      // 已入队/已处理 → 跳过（防死循环）
+                if (allowed != null && !allowed.test(st.spec(), st)) continue;
                 e.setValue(new MobCounterState(st.spec(),
                         advanceCount(st.spec(), MobTrigger.COUNTER, st.current())));
                 if (fullAt(st.spec(), MobTrigger.COUNTER, st.current())) {
+                    enqueued.add(st.spec().id());
                     queue.add(st.spec().id());
                 }
             }

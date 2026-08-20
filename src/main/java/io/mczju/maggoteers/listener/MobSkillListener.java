@@ -26,7 +26,8 @@ public class MobSkillListener implements Listener {
         if (e.getDamager() instanceof LivingEntity attacker) {
             MaggoteersGame victimGame = gameOf(victim.getUniqueId());
             if (victimGame != null) {
-                MobSkillService.fire(victimGame, victim, MobTrigger.DAMAGE_TAKEN, null, attacker);
+                // DAMAGE_TAKEN 的 target=攻击者：quicksand（给目标缓慢）/vengeance（反伤）意图作用于攻击者
+                MobSkillService.fire(victimGame, victim, MobTrigger.DAMAGE_TAKEN, attacker, attacker);
             }
             MaggoteersGame attackGame = gameOf(attacker.getUniqueId());
             if (attackGame != null) {
@@ -40,6 +41,10 @@ public class MobSkillListener implements Listener {
         if (!(e.getEntity() instanceof LivingEntity dead)) return;
         MaggoteersGame game = gameOf(dead.getUniqueId());
         if (game == null) return;
+        // 复活技能：先 cancel 死亡（阻止实体移除/untrack），再 fire 执行 setHealth 复活
+        if (MobSkillService.wantsRevive(dead)) {
+            e.setCancelled(true);
+        }
         LivingEntity killer = dead.getKiller();
         MobSkillService.fire(game, dead, MobTrigger.KILLED, null, killer);
     }
