@@ -43,6 +43,8 @@ public class MaggoteersPlayerQuitStrategy extends AbstractPlayerQuitStrategy {
         EffectService.removeAllFor(pl, mg);
         pl.setGameMode(GameMode.SURVIVAL);   // 死亡转观察者后退出仍处于观察者模式
         MaggoteersGame.resetLobbyVitality(pl);
+        // 须在 finishGame/卸图之前送出 maggoteers_*（MGC leave 本身不传送；可跨世界到 lobby）
+        MaggoteersRoom.teleportReturn(mg, pl);
 
         PlayerState st = PlayerStateManager.get(mg, uuid);
         if (st != null && st.isAlive()) {

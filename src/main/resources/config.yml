@@ -163,9 +163,9 @@ settlement:
 messages:
   game:
     meta_name: "<gold>卫戍协议"
-    meta_author: "<green>MCZJU"
+    meta_author: "<green>_YamatoMaya_"
     meta_description:
-      - "<aqua>4人合作 PvE · 波数防守 + Roguelike"
+      - "<aqua>4人PvE爬塔小游戏"
     world_create_failed: "<red>世界创建失败，对局终止。"
     plan_generating: "<gray>正在生成剧本…"
     plan_timeout: "<yellow>剧本生成超时(30s)，终止。"

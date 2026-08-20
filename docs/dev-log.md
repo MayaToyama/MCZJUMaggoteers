@@ -11,7 +11,14 @@
 - **决策**：包体不再带内部测试版标识；正式服部署产物为 `Maggoteers-1.0.0.jar`。
 - **遗留**：测试服需删旧 `Maggoteers-1.0.0-rc.1.jar`（部署脚本会清同前缀旧 jar）。
 
+## 2026-08-18 — leave 跨世界送回大厅（returnLocation）
+
+- **根因**：`/mgc leave` 不传送；`returnLocation` 只在 `cleanupRun` 对仍在 `getPlayers()` 的人生效，leave 玩家已移出名单，人停在 `maggoteers_*`。
+- **修复**：quit 策略在 `finishGame`/卸图前调 `MaggoteersRoom.teleportReturn`（优先 `returnLocation`，否则 `waitLocation`；`Location` 自带世界，可跨世界）。
+- **运维**：`/mgcop room edit maggoteers default` 把 `returnLocation` 设在 lobby 已加载世界内并保存。
+
 ## 2026-08-17 — leave 清计分板 / 药水；复活剥临时效果再 resync
+
 
 - **根因**：`/mgc leave` 时玩家已不在 `getPlayers()`，`RunScoreboard.stop` 清不到；`removeAllFor` 只剥常驻 ADD_POTION，光环/临时药水残留。死亡 `cancel` 后原版也不清药水。
 - **修复**：`RunScoreboard.clear(player)` 在 quit 策略调用；`removeAllFor` 清全部活跃药水 + `AuraService.stripAllFromReceiver/Source`；自动复活与复活币路径先 `clearAllActivePotions` 再 `resync` 常驻。
