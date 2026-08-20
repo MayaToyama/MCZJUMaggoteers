@@ -47,6 +47,8 @@ public final class EffectKeys {
     /** GRANT_ITEM: ItemCreator item id (YAML key {@code item}). */
     public static final EffectKey<String> ITEM_ID = new EffectKey<>("item_id");
     public static final EffectKey<String> ENTITY = new EffectKey<>("entity");
+    /** SUMMON 弹道 homing 目标预设：nearest_enemy | nearest_player | attack_target | damage_source | killer | none/缺省=不追踪。 */
+    public static final EffectKey<String> HOMING_TARGET = new EffectKey<>("homing_target");
     public static final EffectKey<String> ANCHOR = new EffectKey<>("anchor");
     public static final EffectKey<String> CLEANUP = new EffectKey<>("cleanup");
     public static final EffectKey<Integer> DURATION_SEC = new EffectKey<>("duration_sec");

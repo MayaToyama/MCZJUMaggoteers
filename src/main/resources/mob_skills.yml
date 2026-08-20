@@ -1,0 +1,117 @@
+skills:
+  # ---- 原 affixes.yml 12 词缀迁移（trigger: spawn，出生时施加）----
+  invisible:
+    trigger: spawn
+    invisible: true
+  plastic:
+    trigger: spawn
+    effects:
+      - { effect: potion, target: self, potion: resistance, amp: 4, duration_ticks: 600 }
+  cloaked:
+    trigger: spawn
+    effects:
+      - { effect: potion, target: self, potion: invisibility, amp: 0, duration_ticks: 600 }
+  antifreeze:
+    trigger: spawn
+    effects:
+      - { effect: potion, target: self, potion: slowness, amp: 255, duration_ticks: 0 }
+  mechanical:
+    trigger: spawn
+    effects:
+      - { effect: potion, target: self, potion: wither, amp: 255, duration_ticks: 0 }
+  fireresistance:
+    trigger: spawn
+    effects:
+      - { effect: potion, target: self, potion: fire_resistance, amp: 255, duration_ticks: 0 }
+  withering:
+    trigger: spawn
+    effects:
+      - { effect: potion, target: self, potion: wither, amp: 255, duration_ticks: 99999 }
+  shield:
+    trigger: spawn
+    effects:
+      - { effect: potion, target: self, potion: absorption, amp: 19, duration_ticks: 99999 }
+  exoskeleton:
+    trigger: spawn
+    effects:
+      - { effect: potion, target: self, potion: resistance, amp: 1, duration_ticks: 99999 }
+  infected:
+    trigger: spawn            # 纯装饰：无 effects
+  blinding:
+    trigger: spawn
+    effects:
+      - { effect: potion, target: self, potion: blindness, amp: 0, duration_ticks: 999999 }
+  eternal_curse:
+    trigger: spawn
+    effects:
+      - { effect: potion, target: self, potion: slowness, amp: 255, duration_ticks: 10 }
+
+  # ---- IM 战斗技能迁移（waves.yml infernal.affixes 引用同名 id）----
+  lifesteal:
+    trigger: attack
+    cooldown_sec: 1
+    effects:
+      - { effect: health, target: self, amount: 2 }
+  weakness:
+    trigger: attack
+    cooldown_sec: 2
+    effects:
+      - { effect: potion, target: target, potion: weakness, amp: 0, duration_ticks: 100 }
+  quicksand:
+    trigger: damage_taken
+    cooldown_sec: 2
+    effects:
+      - { effect: potion, target: target, potion: slowness, amp: 0, duration_ticks: 80 }
+  poisonous:
+    trigger: attack
+    cooldown_sec: 3
+    effects:
+      - { effect: potion, target: target, potion: poison, amp: 0, duration_ticks: 100 }
+  sprint:
+    trigger: attack
+    cooldown_sec: 4
+    effects:
+      - { effect: attribute, target: self, attr: movement_speed, op: multiply, value: 0.4, duration_ticks: 100 }
+  berserk:
+    trigger: damage_taken
+    cooldown_sec: 5
+    effects:
+      - { effect: attribute, target: self, attr: attack_damage, op: multiply, value: 0.5, duration_ticks: 120 }
+  archer:
+    trigger: tick
+    cooldown_sec: 6
+    condition: { player_in_radius: 24 }
+    effects:
+      - { effect: summon, target: self, entity: arrow, count: 1, homing_target: nearest_player,
+          projectile_speed: 1.6 }
+  tosser:
+    trigger: tick
+    cooldown_sec: 7
+    condition: { player_in_radius: 24 }
+    effects:
+      - { effect: summon, target: self, entity: tnt, count: 1, projectile_speed: 1.2 }
+  storm:
+    trigger: tick
+    cooldown_sec: 8
+    condition: { player_in_radius: 18 }
+    effects:
+      - { effect: health, target: area, radius: 6, damage: 6 }   # 风暴：目标区域伤害（等效闪电落点）
+  molten:
+    trigger: tick
+    cooldown_sec: 7
+    condition: { player_in_radius: 26 }
+    effects:
+      - { effect: summon, target: self, entity: fireball, count: 1, homing_target: nearest_player,
+          projectile_speed: 1.4 }
+  necromancer:
+    trigger: tick
+    cooldown_sec: 9
+    condition: { player_in_radius: 20 }
+    effects:
+      - { effect: summon, target: area, radius: 8, entity: zombie, count: 2 }
+  ghastly:
+    trigger: tick
+    cooldown_sec: 10
+    condition: { player_in_radius: 28 }
+    effects:
+      - { effect: summon, target: area, radius: 10, entity: ghast, count: 1 }
