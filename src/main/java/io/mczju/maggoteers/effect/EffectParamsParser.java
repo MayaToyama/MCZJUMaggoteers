@@ -57,6 +57,7 @@ public final class EffectParamsParser {
                 case "friendly_fire" -> ctx.put(EffectKeys.FRIENDLY_FIRE, sec.getBoolean(k));
                 case "attributes" -> ctx.put(EffectKeys.ATTRIBUTES, parseAttributesMap(sec.getConfigurationSection(k)));
                 case "projectile" -> ctx.put(EffectKeys.PROJECTILE, parseProjectileContext(sec.getConfigurationSection(k)));
+                case "homing_target" -> ctx.put(EffectKeys.HOMING_TARGET, String.valueOf(v));
                 case "grant_pulse_sec" -> ctx.put(EffectKeys.GRANT_PULSE_SEC, sec.getInt(k));
                 case "grant" -> {
                     ConfigurationSection gs = sec.getConfigurationSection(k);

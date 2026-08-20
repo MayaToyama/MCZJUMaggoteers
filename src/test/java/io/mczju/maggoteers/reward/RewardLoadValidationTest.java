@@ -299,6 +299,24 @@ class RewardLoadValidationTest {
         assertTrue(RewardLoadValidator.validateStatOption(opt).isEmpty());
     }
 
+    @Test
+    void parsesSummonHomingTargetFromMap() {
+        Map<String, Object> params = new HashMap<>();
+        params.put("entity", "SMALL_FIREBALL");
+        params.put("projectile", Map.of("speed", 1.2));
+        params.put("homing_target", "nearest_enemy");
+        Map<String, Object> m = new HashMap<>();
+        m.put("id", "fire_orb_summon");
+        m.put("category", "STAT");
+        m.put("effect", "SUMMON");
+        m.put("params", params);
+
+        RewardOption opt = RewardOption.fromMap(m);
+        assertEquals(Effect.SUMMON, opt.effect());
+        assertEquals("nearest_enemy", opt.params().get(EffectKeys.HOMING_TARGET));
+        assertEquals(1.2, opt.params().get(EffectKeys.PROJECTILE).get(EffectKeys.PROJECTILE_SPEED), 1e-6);
+    }
+
     private static EffectContext boundEquipParams(int max) {
         EffectContext p = new EffectContext();
         p.put(EffectKeys.SLOT, "CHEST");

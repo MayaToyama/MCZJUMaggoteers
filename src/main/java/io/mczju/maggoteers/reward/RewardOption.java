@@ -172,6 +172,7 @@ public record RewardOption(
                 case "friendly_fire" -> ctx.put(EffectKeys.FRIENDLY_FIRE, Boolean.parseBoolean(String.valueOf(v)));
                 case "attributes" -> ctx.put(EffectKeys.ATTRIBUTES, parseAttributesMap(v));
                 case "projectile" -> ctx.put(EffectKeys.PROJECTILE, parseProjectileContext(v));
+                case "homing_target" -> ctx.put(EffectKeys.HOMING_TARGET, String.valueOf(v));
                 case "attr" -> putAttr(ctx, v);
                 case "source_id" -> ctx.put(EffectKeys.SOURCE_ID, String.valueOf(v));
                 case "op" -> ctx.put(EffectKeys.OP, String.valueOf(v).toUpperCase());
