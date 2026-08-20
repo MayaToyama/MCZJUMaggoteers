@@ -1898,7 +1898,6 @@ strategies:
         - slot: OFF_HAND
           item: maggoteers:mob_gold_sword_flame
         skills:
-        - 1up
         - molten
         - ghastly
   b2_breath:
