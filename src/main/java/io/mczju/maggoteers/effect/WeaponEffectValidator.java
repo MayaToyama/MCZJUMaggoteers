@@ -7,7 +7,7 @@ import java.util.Set;
 public final class WeaponEffectValidator {
 
     private static final Set<Trigger> HELD_TRIGGERS = Set.of(
-            Trigger.ON_DAMAGE_DEALT, Trigger.ON_DAMAGE_TAKEN, Trigger.ON_KILL);
+            Trigger.ON_DAMAGE_DEALT, Trigger.ON_DAMAGE_TAKEN, Trigger.ON_KILL, Trigger.ON_COUNTER);
 
     private static final Set<Effect> PERMANENT_HELD = Set.of(
             Effect.ADD_ATTRIBUTE, Effect.ADD_POTION, Effect.AURA);
@@ -33,6 +33,11 @@ public final class WeaponEffectValidator {
         if (fireTrigger != null) {
             if (!HELD_TRIGGERS.contains(fireTrigger)) {
                 return Optional.of("forbidden held trigger: " + fireTrigger);
+            }
+            if (fireTrigger == Trigger.ON_COUNTER) {
+                if (params == null || params.get(EffectKeys.COUNTER_SPEC) == null) {
+                    return Optional.of("ON_COUNTER held requires params.counter");
+                }
             }
             if (effect == Effect.AURA) {
                 return Optional.of("AURA held must be permanent");

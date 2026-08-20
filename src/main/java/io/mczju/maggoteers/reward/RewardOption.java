@@ -190,6 +190,10 @@ public record RewardOption(
                     else ctx.put(EffectKeys.DURATION_TICKS, iv);
                 }
                 case "potion" -> putPotion(ctx, v);
+                case "counter" -> io.mczju.maggoteers.effect.CounterSpecParser.parse(v).ifPresent(spec -> {
+                    ctx.put(EffectKeys.COUNTER_SPEC, spec);
+                    ctx.put(EffectKeys.COUNTER_ID, spec.id());
+                });
                 case "slot" -> ctx.put(EffectKeys.SLOT, String.valueOf(v).toUpperCase());
                 case "items_by_level" -> ctx.put(EffectKeys.ITEMS_BY_LEVEL, parseItemsByLevel(v));
                 default -> { /* 忽略未知键 */ }

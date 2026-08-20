@@ -29,6 +29,7 @@ import org.bukkit.Bukkit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -74,6 +75,10 @@ public final class EffectService {
             resyncDerived(p, st);
         } else if (incoming.isPermanent() && incoming.effect() != Effect.AURA) {
             applyDerived(p, incoming);
+        }
+        if (mergedPe != null) {
+            CounterSpec spec = mergedPe.params().get(EffectKeys.COUNTER_SPEC);
+            if (spec != null) CounterService.register(st, spec);
         }
     }
 
@@ -168,6 +173,7 @@ public final class EffectService {
         if (st != null) {
             stripDerived(p, st.effects());
             st.clearEffects();
+            CounterService.clearAll(st);
         }
         // 光环药水、临时 use_ability 药水、夜视等均不保证在 effects 列表里可逐条剥除
         clearAllActivePotions(p);
@@ -217,6 +223,10 @@ public final class EffectService {
                 try {
                     var ps = io.mczju.maggoteers.state.PlayerStateManager.get(game, p.getUniqueId());
                     if (ps == null || !ps.isAlive()) continue;
+                    CounterCountTrigger ct = counterInput(fired);
+                    if (ct != null) {
+                        fireCounter(game, ps, p, ct, null, TriggerContext.empty());
+                    }
                     processTriggerEffects(ps, p, game, fired, TriggerContext.empty());
                     for (PlayerEffect e : new ArrayList<>(ps.effects())) {
                         // recurring（仅 ON_TICK_1S，基于全局 tick 时钟）— after dispatch+sweep
@@ -255,9 +265,68 @@ public final class EffectService {
             if (fired != Trigger.ON_DEATH && fired != Trigger.ON_REVIVE && !ps.isAlive()) {
                 return;
             }
+            CounterCountTrigger ct = counterInput(fired);
+            if (ct != null) {
+                fireCounter(game, ps, p, ct, null, useCtx);
+            }
             processTriggerEffects(ps, p, game, fired, useCtx);
         } catch (RuntimeException ex) {
             LOG.warning("fireTriggerPlayer " + fired + " player=" + p.getName() + ": " + ex.getMessage());
+        }
+    }
+
+    /** 外部 trigger → 计数器输入信号（无对应输入返回 null）。 */
+    private static CounterCountTrigger counterInput(Trigger t) {
+        return switch (t) {
+            case ON_TICK_1S -> CounterCountTrigger.TICK;
+            case ON_WAVE_CLEAR -> CounterCountTrigger.WAVE_CLEAR;
+            case ON_KILL -> CounterCountTrigger.KILL;
+            case ON_DAMAGE_DEALT -> CounterCountTrigger.ATTACK;
+            case ON_DAMAGE_TAKEN -> CounterCountTrigger.DAMAGE_TAKEN;
+            default -> null;
+        };
+    }
+
+    private static Trigger toTrigger(CounterCountTrigger t) {
+        return switch (t) {
+            case TICK -> Trigger.ON_TICK_1S;
+            case WAVE_CLEAR -> Trigger.ON_WAVE_CLEAR;
+            case KILL -> Trigger.ON_KILL;
+            case ATTACK -> Trigger.ON_DAMAGE_DEALT;
+            case DAMAGE_TAKEN -> Trigger.ON_DAMAGE_TAKEN;
+            case ON_COUNTER -> null;
+        };
+    }
+
+    /**
+     * 推进计数器（含 resetOn 清零 + condition 门 + ON_COUNTER 串联），
+     * 对每个计满 id dispatch fireTrigger==ON_COUNTER && params.counter.id==id 的被动。
+     */
+    public static void fireCounter(MaggoteersGame game, PlayerState ps, Player p,
+                                   CounterCountTrigger t, String sourceId, TriggerContext ctx) {
+        if (ps == null) {
+            return;
+        }
+        CounterService.resetMatching(ps, toTrigger(t));
+        List<String> firedIds = CounterService.advance(ps, t, sourceId,
+                spec -> spec.condition() == null || spec.condition().evaluate(game, p));
+        for (String id : firedIds) {
+            TriggerContext c = (ctx != null ? ctx : TriggerContext.empty())
+                    .withFired(Trigger.ON_COUNTER).withCounter(id);
+            dispatchCounterEffects(ps, p, game, id, c);
+        }
+    }
+
+    private static void dispatchCounterEffects(PlayerState ps, Player p, MaggoteersGame game,
+                                               String counterId, TriggerContext ctx) {
+        for (PlayerEffect e : new ArrayList<>(ps.effects())) {
+            if (e.fireTrigger() != Trigger.ON_COUNTER) {
+                continue;
+            }
+            if (!counterId.equals(e.params().get(EffectKeys.COUNTER_ID))) {
+                continue;
+            }
+            executeEffect(p, e, game, ctx);
         }
     }
 
@@ -266,6 +335,13 @@ public final class EffectService {
      */
     static void processTriggerEffects(PlayerState ps, Player p, MaggoteersGame game,
                                       Trigger fired, TriggerContext useCtx) {
+        Map<String, CounterSpec> counterByEffectId = new java.util.HashMap<>();
+        for (PlayerEffect e : ps.effects()) {
+            CounterSpec cs = e.params().get(EffectKeys.COUNTER_SPEC);
+            if (cs != null) {
+                counterByEffectId.put(e.id(), cs);
+            }
+        }
         Set<String> touched = new HashSet<>();
         List<String> removed = TriggerFireOrder.run(
                 () -> touched.addAll(dispatchTriggeredEffectsCollecting(p, ps, game, fired, useCtx)),
@@ -283,6 +359,10 @@ public final class EffectService {
             for (String removedId : removed) {
                 io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
                 BoundEquipService.remove(p, removedId);
+                CounterSpec cs = counterByEffectId.get(removedId);
+                if (cs != null) {
+                    CounterService.unregister(ps, cs.id());
+                }
             }
         }
         playEmpowerFxIfNeeded(useCtx, touched);

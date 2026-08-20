@@ -117,6 +117,14 @@ public final class WeaponHeldRegistry {
             params = EffectParamsParser.parse(sec);
         }
         params = MagicEffectParams.withDefaults(effect, params);
+        if (paramsRaw instanceof Map<?, ?> pm && pm.get("counter") != null) {
+            java.util.Optional<CounterSpec> parsed = CounterSpecParser.parse(pm.get("counter"));
+            if (parsed.isPresent()) {
+                CounterSpec spec = parsed.get();
+                params.put(EffectKeys.COUNTER_SPEC, spec);
+                params.put(EffectKeys.COUNTER_ID, spec.id());
+            }
+        }
 
         Stack stack = Stack.IGNORE;
         Object stackRaw = map.get("stack");

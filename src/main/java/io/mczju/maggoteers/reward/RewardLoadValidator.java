@@ -36,7 +36,8 @@ public final class RewardLoadValidator {
             Trigger.ON_DAMAGE_TAKEN,
             Trigger.ON_DEATH,
             Trigger.ON_WAVE_CLEAR,
-            Trigger.ON_ACT_ENTER
+            Trigger.ON_ACT_ENTER,
+            Trigger.ON_COUNTER
     );
 
     private static final Set<Trigger> GRANT_SUMMON_TRIGGERS = Set.of(
@@ -68,6 +69,11 @@ public final class RewardLoadValidator {
         }
         if (fire != null && !ALLOWED_FIRE.contains(fire)) {
             return Optional.of("forbidden fireTrigger: " + fire);
+        }
+        if (fire == Trigger.ON_COUNTER) {
+            if (opt.params() == null || opt.params().get(EffectKeys.COUNTER_SPEC) == null) {
+                return Optional.of("ON_COUNTER requires params.counter");
+            }
         }
         if (opt.effect() == Effect.ADD_ATTRIBUTE && opt.params() != null
                 && TriggeredGrantAttribute.isRevoke(opt.params())) {
