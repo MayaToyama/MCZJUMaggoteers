@@ -14,8 +14,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Locks Maggoteers-spawned mob display names after IM mechanize: configured MiniMessage name,
- * or clear custom name (suppress IM nametags).
+ * Locks Maggoteers-spawned mob display names: configured MiniMessage name,
+ * or clear custom name (suppress stray nametags / 旧 IM nametag 遗留).
  */
 public final class MobDisplayNames {
     private static final MiniMessage MM = MiniMessage.miniMessage();

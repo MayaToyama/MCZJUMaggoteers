@@ -5,6 +5,31 @@
 
 ---
 
+## 2026-08-20 — 怪物技能系统 1.1：计数器 + 计时器合一 + 怪物技能（plan）
+
+按 `docs/superpowers/plans/2026-08-20-maggoteers-1.1-counters-mob-skills.md` 完成 1.1 三部分：
+
+1. **计数器（玩家侧）**：`CounterService` + `CounterSpec` + `CounterCondition`（HOLD_ITEM_PDC / PLAYER_IN_RADIUS，AND/OR/NOT 组合）；新 trigger `ON_COUNTER`。
+2. **计时器并入计数器**：计时器 = `count: tick` 的计数器（每秒 1 次，`amount: N` = N 秒触发一次，清零循环）。**删除独立 ON_TIMER / tickTimers 状态机**——同一套 `ON_COUNTER`。
+3. **怪物技能系统**：移除 InfernalMobs 依赖与旧 affixes 系统；`mob_skills.yml` 可配置 `trigger（attack/damage_taken/killed/spawn/tick/counter）+ effect（health/attribute/potion/summon/teleport）`；怪物计数器出生加载、死亡卸载；条件以怪物为中心。waves.yml 已迁移（affixes/infernal → skills）。
+
+**决策与原因**
+- 计数器与计时器同构 → 只保留 `ON_COUNTER`（避免双 trigger 状态机）。
+- 怪物技能链路复用玩家 CounterCondition 范式但以怪物为中心判断。
+- homing 弹道纯原版每 tick 转向（不依赖 IM 追踪能力）。
+- 迁移脚本用 PyYAML dump（丢注释），waves.yml 头部注释顺带去 IM。
+- `MobCounterRegistry.signal` 用 visited 集合防两个 `count: COUNTER` 计数器互 ping-pong 死循环（Task 8 硬化）。
+- TELEPORT 安全判定以当前层原点（ActPlan.playerSpawn 绝对坐标）为中心，修复 Act2/3 恒 null（Task 8）。
+- `1up` 复活 = KILLED 死亡事件 cancel + setHealth 拉满；`MobDeathListener.onDeath` 改 `ignoreCancelled=true`，复活怪保留波次追踪（Task 8）。
+- DAMAGE_TAKEN 反伤 target 改为攻击者（quicksand/vengeance 修复，Task 8）。
+
+**遗留 / 待实现期核实**
+- mob_skills.yml 旧 affix 数值语义迁移后的平衡性测试（新补 6 技能 confusing/refrigerate/swap/vengeance/wardenwrath/1up 数值未实测）。
+- **1up 无 cooldown_sec**：KILLED trigger 每次死亡都复活 → 带 1up 的怪等效不朽（waves.yml b_imposter 的 PIGLIN passenger），可能卡波清不空，需全分支 review 定夺（加 cooldown 需先让 fire() 尊重非 TICK trigger 的冷却）。
+- swap/1up 依赖 Task 8 的 TELEPORT 层原点修复（Act2/3）与 1up cancel+setHealth 复活链路，未实测。
+- TELEPORT 的 `outsideMap` 常量半径（160）在正式地图尺寸确认后调整。
+- ItemCreator 版本 / jitpack 坐标（沿用前代）。
+
 ## 2026-08-17 — 版本去掉内部测试 rc 标记 → `1.0.0`
 
 - **做了什么**：`pom.xml` / jar 最终名由 `1.0.0-rc.1` 改为 `1.0.0`；`config.debug.enabled/announce` 保持 `false`。

@@ -14,7 +14,7 @@
 - **三条铁律（不要违反）**：
   1. **绝对坐标永不入配置**——图内用相对坐标，层原点只写在 `config.yml`，进层时 `原点 + 相对` 现算。
   2. **定义唯一处**——刷怪策略只在 `waves.yml`、奖励项只在 `rewards.yml`，被各处引用；改一处即全局生效。
-  3. **内容增删零代码**——加地图/波次/词缀/奖励/武器 = 加配置条目；只有"新增触发类型 / 新增 Effect 类型"才需要写 Java（有清晰扩展点，见 §14）。
+  3. **内容增删零代码**——加地图/波次/怪物技能/奖励/武器 = 加配置条目；只有"新增触发类型 / 新增 Effect 类型"才需要写 Java（有清晰扩展点，见 §14）。
 
 ---
 
@@ -31,7 +31,7 @@
 | 构建 | Maven（`paper-api` / `MCZJUGameCore` 为 provided，不打进 jar） |
 | 硬依赖 | `MCZJUGameCore`（`depend`） |
 | 软依赖 | `MCZJUItemCreator`（`softdepend`；缺失时仅警告，不崩） |
-| 其他 | 无（**不引入** WorldEdit / MythicMobs）；**InfernalMobs** 为可选 `softdepend`，运行时反射接入，**非** Maven 编译依赖 |
+| 其他 | 无（**不引入** WorldEdit / MythicMobs / InfernalMobs）；怪物技能系统原生实现（`mob_skills.yml` 可配置 trigger+effect），无需 IM JAR |
 
 > ⚠️ **版本基线**：本设计以 **MGC GitHub `1.0.7`** 为准（Paper 26.2）。`JsonPlayerData`/`getPlayerDataManager()`/`getData()`/`PlayerDataLeaderboard` 自 1.0.4 起存在。核对 API 须看 GitHub **1.0.7** tag，勿用过时本地 clone（1.0.0）。
 
@@ -136,18 +136,17 @@ api.hasItem(id); api.createItem(id); api.createItem(id, amount); api.parseYamlTo
 | `world/` | `WorldService`（建/卸/删/清理孤立）、`MapRepository`（读图）、`StructurePaster`（粘贴单文件 `structure.nbt`）、`VoidGenerator`、`ActSpawnHelper` |
 | `plan/` | `RunPlanner`（异步种子化）、`ActPlan`、`RunConfig`、`SeededRng` |
 | `wave/` | `WaveEngine`、`WaveScheduler`（单可暂停状态机）、`WaveRuntime`、模型 `WaveSpec/SpawnStep` |
-| `mob/` | `MobFactory`（原版实体+系数+词缀+装备）、`MobDisplayNames`、`MountedSquadRegistry` |
+| `mob/` | `MobFactory`（原版实体+系数+技能+装备）、`MobSkillService`/`MobEffectExecutor`（技能运行时）、`MobSkillRegistry`/`MobSkillSpecParser`（技能表）、`MobCounterRegistry`、`MobProjectileService`、`TeleportSafety`、`MobDisplayNames`、`MountedSquadRegistry` |
 | `menu/` | `RestMenu`（休整中枢）、`PickMenu`（3 选 1）、`ClassSelectMenu`（开局职业选）、`UnlockShopMenu`（局外商店）、`ReviveMenu`（复活币） |
 | `reward/` | `RewardService`（3 选 1 抽取/扣费/应用）、`RewardDrawVisibility`、模型 `RewardPool/RewardOption` |
 | `state/` | `PlayerState`（本局真相源）、`PlayerStateManager` |
 | `effect/` | `Trigger`、`Effect`、`PlayerEffect`、`EffectContext`、`EffectKey`、`EffectService`（apply/resync/expire）、`WeaponHeldRegistry` |
 | `unlock/` | `UnlockRegistry`（开局把解锁并入每玩家个人池） |
 | `item/` | `ItemService`（ItemCreator 接入 + 本插件 parseYamlToItems 缓存）、`ItemInteractRouter`（PDC 物品右键路由）、`RunItemTags` |
-| `config/` | 各 Config 加载类（`WavesConfig`/`ScalingConfig`/`MessageService`/`MapPoints`/`MobYamlParser`/`AffixService`）+ `ConfigParse` 校验工具 |
-| `listener/` | `GameplayTickListener`（光环/药水/满腹维护心跳）、`PurifyListener`、`RunItemGuardListener` 等事件监听 |
+| `config/` | 各 Config 加载类（`WavesConfig`/`ScalingConfig`/`MessageService`/`MapPoints`/`MobYamlParser`）+ `ConfigParse` 校验工具 |
+| `listener/` | `GameplayTickListener`（光环/药水/满腹维护心跳）、`PurifyListener`、`RunItemGuardListener`、`MobSkillListener`/`MobDeathListener` 等事件监听 |
 | `command/` | Brigadier `/maggoteers ...` |
 | `persist/` | `MaggoteersPlayerData`、`Settlement`、`MaggoteersTotalLeaderboard` |
-| `integration/` | `InfernalMobsBridge`（反射接入，可选） |
 | `util/` | `Coords`（相对→绝对）、`Origins`、`ParticleEffects`、`ItemYaml`、`GameRegistries` |
 
 ---
@@ -205,7 +204,7 @@ List<ActPlan> { mapId, playerSpawn,        // playerSpawn 已叠层原点（绝�
                 waves:[ Wave{ steps:[Step…已解析绝对坐标&缩放后数值], clearReward } … ] }   // M+N+1 波
 RunConfig { origins{act→Vec3}, wavesPerAct{act→[weak,strong]} }   // 层原点 + 每层波数（config.yml 静态）
 ```
-- **流程/层**：抽 1 图 → 并入地图专属波次 → weak roll M、strong roll N、boss roll 1（**加权随机**，地图专属波次权重更高）→ 每条 strategy 展开成 `Wave`（`steps × repeat`）→ 刷怪点编号解析成绝对坐标 → 数值叠 `coeff × affix × scaling`。
+- **流程/层**：抽 1 图 → 并入地图专属波次 → weak roll M、strong roll N、boss roll 1（**加权随机**，地图专属波次权重更高）→ 每条 strategy 展开成 `Wave`（`steps × repeat`）→ 刷怪点编号解析成绝对坐标 → 数值叠 `coeff × scaling`（怪物技能由 `mob_skills.yml` 在生成时 attach）。
 - **主线程只消费 ActPlan 列表**：战斗中零随机、零池查询。
 > **奖励 3 选 1 不在 RunPlanner 预 roll**——它发生在休整期（非战斗），开销极小，玩家点按钮时按需现抽。
 
@@ -214,15 +213,15 @@ RunConfig { origins{act→Vec3}, wavesPerAct{act→[weak,strong]} }   // 层原�
 ## 7. 波次 / 池子引擎
 
 ### 7.1 配置侧模型
-- `Affix`（词缀，强化层）：`id, hp×, dmg×, speed×, drop×, potions[], on, display`。定义在 `affixes.yml`。
-- `SpawnStep`：`point(id), type, count, coeff{hp,dmg,speed}, affixes[], delaySec`（**步前等待**：相对上一步刷怪时刻的秒数；首步相对本波开始；`delaySec=0` 表示不额外等待；`repeat` 多轮时上一轮末步之后继续累加）。
+- `MobSkill`（怪物技能，替代旧词缀/IM）：`id, trigger, condition?, counter?, cooldown_sec, effects[]`。定义在 `mob_skills.yml`（定义唯一处，§7.5）。
+- `SpawnStep`：`point(id), type, count, coeff{hp,dmg,speed}, skills[], delaySec`（**步前等待**：相对上一步刷怪时刻的秒数；首步相对本波开始；`delaySec=0` 表示不额外等待；`repeat` 多轮时上一轮末步之后继续累加）。
 - `SpawnStrategy`（池内一条）：`id, steps[], repeat, clearReward[]`。roll 出来 = 一波。
 - `WavePool`：每层 `weak[]/strong[]/boss[]`，每条 `{strategy, weight}`。
-- 怪物强度 = **`coeff(波次内) × affix(词缀) × scaling(人数)`** 三层叠加。
+- 怪物强度 = **`coeff(波次内) × scaling(人数)`** 两层叠加；技能（`mob_skills.yml`）在生成时 attach 施加。
 
 ### 7.2 WaveEngine（执行，主线程，借鉴 `MCZJUvampireSurvivor/WaveManager`）
 - `IdentityHashMap<MaggoteersGame, WaveRuntime>` + `UUID→WaveRuntime` 死亡反查 + `livingMobs`/`mobEntries`。
-- `spawnStep`：`spawnEntity` → 套 `coeff×affix×scaling` 的 HP/伤害/速度 → 给药水 → 装备（drop 率 0）→ 可选 BossBar → 记入追踪。
+- `spawnStep`：`spawnEntity` → 套 `coeff×scaling` 的 HP/伤害/速度 → attach `skills`（`MobSkillService.attach`，SPAWN 立即执行）→ 装备（drop 率 0）→ 可选 BossBar → 记入追踪。
 - `handleMobDeath`：移除追踪 → 按 `drop×` 掉落货币/物品 → `livingMobs` 空则**发本波通关奖励** → 进入休整。
 - **5-tick 安全扫描**：把已消失/爆炸的实体强制计入击杀（防苦力怕等卡波）；刷新 BossBar——**沿用前代已验证逻辑**。
 
@@ -248,23 +247,21 @@ strategies:
     repeat: 2
     clearReward: [ {item: currency_normal, amount: 2} ]   # 每人发
     steps:
-      - { point: 1, type: ZOMBIE, count: 5, coeff: {hp: 1.0}, affixes: [], delay: 0 }
+      - { point: 1, type: ZOMBIE, count: 5, coeff: {hp: 1.0}, skills: [], delay: 0 }
       - { point: 9, type: ZOMBIE, count: 5, coeff: {hp: 1.0}, delay: 5 }   # 上一批刷出后 5s 再刷本步
   b_iron_golem_guard:
     steps:
-      - { point: boss, type: IRON_GOLEM, count: 1, coeff: {hp: 8.0, dmg: 1.5}, affixes: [armored], delay: 0 }
-      # 可选 IM 技能（主体 / passengers / on_death 各自独立，见 infernal 块）：
-      # - { point: 1, type: ZOMBIE, count: 3, infernal: { level: 3, affixes: [poisonous, sprint] }, delay: 0 }
+      - { point: boss, type: IRON_GOLEM, count: 1, coeff: {hp: 8.0, dmg: 1.5}, skills: [armored], delay: 0 }
+      # skills: 引用 mob_skills.yml 的怪物技能 id 列表（trigger+effect 全可配置；1.1 起替代旧 affixes/infernal）
 ```
 
-### 7.5 affixes.yml（Maggoteers 原生出生/倍率词缀）
+### 7.5 mob_skills.yml（怪物技能：trigger + effect 全可配置）
 ```yaml
-affixes:
-  armored: { hp: 2.0, display: "<aqua>装甲" }
-  berserk: { dmg: 1.5, speed: 1.2, display: "<red>狂暴" }
+skills:
+  plastic:   { trigger: spawn, effects: [ { effect: potion, target: self, potion: resistance, amp: 4, duration_ticks: 600 } ] }
+  lifesteal: { trigger: attack, cooldown_sec: 1, effects: [ { effect: health, target: self, amount: 2 } ] }
 ```
-
-**IM 战斗技能**不在 `affixes.yml`，而在 `waves.yml` 各刷怪节点的 `infernal:` 块（`level` 1–100 + 精确 `affixes` 列表；与原生 `affixes:` 命名空间独立、互不继承）。刷怪顺序：原生 stats/affixes → **IM mechanize** → 显式 `equipment`（覆盖 IM 自动装备）。IM 缺失或技能未知时跳过并 warning，实体仍为普通怪且受 WaveEngine 追踪。本插件 mechanize 的 IM 怪在 `EntityDeathEvent` **LOWEST** 提前 `unregisterMob`，**不**触发 IM 掉落/统计/广播/死亡技能。
+技能 schema：`trigger`（`spawn`/`attack`/`damage_taken`/`killed`/`tick`/`counter`）+ `condition`（`player_in_radius`/`hold_item_pdc`/AND/OR/NOT）+ `counter`（计数触发，count 用 `MobTrigger`，计满联动）+ `cooldown_sec`（光环 tick 用）+ `effects[]`（`health`/`attribute`/`potion`/`summon`/`teleport`）。技能生成时 `MobSkillService.attach`（SPAWN 立即执行）、死亡/清波 `detach`；条件以怪物为中心判断。定义唯一处：技能只在 `mob_skills.yml`；`waves.yml` 仅按 id 引用。详见 `mob_skills.yml` 全文与 `docs/superpowers/plans/2026-08-20-maggoteers-1.1-counters-mob-skills.md`。
 
 ### 7.6 config.yml（缩放 / 每层波数 / 全局）
 ```yaml
@@ -356,7 +353,7 @@ messages: { game, wave, death, menu, pick, class, revive, shop, item, reward, sc
 > **净化 / 沉默 / 免疫**（见 `docs/superpowers/specs/2026-08-12-potion-clear-immunity-design.md`）：
 > - **一次性清除**：`params.clear_potions: [TYPE…]`（`DAMAGE_AREA` / `BUFF_AREA`）或武器顶层 `self_clear_potions`（`removePotionEffect`；不写 PlayerState）。
 > - **局内免疫**：奖励 `ADD_POTION` + `params.immunity: true`（无 trigger/expiry/recurring；非瞬时药水）→ 清现有效果 + 拦 `EntityPotionEffectEvent` ADDED/CHANGED + `PurifyListener` 拦 POISON/WITHER 伤害。
-> - **禁止**用 `amp: 255` + `duration_ticks: 0|1` 伪装清除/免疫：`rewards.yml` / `items/*.yml` **硬失败**加载（`affixes.yml` 的 amp 255 仍是怪物词缀，不在此规则内）。
+> - **禁止**用 `amp: 255` + `duration_ticks: 0|1` 伪装清除/免疫：`rewards.yml` / `items/*.yml` **硬失败**加载（`mob_skills.yml` 的 amp 255 是怪物出生/免疫药水，不在此规则内）。
 > - `DAMAGE_AREA` 顺序：**damage → clear_potions → potions**（本击仍受目标已有 Resistance 影响）。
 
 ### 10.3 生命周期模型（**事件到期，非挂钟计时**）
@@ -494,11 +491,10 @@ MCZJUGameCore.getLeaderboardManager()
 |---|---|---|
 | 新地图 | `maps/actN/<mapId>/` 加 `structure.nbt` + points.yml（+ special_waves.yml） | 否 |
 | 新波次 | `waves.yml` 加 strategy + 池引用 | 否 |
-| 新词缀（原生 hp/dmg/速度/掉落/体型） | `affixes.yml` 加条目 | 否 |
-| IM 战斗技能 | `waves.yml` 各节点加 `infernal: { level, affixes }`（需测试服装 InfernalMobs） | 否 |
+| 新怪物技能（trigger+effect） | `mob_skills.yml` 加条目（trigger/effect/condition/counter 全可配置），`waves.yml` 按 id 引用 | 否 |
 | 新奖励（属性/武器/补给） | `rewards.yml` 加 option（武器/补给配 ItemCreator 物品） | 否 |
-| 新触发类型 | `effect/Trigger` 枚举加值 + 对应监听器分发 | **是**（有模板） |
-| 新 Effect 类型 | `effect/Effect` 枚举加值 + `EffectService` 实现 | **是**（有模板） |
+| 新触发类型 | `effect/Trigger` 枚举加值 + 监听器分发；怪物侧 `MobTrigger` 同理 | **是**（有模板） |
+| 新 Effect 类型 | `effect/Effect` 枚举加值 + `EffectService` 实现；怪物侧 `MobEffect` + `MobEffectExecutor` 同理 | **是**（有模板） |
 | 新魔法武器（旋转刀片等） | ItemCreator 出带 PDC 物品 → 本插件写识别+触发类读 PDC（走 `ItemInteractRouter`） | **是**（见 §15 指南） |
 
 ---
@@ -567,7 +563,7 @@ held_effects:   # 主手持有期间生效；禁止 expiry
 - [ ] `plugins/MCZJUGameCore/rooms/maggoteers/default.json` 存在（由本插件 `onEnable` 自动释放，或 `/mgcop room create maggoteers default`）——否则 `/mgc join maggoteers` 无房间（G1）。
 - [ ] `plugins/Maggoteers/{items,maps}/...` 资产就位（首次启动释放默认样例）。
 - [ ] `MCZJUItemCreator` 已装（否则物品缺失，仅警告不崩）。
-- [ ] 若使用 `infernal:` 块：测试服 `plugins/` 有 **InfernalMobs** JAR；无 IM 时波次仍正常，仅跳过 IM 技能。
+- [ ] `waves.yml` 引用 `mob_skills.yml` 技能 id（`skills:` 列表），**无需 IM JAR**；缺失 id 的怪无技能但受 WaveEngine 追踪（warning 一次）。
 
 ---
 
@@ -595,7 +591,7 @@ held_effects:   # 主手持有期间生效；禁止 expiry
 - **~~净化技巧待实测（D1）~~（已退役）**：假 amp-255 已由真实 `clear_potions` / `immunity: true` 取代；部署须同步 `rewards.yml` + `items/maggoteers.yml`（`saveResource(false)` 不会覆盖服上旧 YAML）。
 - **结构粘贴主线程掉帧（D8）**：粘贴该层 `structure.nbt` 主线程瞬时完成会掉几 tick；接受。已改为"进层时粘该层"（非开局一次性粘三层）摊薄。
 - **缩放开局锁定（D8）**：人数中途减少时仍按开局人数算难度（偏难）；接受。
-- **InfernalMobs 反射（IM1）**：仅调用 `mechanizeWithAffixes`；禁用 `morph`/`mama`/`mounted`/`vexsummoner`/`ghost`；反射签名变更会导致整局 bridge 禁用（dedupe warning）。死亡前须 unregister，否则 IM 会发战利品。
+- **怪物技能运行时（D9）**：attach/detach 泄漏（死亡/清波必须 detach，否则实体无效技能残留、TICK 心跳空转）；`mob_skills.yml` 未知 id 静默跳过（怪无技能，仍受 WaveEngine 追踪）；homing 弹道每 tick 转向开销；TeleportSafety 边界以当前层原点 ±160 判定。
 
 ---
 
@@ -607,7 +603,7 @@ held_effects:   # 主手持有期间生效；禁止 expiry
 | ActPlan（单层剧本） | RunPlanner 异步种子化预生成的该层波次/地图/出生点（叠好绝对坐标），主线程只消费 |
 | 刷怪策略（SpawnStrategy） | 池内一条；按时序（steps + delay + repeat）定义一波如何刷怪 |
 | 刷怪点 | points.yml 里编号化的相对坐标（如"刷怪点9"），进层叠层原点变绝对 |
-| 词缀（Affix） | 挂在原版实体上的强化层（hp/dmg/speed/potion/drop），纯配置 |
+| 怪物技能（MobSkill） | `mob_skills.yml` 里 trigger+effect 可配置的技能（生成/攻击/受击/死亡/光环/计数器触发），1.1 起替代旧词缀/IM |
 | 通关奖励（clearReward） | 每波清空后发到每人手里的物品（货币/补给） |
 | PlayerState | 每玩家**本局**运行期容器：reviveCount、模式、效果列表（真相源） |
 | PlayerEffect | 一条效果实例（effect + 触发 + 到期 + 堆叠策略） |

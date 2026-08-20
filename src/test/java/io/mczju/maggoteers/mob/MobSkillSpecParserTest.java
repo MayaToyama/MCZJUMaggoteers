@@ -91,6 +91,38 @@ class MobSkillSpecParserTest {
     }
 
     @Test
+    void parsesNewSixSkillsFromMigration() {
+        // waves.yml 迁移后引用的 6 个补齐 id 必须可解析（对照 mob_skills.yml 定义形态）
+        MobSkillSpec confusing = MobSkillSpecParser.parse(Map.of(
+                "id", "confusing", "trigger", "attack", "cooldown_sec", 3,
+                "effects", List.of(Map.of(
+                        "effect", "potion", "target", "target",
+                        "potion", "nausea", "amp", 0, "duration_ticks", 100)))).orElseThrow();
+        assertEquals(MobTrigger.ATTACK, confusing.trigger());
+
+        MobSkillSpec swap = MobSkillSpecParser.parse(Map.of(
+                "id", "swap", "trigger", "attack", "cooldown_sec", 8,
+                "effects", List.of(Map.of(
+                        "effect", "teleport", "target", "target", "offset_y", 0)))).orElseThrow();
+        assertEquals(MobEffect.TELEPORT, swap.effects().get(0).effect());
+
+        MobSkillSpec wardenwrath = MobSkillSpecParser.parse(Map.of(
+                "id", "wardenwrath", "trigger", "tick", "cooldown_sec", 6,
+                "condition", Map.of("player_in_radius", 16),
+                "effects", List.of(Map.of(
+                        "effect", "health", "target", "area", "radius", 6, "damage", 6)))).orElseThrow();
+        assertTrue(wardenwrath.condition() instanceof MobCondition.PlayerInRadius);
+
+        MobSkillSpec revive = MobSkillSpecParser.parse(Map.of(
+                "id", "1up", "trigger", "killed",
+                "effects", List.of(Map.of(
+                        "effect", "health", "target", "self", "amount", 99999)))).orElseThrow();
+        assertEquals(MobTrigger.KILLED, revive.trigger());
+        assertEquals(MobEffect.HEALTH, revive.effects().get(0).effect());
+        assertEquals(99999.0, revive.effects().get(0).params().getOrDefault(EffectKeys.AMOUNT, 0.0));
+    }
+
+    @Test
     void mobConditionCombinators() {
         MobCondition t = MobCondition.TRUE;   // 见实现
         MobCondition f = MobCondition.FALSE;

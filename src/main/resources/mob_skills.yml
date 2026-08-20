@@ -115,3 +115,35 @@ skills:
     condition: { player_in_radius: 28 }
     effects:
       - { effect: summon, target: area, radius: 10, entity: ghast, count: 1 }
+
+  # ---- waves.yml 迁移后补齐的 6 个引用 id（原 infernal.affixes 同名）----
+  confusing:
+    trigger: attack
+    cooldown_sec: 3
+    effects:
+      - { effect: potion, target: target, potion: nausea, amp: 0, duration_ticks: 100 }
+  refrigerate:
+    trigger: attack
+    cooldown_sec: 4
+    effects:
+      - { effect: potion, target: target, potion: slowness, amp: 0, duration_ticks: 100 }
+  swap:
+    trigger: attack
+    cooldown_sec: 8
+    effects:
+      - { effect: teleport, target: target, offset_y: 0 }
+  vengeance:
+    trigger: damage_taken
+    cooldown_sec: 4
+    effects:
+      - { effect: health, target: target, damage: 4 }
+  wardenwrath:
+    trigger: tick
+    cooldown_sec: 6
+    condition: { player_in_radius: 16 }
+    effects:
+      - { effect: health, target: area, radius: 6, damage: 6 }
+  1up:
+    trigger: killed
+    effects:
+      - { effect: health, target: self, amount: 99999 }
