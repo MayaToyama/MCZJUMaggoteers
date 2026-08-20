@@ -51,4 +51,15 @@ class TriggerContextTest {
         assertTrue(SummonParamsParser.validate(ctx, Trigger.ON_WAVE_CLEAR, false).isPresent());
         assertTrue(SummonParamsParser.validate(ctx, Trigger.ON_DEATH, false).isEmpty());
     }
+
+    @Test
+    void counterIdSurvivesWithCounter() {
+        TriggerContext base = TriggerContext.empty().withFired(Trigger.ON_COUNTER);
+        TriggerContext c = base.withCounter("fire_every_5_attacks");
+        assertEquals(Trigger.ON_COUNTER, c.fired());
+        assertEquals("fire_every_5_attacks", c.counterId());
+        // withHitTarget 保留 counterId（串联链路里战斗字段不丢来源）
+        assertEquals("fire_every_5_attacks",
+                c.withHitTarget(null).counterId());
+    }
 }

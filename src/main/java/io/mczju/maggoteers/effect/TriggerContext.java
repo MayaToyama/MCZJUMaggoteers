@@ -7,20 +7,26 @@ public record TriggerContext(
         Trigger fired,
         LivingEntity hitTarget,
         LivingEntity attacker,
-        Location eventLocation
+        Location eventLocation,
+        String counterId
 ) {
     public TriggerContext(Trigger fired, LivingEntity hitTarget, LivingEntity attacker) {
-        this(fired, hitTarget, attacker, null);
+        this(fired, hitTarget, attacker, null, null);
+    }
+
+    /** Back-compat: 4-arg pre-record form (no counter). */
+    public TriggerContext(Trigger fired, LivingEntity hitTarget, LivingEntity attacker, Location eventLocation) {
+        this(fired, hitTarget, attacker, eventLocation, null);
     }
 
     public static TriggerContext empty() {
-        return new TriggerContext(null, null, null, null);
+        return new TriggerContext(null, null, null, null, null);
     }
 
     /** Event anchor (e.g. death site) with optional trigger tag. */
     public static TriggerContext atEvent(Trigger fired, Location location) {
         Location loc = location == null ? null : location.clone();
-        return new TriggerContext(fired, null, null, loc);
+        return new TriggerContext(fired, null, null, loc, null);
     }
 
     /** Prefer {@link #eventLocation()} when resolving area/summon origins. */
@@ -32,10 +38,14 @@ public record TriggerContext(
     }
 
     public TriggerContext withHitTarget(LivingEntity hitTarget) {
-        return new TriggerContext(fired, hitTarget, attacker, eventLocation);
+        return new TriggerContext(fired, hitTarget, attacker, eventLocation, counterId);
     }
 
     public TriggerContext withFired(Trigger fired) {
-        return new TriggerContext(fired, hitTarget, attacker, eventLocation);
+        return new TriggerContext(fired, hitTarget, attacker, eventLocation, counterId);
+    }
+
+    public TriggerContext withCounter(String counterId) {
+        return new TriggerContext(fired, hitTarget, attacker, eventLocation, counterId);
     }
 }
