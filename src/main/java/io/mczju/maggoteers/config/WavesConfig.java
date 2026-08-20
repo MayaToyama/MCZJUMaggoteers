@@ -65,13 +65,13 @@ public final class WavesConfig {
                         throw new IllegalStateException(
                             "waves.yml: 池 " + act + "/" + tier + " 引用了未定义的 strategy: " + pe.strategy());
                     }
-                    // 校验 steps 里引用的 affix 必须在 AffixService 里（affixes.yml 已加载）
+                    // 校验 steps 里引用的 skill 必须在 MobSkillRegistry 里（mob_skills.yml 已加载）
                     SpawnStrategyCfg strat = INSTANCE.strategies.get(pe.strategy());
                     if (strat != null) for (StepCfg step : strat.steps()) {
-                        for (String affixId : step.affixes()) {
-                            if (AffixService.getInstance().get(affixId) == null) {
+                        for (String skillId : step.skills()) {
+                            if (io.mczju.maggoteers.mob.MobSkillRegistry.get(skillId).isEmpty()) {
                                 plugin.getLogger().severe("waves.yml: strategy " + pe.strategy()
-                                    + " 引用了未定义的词缀: " + affixId + "（继续，但该词缀无效）");
+                                    + " 引用了未定义的技能: " + skillId + "（继续，但该技能无效）");
                             }
                         }
                     }
@@ -91,13 +91,12 @@ public final class WavesConfig {
             CoeffCfg coeff = MobYamlParser.parseCoeff(m);
             int delay = ConfigParse.num(m.get("delay"), 0).intValue();
             int stepRepeat = ConfigParse.num(m.get("repeat"), 1).intValue();
-            List<String> affixes = MobYamlParser.parseAffixes(m);
-            InfernalCfg infernal = MobYamlParser.parseInfernal(m);
+            List<String> skills = MobYamlParser.parseSkills(m, id + "/" + point + "/" + type.name());
             List<PassengerCfg> passengers = MobYamlParser.parsePassengers(m.get("passengers"));
             String ctx = id + "/" + point + "/" + type.name();
             String name = MobYamlParser.parseName(m, ctx);
             boolean bossBar = MobYamlParser.parseBossBar(m, ctx);
-            steps.add(new StepCfg(point, type, count, coeff, delay, affixes, infernal,
+            steps.add(new StepCfg(point, type, count, coeff, delay, skills,
                     MobYamlParser.parseEquipment(m.get("equipment")),
                     MobYamlParser.parseOnDeath(m.get("on_death")),
                     passengers, stepRepeat, name, bossBar));

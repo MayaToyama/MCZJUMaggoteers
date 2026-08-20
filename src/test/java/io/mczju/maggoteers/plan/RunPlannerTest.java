@@ -71,11 +71,6 @@ class RunPlannerTest {
                 new double[]{1, 1, 1, 1}, new double[]{1, 1, 1.2, 1.5});
     }
 
-    private AffixService affixes() {
-        Affix armored = new Affix("armored", 2, 1, 1, List.of(), "装甲");
-        return AffixService.forTesting(Map.of("armored", armored));
-    }
-
     private static void assertDistinct(List<WaveSpec> slice) {
         Set<String> ids = new HashSet<>();
         for (WaveSpec w : slice) {
@@ -85,8 +80,8 @@ class RunPlannerTest {
 
     @Test
     void sameSeedProducesSamePlan() {
-        List<ActPlan> a = RunPlanner.plan(999L, 2, simpleDefs(), oneMapLib(), scaling(), affixes(), cfg());
-        List<ActPlan> b = RunPlanner.plan(999L, 2, simpleDefs(), oneMapLib(), scaling(), affixes(), cfg());
+        List<ActPlan> a = RunPlanner.plan(999L, 2, simpleDefs(), oneMapLib(), scaling(), cfg());
+        List<ActPlan> b = RunPlanner.plan(999L, 2, simpleDefs(), oneMapLib(), scaling(), cfg());
         assertEquals(a.size(), b.size());
         for (int i = 0; i < a.size(); i++) {
             assertEquals(a.get(i).waves().size(), b.get(i).waves().size());
@@ -106,14 +101,14 @@ class RunPlannerTest {
 
     @Test
     void waveCountIsMPlusNPlusOne() {
-        List<ActPlan> acts = RunPlanner.plan(1L, 1, simpleDefs(), oneMapLib(), scaling(), affixes(), cfg());
+        List<ActPlan> acts = RunPlanner.plan(1L, 1, simpleDefs(), oneMapLib(), scaling(), cfg());
         acts.forEach(a -> assertEquals(6, a.waves().size()));
         assertEquals(3, acts.size());
     }
 
     @Test
     void sameTierStrategiesAreUniqueWithinAct() {
-        List<ActPlan> acts = RunPlanner.plan(42L, 1, simpleDefs(), oneMapLib(), scaling(), affixes(), cfg());
+        List<ActPlan> acts = RunPlanner.plan(42L, 1, simpleDefs(), oneMapLib(), scaling(), cfg());
         for (ActPlan act : acts) {
             List<WaveSpec> waves = act.waves();
             assertEquals(6, waves.size());
@@ -136,23 +131,23 @@ class RunPlannerTest {
         }
         WaveDefinitions defs = new WaveDefinitions(strat, pools);
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> RunPlanner.plan(1L, 1, defs, oneMapLib(), scaling(), affixes(), cfg()));
+                () -> RunPlanner.plan(1L, 1, defs, oneMapLib(), scaling(), cfg()));
         String msg = ex.getMessage();
         assertTrue(msg.contains("weak") || msg.contains("act1"), msg);
         assertTrue(msg.contains("w_a") || msg.contains("已用") || msg.contains("空"), msg);
     }
 
     @Test
-    void bossWaveHasAffixComposed() {
-        List<ActPlan> acts = RunPlanner.plan(1L, 1, simpleDefs(), oneMapLib(), scaling(), affixes(), cfg());
+    void bossWaveCarriesSkills() {
+        List<ActPlan> acts = RunPlanner.plan(1L, 1, simpleDefs(), oneMapLib(), scaling(), cfg());
         var bossStep = acts.get(0).waves().get(5).expand().get(0);
-        assertEquals(16.0, bossStep.hpMult(), 1e-9);
-        assertTrue(bossStep.affixes().contains("armored"));
+        assertEquals(8.0, bossStep.hpMult(), 1e-9);   // 8 × scaling.mobHp(1)=8，无 affix 乘法
+        assertTrue(bossStep.skills().contains("armored"));
     }
 
     @Test
     void absoluteCoordsShiftByActOrigin() {
-        List<ActPlan> acts = RunPlanner.plan(1L, 1, simpleDefs(), oneMapLib(), scaling(), affixes(), cfg());
+        List<ActPlan> acts = RunPlanner.plan(1L, 1, simpleDefs(), oneMapLib(), scaling(), cfg());
         var act2Step0 = acts.get(1).waves().get(0).expand().get(0);
         assertEquals(1032.0, act2Step0.point().x(), 1e-9);
     }
@@ -170,7 +165,7 @@ class RunPlannerTest {
                     "strong", List.of(new WavesConfig.PoolEntry("s_a", 1)),
                     "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
         WaveDefinitions defs = new WaveDefinitions(strat, pools);
-        List<ActPlan> acts = RunPlanner.plan(1L, 1, defs, oneMapLib(), scaling(), affixes(), cfg(1, 1));
+        List<ActPlan> acts = RunPlanner.plan(1L, 1, defs, oneMapLib(), scaling(), cfg(1, 1));
         var step = acts.get(0).waves().get(0).expand().get(0);
         assertEquals(0.0, step.point().x(), 1e-9);
         assertEquals(129.0, step.point().y(), 1e-9);
@@ -199,7 +194,7 @@ class RunPlannerTest {
                     "boss", List.of(new WavesConfig.PoolEntry("b_boss", 1))));
         WaveDefinitions defs = new WaveDefinitions(strat, pools);
         assertThrows(IllegalStateException.class,
-                () -> RunPlanner.plan(1L, 1, defs, new MapLibrary(byAct), scaling(), affixes(), cfg(1, 1)));
+                () -> RunPlanner.plan(1L, 1, defs, new MapLibrary(byAct), scaling(), cfg(1, 1)));
     }
 
     @Test
@@ -220,7 +215,7 @@ class RunPlannerTest {
 
         int specialHits = 0;
         for (int s = 0; s < 50; s++) {
-            List<ActPlan> acts = RunPlanner.plan(s, 1, defs, new MapLibrary(byAct), scaling(), affixes(), cfg());
+            List<ActPlan> acts = RunPlanner.plan(s, 1, defs, new MapLibrary(byAct), scaling(), cfg());
             List<WaveSpec> strong = acts.get(0).waves().subList(3, 5);
             if (strong.stream().anyMatch(w -> "s_special".equals(w.strategyId()))) specialHits++;
         }
@@ -228,17 +223,13 @@ class RunPlannerTest {
     }
 
     @Test
-    void carriesIndependentInfernalConfigForAllSpawnKinds() {
+    void carriesIndependentSkillsForAllSpawnKinds() {
         PassengerCfg passenger = new PassengerCfg(
-                EntityType.SKELETON, 1, new CoeffCfg(1, 1, 1), List.of(),
-                new InfernalCfg(1, List.of("archer")),
-                List.of(), List.of(), List.of());
+                EntityType.SKELETON, 1, new CoeffCfg(1, 1, 1), List.of("archer"));
         DeathSpawnCfg death = new DeathSpawnCfg(
-                EntityType.SILVERFISH, 1, new CoeffCfg(1, 1, 1), List.of(),
-                new InfernalCfg(2, List.of("berserk")), List.of(), List.of(), List.of());
+                EntityType.SILVERFISH, 1, new CoeffCfg(1, 1, 1), List.of("berserk"));
         StepCfg root = new StepCfg(
-                "1", EntityType.ZOMBIE, 1, new CoeffCfg(1, 1, 1), 0, List.of(),
-                new InfernalCfg(3, List.of("sprint")),
+                "1", EntityType.ZOMBIE, 1, new CoeffCfg(1, 1, 1), 0, List.of("sprint"),
                 List.of(), List.of(death), List.of(passenger));
         SpawnStrategyCfg im = new SpawnStrategyCfg("w_im", "w_im", List.of(root), 1, List.of());
 
@@ -254,27 +245,25 @@ class RunPlannerTest {
 
         SpawnStep step = RunPlanner.plan(
                 1L, 1, new WaveDefinitions(strategies, pools),
-                oneMapLib(), scaling(), affixes(), cfg(1, 1))
+                oneMapLib(), scaling(), cfg(1, 1))
                 .get(0).waves().get(0).steps().get(0);
 
-        assertEquals(List.of("sprint"), step.infernal().affixes());
-        assertEquals(List.of("archer"), step.passengers().get(0).infernal().affixes());
-        assertEquals(List.of("berserk"), step.onDeath().get(0).infernal().affixes());
-        assertNotEquals(step.infernal(), step.passengers().get(0).infernal());
-        assertNotEquals(step.infernal(), step.onDeath().get(0).infernal());
+        assertEquals(List.of("sprint"), step.skills());
+        assertEquals(List.of("archer"), step.passengers().get(0).skills());
+        assertEquals(List.of("berserk"), step.onDeath().get(0).skills());
     }
 
     @Test
     void deathSpawnCarriesPassengers() {
         PassengerCfg rider = new PassengerCfg(
                 EntityType.VINDICATOR, 1, new CoeffCfg(1, 1, 1), List.of(),
-                InfernalCfg.NONE, List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of());
         DeathSpawnCfg camel = new DeathSpawnCfg(
                 EntityType.CAMEL, 1, new CoeffCfg(1, 1, 1), List.of(),
-                InfernalCfg.NONE, List.of(), List.of(rider), List.of());
+                List.of(), List.of(rider), List.of());
         StepCfg root = new StepCfg(
                 "1", EntityType.SLIME, 1, new CoeffCfg(1, 1, 1), 0, List.of(),
-                InfernalCfg.NONE, List.of(), List.of(camel), List.of());
+                List.of(), List.of(camel), List.of());
         SpawnStrategyCfg strat = new SpawnStrategyCfg("w_rhine", "w_rhine", List.of(root), 1, List.of());
 
         Map<String, SpawnStrategyCfg> strategies = new HashMap<>(simpleDefs().strategies());
@@ -289,7 +278,7 @@ class RunPlannerTest {
 
         DeathSpawn death = RunPlanner.plan(
                 2L, 1, new WaveDefinitions(strategies, pools),
-                oneMapLib(), scaling(), affixes(), cfg(1, 1))
+                oneMapLib(), scaling(), cfg(1, 1))
                 .get(0).waves().get(0).steps().get(0).onDeath().get(0);
 
         assertEquals(EntityType.CAMEL, death.type());

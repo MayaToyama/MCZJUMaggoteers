@@ -1,6 +1,5 @@
 package io.mczju.maggoteers.plan;
 
-import io.mczju.maggoteers.config.Affix;
 import io.mczju.maggoteers.config.CoeffCfg;
 import io.mczju.maggoteers.config.ScalingConfig;
 import io.mczju.maggoteers.mob.MobFactory;
@@ -15,20 +14,10 @@ class ComposeTest {
 
     @Test
     void coeffOnlyTimesScaling() {
-        Compose.MobScale m = Compose.compose(new CoeffCfg(2.0, 1.5, 1.0), List.of(), SNAP);
+        Compose.MobScale m = Compose.compose(new CoeffCfg(2.0, 1.5, 1.0), SNAP);
         assertEquals(2.0 * 1.6, m.hp(), 1e-9);
         assertEquals(1.5 * 1.3, m.dmg(), 1e-9);
         assertEquals(1.0 * 1.0, m.speed(), 1e-9);
-    }
-
-    @Test
-    void multipleAffixesMultiply() {
-        Affix armored = new Affix("armored", 2.0, 1, 1, List.of(), "x");
-        Affix berserk = new Affix("berserk", 1, 1.5, 1.2, List.of(), "x");
-        Compose.MobScale m = Compose.compose(new CoeffCfg(1.0, 1.0, 1.0), List.of(armored, berserk), SNAP);
-        assertEquals(2.0 * 1.6, m.hp(), 1e-9);
-        assertEquals(1.5 * 1.3, m.dmg(), 1e-9);
-        assertEquals(1.2 * 1.0, m.speed(), 1e-9);
     }
 
     @Test

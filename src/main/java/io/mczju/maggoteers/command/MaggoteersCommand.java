@@ -8,7 +8,6 @@ import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.persist.MaggoteersPlayerData;
 import io.mczju.maggoteers.item.ItemKind;
 import io.mczju.maggoteers.item.ItemService;
-import io.mczju.maggoteers.config.AffixService;
 import io.mczju.maggoteers.plan.Compose;
 import io.mczju.maggoteers.config.ScalingConfig;
 import io.mczju.maggoteers.effect.Effect;
@@ -203,7 +202,7 @@ public class MaggoteersCommand implements CommandExecutor {
             }
             case "spawnmob" -> {
                 if (game == null) { msg(p, "不在局内。"); return true; }
-                if (args.length < 3) { msg(p, "用法：/maggoteers debug spawnmob <实体> [词缀...]"); return true; }
+                if (args.length < 3) { msg(p, "用法：/maggoteers debug spawnmob <实体> [技能...]"); return true; }
                 EntityType type;
                 try {
                     type = io.mczju.maggoteers.util.GameRegistries.entityType(args[2]);
@@ -211,14 +210,13 @@ public class MaggoteersCommand implements CommandExecutor {
                     msg(p, "未知实体：" + args[2]);
                     return true;
                 }
-                List<String> affixes = new ArrayList<>();
-                for (int i = 3; i < args.length; i++) affixes.add(args[i]);
-                var affixList = AffixService.getInstance().resolve(affixes);
+                List<String> skills = new ArrayList<>();
+                for (int i = 3; i < args.length; i++) skills.add(args[i]);
                 var snap = ScalingConfig.getInstance().scaleFor(game.getPlayers().size());
-                var ms = Compose.compose(new io.mczju.maggoteers.config.CoeffCfg(1, 1, 1), affixList, snap);
-                var le = MobFactory.spawnDebugMob(p.getLocation(), type, ms.hp(), ms.dmg(), ms.speed(), affixes);
+                var ms = Compose.compose(new io.mczju.maggoteers.config.CoeffCfg(1, 1, 1), snap);
+                var le = MobFactory.spawnDebugMob(p.getLocation(), type, ms.hp(), ms.dmg(), ms.speed(), skills);
                 if (le != null) WaveEngine.trackDebugMob(game, le);
-                msg(p, le == null ? "生成失败。" : "已生成 " + type.name() + "（词缀=" + affixes + "）");
+                msg(p, le == null ? "生成失败。" : "已生成 " + type.name() + "（技能=" + skills + "）");
             }
             case "effects" -> {
                 if (game == null) { msg(p, "不在局内。"); return true; }

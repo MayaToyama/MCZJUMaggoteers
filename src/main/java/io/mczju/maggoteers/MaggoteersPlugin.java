@@ -2,9 +2,6 @@ package io.mczju.maggoteers;
 
 import com.github.mczjuops.mczjugamecore.MCZJUGameCore;
 import com.github.mczjuops.mczjugamecore.menu.MenuFacade;
-import io.mczju.maggoteers.integration.InfernalMobsBridge;
-import io.mczju.maggoteers.config.AffixService;
-
 import io.mczju.maggoteers.config.ScalingConfig;
 import io.mczju.maggoteers.config.WavesConfig;
 import io.mczju.maggoteers.game.MaggoteersGame;
@@ -39,8 +36,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         MCZJUGameCore.getGameManager().registerGame(MaggoteersGame.class, MaggoteersRoom.class);
         MCZJUGameCore.getPlayerDataManager().registerPlayerData("maggoteers", io.mczju.maggoteers.persist.MaggoteersPlayerData.class);
         MCZJUGameCore.getLeaderboardManager().registerLeaderboard("maggoteers_total", io.mczju.maggoteers.persist.MaggoteersTotalLeaderboard.class);
-        InfernalMobsBridge.initialize(this);
-        AffixService.load(this);
+        io.mczju.maggoteers.mob.MobSkillRegistry.load(this);
         WavesConfig.loadFromFile(this);
         MapRepository.load(this);
         ScalingConfig.load(this);
@@ -89,7 +85,6 @@ public final class MaggoteersPlugin extends JavaPlugin {
         io.mczju.maggoteers.effect.EffectListener.stopTick();
         io.mczju.maggoteers.effect.MobAiLockRegistry.restoreAll();
         io.mczju.maggoteers.effect.MobAiLockRegistry.stop();
-        InfernalMobsBridge.shutdown();
         getLogger().info("Maggoteers disabled.");
     }
 

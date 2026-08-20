@@ -1,7 +1,6 @@
 package io.mczju.maggoteers.wave;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
-import io.mczju.maggoteers.integration.InfernalMobsBridge;
 import io.mczju.maggoteers.mob.MobDisplayNames;
 import io.mczju.maggoteers.mob.MobFactory;
 import io.mczju.maggoteers.mob.MountedSquadAiService;
@@ -115,7 +114,6 @@ public final class WaveEngine {
         WaveRuntime rt = RUNTIMES.get(game);
         if (rt == null) return;
         for (UUID uuid : new HashSet<>(rt.livingMobs)) {
-            InfernalMobsBridge.unregisterManaged(uuid);
             BY_ENTITY.remove(uuid);
         }
         rt.livingMobs.clear();
@@ -131,7 +129,6 @@ public final class WaveEngine {
         for (UUID uuid : new HashSet<>(rt.livingMobs)) {
             var e = Bukkit.getEntity(uuid);
             if (e != null) e.remove();
-            InfernalMobsBridge.unregisterManaged(uuid);
         }
         clearTracking(game);
     }
@@ -144,7 +141,6 @@ public final class WaveEngine {
         for (UUID uuid : ourMobs) {
             var e = Bukkit.getEntity(uuid);
             if (e != null) e.remove();
-            InfernalMobsBridge.unregisterManaged(uuid);
             BY_ENTITY.remove(uuid);
         }
         rt.livingMobs.clear();
@@ -158,7 +154,6 @@ public final class WaveEngine {
     public static boolean handleMobDeath(UUID uuid, Location loc) {
         WaveRuntime rt = BY_ENTITY.get(uuid);
         if (rt == null) return false;
-        InfernalMobsBridge.unregisterManaged(uuid);
         var dead = Bukkit.getEntity(uuid);
         if (dead instanceof org.bukkit.entity.Slime) {
             PENDING_SPLIT_CANCEL.add(uuid);

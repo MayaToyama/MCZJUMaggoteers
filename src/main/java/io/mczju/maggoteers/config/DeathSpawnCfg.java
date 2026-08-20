@@ -5,14 +5,12 @@ import org.bukkit.entity.EntityType;
 
 import java.util.List;
 
-public record DeathSpawnCfg(EntityType type, int count, CoeffCfg coeff, List<String> affixes,
-                            InfernalCfg infernal,
+public record DeathSpawnCfg(EntityType type, int count, CoeffCfg coeff, List<String> skills,
                             List<MobEquipment> equipment, List<PassengerCfg> passengers,
                             List<DeathSpawnCfg> onDeath,
                             String name, boolean bossBar) {
     public DeathSpawnCfg {
-        affixes = affixes == null ? List.of() : List.copyOf(affixes);
-        infernal = infernal == null ? InfernalCfg.NONE : infernal;
+        skills = skills == null ? List.of() : List.copyOf(skills);
         equipment = equipment == null ? List.of() : List.copyOf(equipment);
         passengers = passengers == null ? List.of() : List.copyOf(passengers);
         onDeath = onDeath == null ? List.of() : List.copyOf(onDeath);
@@ -23,11 +21,15 @@ public record DeathSpawnCfg(EntityType type, int count, CoeffCfg coeff, List<Str
         }
     }
 
+    /** 扁平条目（无嵌套）。 */
+    public DeathSpawnCfg(EntityType type, int count, CoeffCfg coeff, List<String> skills) {
+        this(type, count, coeff, skills, List.of(), List.of(), List.of(), null, false);
+    }
+
     /** 兼容旧 8 参构造。 */
-    public DeathSpawnCfg(EntityType type, int count, CoeffCfg coeff, List<String> affixes,
-                         InfernalCfg infernal,
+    public DeathSpawnCfg(EntityType type, int count, CoeffCfg coeff, List<String> skills,
                          List<MobEquipment> equipment, List<PassengerCfg> passengers,
                          List<DeathSpawnCfg> onDeath) {
-        this(type, count, coeff, affixes, infernal, equipment, passengers, onDeath, null, false);
+        this(type, count, coeff, skills, equipment, passengers, onDeath, null, false);
     }
 }

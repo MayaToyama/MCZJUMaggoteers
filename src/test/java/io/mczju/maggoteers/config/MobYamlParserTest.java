@@ -9,24 +9,29 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MobYamlParserTest {
     @Test
-    void parsesInfernalBlock() {
-        InfernalCfg cfg = MobYamlParser.parseInfernal(Map.of(
-                "infernal", Map.of("level", 4, "affixes", List.of("poisonous", "sprint"))));
-        assertEquals(4, cfg.level());
-        assertEquals(List.of("poisonous", "sprint"), cfg.affixes());
+    void parsesSkillsList() {
+        assertEquals(List.of("plastic", "berserk"),
+                MobYamlParser.parseSkills(Map.of("skills", List.of("plastic", "berserk")), "t"));
     }
 
     @Test
-    void missingBlockReturnsNone() {
-        assertSame(InfernalCfg.NONE, MobYamlParser.parseInfernal(Map.of()));
+    void fallsBackToAffixes() {
+        assertEquals(List.of("armored"),
+                MobYamlParser.parseSkills(Map.of("affixes", List.of("armored")), "t"));
     }
 
     @Test
-    void invalidLevelFailsWithContext() {
-        IllegalStateException ex = assertThrows(IllegalStateException.class,
-                () -> MobYamlParser.parseInfernal(Map.of(
-                        "infernal", Map.of("level", 0, "affixes", List.of("sprint")))));
-        assertTrue(ex.getMessage().contains("infernal.level"));
+    void fallsBackToInfernalAffixes() {
+        assertEquals(List.of("poisonous", "sprint"),
+                MobYamlParser.parseSkills(Map.of("infernal",
+                        Map.of("level", 4, "affixes", List.of("poisonous", "sprint"))), "t"));
+    }
+
+    @Test
+    void skillsWinsOverAffixes() {
+        assertEquals(List.of("plastic"),
+                MobYamlParser.parseSkills(Map.of("skills", List.of("plastic"),
+                        "affixes", List.of("armored")), "t"));
     }
 
     @Test

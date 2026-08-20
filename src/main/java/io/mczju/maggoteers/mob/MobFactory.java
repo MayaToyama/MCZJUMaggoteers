@@ -2,8 +2,6 @@ package io.mczju.maggoteers.mob;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import io.mczju.maggoteers.MaggoteersPlugin;
-import io.mczju.maggoteers.config.InfernalCfg;
-import io.mczju.maggoteers.integration.InfernalMobsBridge;
 import io.mczju.maggoteers.item.ItemService;
 import io.mczju.maggoteers.wave.*;
 import org.bukkit.Bukkit;
@@ -20,7 +18,6 @@ import org.bukkit.entity.TNTPrimed;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.Material;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,16 +82,12 @@ public final class MobFactory {
         }
     }
 
-    /** 刷怪后统一配置：防卸载 → 系数 → 药水 → 视觉 → IM → 装备 → 名字锁定 → 名字再断言 → 挂载限制。 */
+    /** 刷怪后统一配置：防卸载 → 系数 → 装备 → 名字锁定 → 名字再断言 → 挂载限制。技能挂载由 WaveEngine.trackSpawned 做（Task 6）。 */
     private static void configureSpawnedLiving(LivingEntity le, double hpMult, double dmgMult, double speedMult,
-                                               double scaleMult, double followRangeMult, List<String> affixes,
-                                               List<PotionSpec> potions, InfernalCfg infernal,
+                                               double scaleMult, double followRangeMult,
                                                List<MobEquipment> equipment, String name) {
         le.setRemoveWhenFarAway(false);
         applyMobStats(le, hpMult, dmgMult, speedMult, scaleMult, followRangeMult);
-        applyAffixPotions(le, affixes, potions);
-        applyAffixVisuals(le, affixes);
-        InfernalMobsBridge.mechanize(le, infernal);
         applyEquipment(le, equipment);
         MobDisplayNames.lock(le, name);
         scheduleNameReassert(le);
@@ -117,7 +110,7 @@ public final class MobFactory {
                 return null;
             }
             configureSpawnedLiving(le, ds.hpMult(), ds.dmgMult(), ds.speedMult(), ds.scaleMult(),
-                    ds.followRangeMult(), ds.affixes(), ds.potions(), ds.infernal(), ds.equipment(), ds.name());
+                    ds.followRangeMult(), ds.equipment(), ds.name());
             if (le instanceof Mob m) m.setAware(true);
             return le;
         } catch (Exception e) {
@@ -148,8 +141,7 @@ public final class MobFactory {
                 return null;
             }
             configureSpawnedLiving(le, step.hpMult(), step.dmgMult(), step.speedMult(), step.scaleMult(),
-                    step.followRangeMult(), step.affixes(), step.potions(), step.infernal(), step.equipment(),
-                    step.name());
+                    step.followRangeMult(), step.equipment(), step.name());
             return le;
         } catch (Exception e) {
             LOG.warning("生成怪物失败 " + step.type() + "：" + e.getMessage());
@@ -166,7 +158,7 @@ public final class MobFactory {
                 return null;
             }
             configureSpawnedLiving(le, ps.hpMult(), ps.dmgMult(), ps.speedMult(), ps.scaleMult(),
-                    ps.followRangeMult(), ps.affixes(), ps.potions(), ps.infernal(), ps.equipment(), ps.name());
+                    ps.followRangeMult(), ps.equipment(), ps.name());
             if (le instanceof Mob m) m.setAware(true);
             return le;
         } catch (Exception e) {
@@ -175,14 +167,14 @@ public final class MobFactory {
         }
     }
 
-    /** 调试用：在玩家位置生成带词缀的怪。 */
+    /** 调试用：在玩家位置生成带技能的怪。 */
     public static LivingEntity spawnDebugMob(Location loc, org.bukkit.entity.EntityType type,
                                              double hpMult, double dmgMult, double spdMult,
-                                             List<String> affixIds) {
+                                             List<String> skillIds) {
         SpawnStep fake = new SpawnStep(
                 new Vec3(loc.getX(), loc.getY(), loc.getZ()),
                 type, 1, hpMult, dmgMult, spdMult, 1.0, 1.0,
-                0, affixIds, List.of(), InfernalCfg.NONE, List.of(), List.of(), List.of());
+                0, skillIds, List.of(), List.of(), List.of());
         return spawnMount(loc, fake);
     }
 
@@ -323,38 +315,6 @@ public final class MobFactory {
         }
     }
 
-    private static void applyAffixVisuals(LivingEntity le, List<String> affixIds) {
-        if (affixIds == null || !affixIds.contains("invisible")) return;
-        // 实体隐身旗标，避免 INVISIBILITY 药水在苦力怕爆炸时形成超长滞留云
-        le.setInvisible(true);
-        EntityEquipment eq = le.getEquipment();
-        if (eq == null) return;
-        ItemStack bottle = new ItemStack(Material.GLASS_BOTTLE);
-        eq.setHelmet(bottle);
-        eq.setHelmetDropChance(0f);
-    }
-
-    private static void applyAffixPotions(LivingEntity le, List<String> affixIds,
-                                          List<PotionSpec> stepPotions) {
-        var affixSvc = io.mczju.maggoteers.config.AffixService.getInstance();
-        if (affixIds != null) {
-            for (String affixId : affixIds) {
-                var a = affixSvc.get(affixId);
-                if (a == null) continue;
-                for (var ps : a.potions()) {
-                    var type = io.mczju.maggoteers.util.GameRegistries.potionEffect(ps.effect());
-                    if (type != null) le.addPotionEffect(new org.bukkit.potion.PotionEffect(type, ps.dur(), ps.amp()));
-                }
-            }
-        }
-        if (stepPotions != null) {
-            for (var ps : stepPotions) {
-                var type = io.mczju.maggoteers.util.GameRegistries.potionEffect(ps.effect());
-                if (type != null) le.addPotionEffect(new org.bukkit.potion.PotionEffect(type, ps.dur(), ps.amp()));
-            }
-        }
-    }
-
-    /** 战斗触发型词缀已退役；所有 affix 药水均在刷怪时施加。 */
+    /** 战斗触发型词缀已退役；技能改为 Task 6 的 MobSkillService 挂载。 */
     private MobFactory() {}
 }

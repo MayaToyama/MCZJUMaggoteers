@@ -5,15 +5,13 @@ import org.bukkit.entity.EntityType;
 
 import java.util.List;
 
-/** waves.yml step.passengers[] 条目（可嵌套 passengers / on_death）。 */
-public record PassengerCfg(EntityType type, int count, CoeffCfg coeff, List<String> affixes,
-                           InfernalCfg infernal,
+/** waves.yml step.passengers[] 条目（可嵌套 passengers / on_death）。skills 为技能 id 列表。 */
+public record PassengerCfg(EntityType type, int count, CoeffCfg coeff, List<String> skills,
                            List<MobEquipment> equipment, List<DeathSpawnCfg> onDeath,
                            List<PassengerCfg> passengers,
                            String name, boolean bossBar, boolean controller) {
     public PassengerCfg {
-        affixes = affixes == null ? List.of() : List.copyOf(affixes);
-        infernal = infernal == null ? InfernalCfg.NONE : infernal;
+        skills = skills == null ? List.of() : List.copyOf(skills);
         equipment = equipment == null ? List.of() : List.copyOf(equipment);
         onDeath = onDeath == null ? List.of() : List.copyOf(onDeath);
         passengers = passengers == null ? List.of() : List.copyOf(passengers);
@@ -25,16 +23,14 @@ public record PassengerCfg(EntityType type, int count, CoeffCfg coeff, List<Stri
     }
 
     /** 扁平条目（无嵌套）。 */
-    public PassengerCfg(EntityType type, int count, CoeffCfg coeff, List<String> affixes) {
-        this(type, count, coeff, affixes, InfernalCfg.NONE,
-                List.of(), List.of(), List.of(), null, false, false);
+    public PassengerCfg(EntityType type, int count, CoeffCfg coeff, List<String> skills) {
+        this(type, count, coeff, skills, List.of(), List.of(), List.of(), null, false, false);
     }
 
     /** 兼容旧 8 参构造。 */
-    public PassengerCfg(EntityType type, int count, CoeffCfg coeff, List<String> affixes,
-                        InfernalCfg infernal,
+    public PassengerCfg(EntityType type, int count, CoeffCfg coeff, List<String> skills,
                         List<MobEquipment> equipment, List<DeathSpawnCfg> onDeath,
                         List<PassengerCfg> passengers) {
-        this(type, count, coeff, affixes, infernal, equipment, onDeath, passengers, null, false, false);
+        this(type, count, coeff, skills, equipment, onDeath, passengers, null, false, false);
     }
 }

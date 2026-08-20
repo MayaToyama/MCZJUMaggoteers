@@ -1,6 +1,5 @@
 package io.mczju.maggoteers.listener;
 
-import io.mczju.maggoteers.integration.InfernalMobsBridge;
 import io.mczju.maggoteers.wave.WaveEngine;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
@@ -32,15 +31,6 @@ public class MobDeathListener implements Listener {
         if (!WaveEngine.isTracked(le.getUniqueId())) return;
         for (PotionEffect pe : new ArrayList<>(le.getActivePotionEffects())) {
             le.removePotionEffect(pe.getType());
-        }
-    }
-
-    /** 在 IM NORMAL 死亡监听器之前注销，抑制 IM 战利品与死亡技能。 */
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void beforeInfernalDeath(EntityDeathEvent event) {
-        var uuid = event.getEntity().getUniqueId();
-        if (WaveEngine.isTracked(uuid) && InfernalMobsBridge.isManaged(uuid)) {
-            InfernalMobsBridge.unregisterManaged(uuid);
         }
     }
 

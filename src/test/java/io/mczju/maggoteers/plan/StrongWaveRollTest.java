@@ -31,7 +31,7 @@ class StrongWaveRollTest {
         Set<String> seen = new HashSet<>();
         String[] acts = {"act1", "act2", "act3"};
         for (long seed = 0; seed < 500; seed++) {
-            List<ActPlan> plans = RunPlanner.plan(seed, 2, defs, oneMap(), scaling(), affixes(), rc);
+            List<ActPlan> plans = RunPlanner.plan(seed, 2, defs, oneMap(), scaling(), rc);
             for (int ai = 0; ai < plans.size(); ai++) {
                 int weak = rc.weak(acts[ai]);
                 int strong = rc.strong(acts[ai]);
@@ -114,24 +114,6 @@ class StrongWaveRollTest {
                 new double[]{1, 1, 1, 1}, new double[]{1, 1, 1.2, 1.5});
     }
 
-    private static AffixService affixes() {
-        return loadBundledAffixes();
-    }
-
-    private static AffixService loadBundledAffixes() {
-        File f = new File("src/main/resources/affixes.yml");
-        if (!f.isFile()) f = new File("src/main/resources/affixes.yml").getAbsoluteFile();
-        var cfg = YamlConfiguration.loadConfiguration(f);
-        Map<String, Affix> map = new HashMap<>();
-        var sec = cfg.getConfigurationSection("affixes");
-        if (sec != null) {
-            for (String id : sec.getKeys(false)) {
-                map.put(id, new Affix(id, 1, 1, 1, List.of(), id));
-            }
-        }
-        return AffixService.forTesting(map);
-    }
-
     private static SpawnStrategyCfg parseStrategy(String id, ConfigurationSection s) {
         if (s == null) throw new IllegalStateException("strategy " + id + " 配置缺失");
         int repeat = s.getInt("repeat", 1);
@@ -145,10 +127,8 @@ class StrongWaveRollTest {
             double dmg = c.get("dmg") instanceof Number dn ? dn.doubleValue() : 1.0;
             double spd = c.get("speed") instanceof Number sn ? sn.doubleValue() : 1.0;
             int delay = m.get("delay") instanceof Number dln ? dln.intValue() : 0;
-            List<String> affixes = new ArrayList<>();
-            Object affRaw = m.get("affixes");
-            if (affRaw instanceof List<?> al) for (Object o : al) affixes.add(String.valueOf(o));
-            steps.add(new StepCfg(point, type, count, new CoeffCfg(hp, dmg, spd), delay, affixes));
+            List<String> skills = MobYamlParser.parseSkills(m, id);
+            steps.add(new StepCfg(point, type, count, new CoeffCfg(hp, dmg, spd), delay, skills));
         }
         List<RewardItemCfg> rewards = new ArrayList<>();
         for (var m : s.getMapList("clearReward")) {

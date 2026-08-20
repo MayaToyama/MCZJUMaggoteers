@@ -24,27 +24,24 @@ public final class MobYamlParser {
                 ConfigParse.num(c.get("follow_range"), 1.0).doubleValue());
     }
 
-    public static List<String> parseAffixes(Map<?, ?> m) {
-        List<String> affixes = new ArrayList<>();
-        Object affRaw = m.get("affixes");
-        if (affRaw instanceof List<?> al) {
-            for (Object o : al) affixes.add(String.valueOf(o));
+    /**
+     * 技能 id 列表，fallback：{@code skills} → 旧 {@code affixes} → 旧 {@code infernal.affixes}。
+     * <p>迁移（Task 8）前旧 waves.yml 的 affix/infernal 引用仍能加载，id 直传 skill id（mob_skills.yml 含同名）。
+     */
+    public static List<String> parseSkills(Map<?, ?> m, String context) {
+        List<String> out = new ArrayList<>();
+        if (m.get("skills") instanceof List<?> skills) {
+            for (Object o : skills) out.add(String.valueOf(o));
+            return out;
         }
-        return affixes;
-    }
-
-    public static InfernalCfg parseInfernal(Map<?, ?> m) {
-        if (!(m.get("infernal") instanceof Map<?, ?> raw)) return InfernalCfg.NONE;
-        int level = ConfigParse.num(raw.get("level"), 1).intValue();
-        List<String> ids = new ArrayList<>();
-        if (raw.get("affixes") instanceof List<?> list) {
-            for (Object value : list) ids.add(String.valueOf(value));
+        if (m.get("affixes") instanceof List<?> aff) {
+            for (Object o : aff) out.add(String.valueOf(o));
+            return out;
         }
-        try {
-            return new InfernalCfg(level, ids);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException("invalid infernal.level: " + level, e);
+        if (m.get("infernal") instanceof Map<?, ?> im && im.get("affixes") instanceof List<?> il) {
+            for (Object o : il) out.add(String.valueOf(o));
         }
+        return out;
     }
 
     /** MiniMessage display name; omitted/blank (after trim) → null. Non-string → hard-fail. */
@@ -120,8 +117,8 @@ public final class MobYamlParser {
     }
 
     /** passengers / on_death 两类节点共享的节点级解析结果（字段 + 两层嵌套 + name/bossBar/controller）。 */
-    private record MobNode(EntityType type, int count, CoeffCfg coeff, List<String> affixes,
-                           InfernalCfg infernal, List<MobEquipment> equipment,
+    private record MobNode(EntityType type, int count, CoeffCfg coeff, List<String> skills,
+                           List<MobEquipment> equipment,
                            List<PassengerCfg> passengers, List<DeathSpawnCfg> onDeath,
                            String name, boolean bossBar, boolean controller) {}
 
@@ -129,15 +126,14 @@ public final class MobYamlParser {
         EntityType type = GameRegistries.entityType(String.valueOf(m.get("type")));
         int count = ConfigParse.num(m.get("count"), 1).intValue();
         CoeffCfg coeff = parseCoeff(m);
-        List<String> affixes = parseAffixes(m);
-        InfernalCfg infernal = parseInfernal(m);
+        List<String> skills = parseSkills(m, context);
         List<MobEquipment> equipment = parseEquipment(m.get("equipment"));
         List<PassengerCfg> passengers = parsePassengersDepth(m.get("passengers"), depth + 1, type.name());
         List<DeathSpawnCfg> onDeath = parseOnDeathDepth(m.get("on_death"), depth + 1, type.name());
         String name = parseName(m, context + "/" + type.name());
         boolean bossBar = parseBossBar(m, context + "/" + type.name());
         boolean controller = parseController(m, context + "/" + type.name());
-        return new MobNode(type, count, coeff, affixes, infernal, equipment, passengers, onDeath, name, bossBar, controller);
+        return new MobNode(type, count, coeff, skills, equipment, passengers, onDeath, name, bossBar, controller);
     }
 
     private static List<PassengerCfg> parsePassengersDepth(Object raw, int depth, String context) {
@@ -149,7 +145,7 @@ public final class MobYamlParser {
         for (Object o : list) {
             if (!(o instanceof Map<?, ?> m)) continue;
             MobNode n = parseMobNode(m, depth, context);
-            out.add(new PassengerCfg(n.type(), n.count(), n.coeff(), n.affixes(), n.infernal(), n.equipment(),
+            out.add(new PassengerCfg(n.type(), n.count(), n.coeff(), n.skills(), n.equipment(),
                     n.onDeath(), n.passengers(), n.name(), n.bossBar(), n.controller()));
         }
         return out;
@@ -164,7 +160,7 @@ public final class MobYamlParser {
         for (Object o : list) {
             if (!(o instanceof Map<?, ?> m)) continue;
             MobNode n = parseMobNode(m, depth, context);
-            out.add(new DeathSpawnCfg(n.type(), n.count(), n.coeff(), n.affixes(), n.infernal(), n.equipment(),
+            out.add(new DeathSpawnCfg(n.type(), n.count(), n.coeff(), n.skills(), n.equipment(),
                     n.passengers(), n.onDeath(), n.name(), n.bossBar()));
         }
         return out;

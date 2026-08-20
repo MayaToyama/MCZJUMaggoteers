@@ -26,25 +26,23 @@ public final class RunPlanner {
                 WavesConfig.getInstance().definitions(),
                 MapRepository.library(),
                 ScalingConfig.getInstance(),
-                AffixService.getInstance(),
                 loadRunConfig(plugin));
     }
 
     /** 纯函数：完全注入，不碰 Bukkit。 */
     public static List<ActPlan> plan(long seed, int playerCount, WaveDefinitions defs,
-                                     MapLibrary maps, ScalingConfig scaling,
-                                     AffixService affixes, RunConfig cfg) {
+                                     MapLibrary maps, ScalingConfig scaling, RunConfig cfg) {
         SeededRng root = new SeededRng(seed);
         ScalingConfig.Scaling snap = scaling.scaleFor(playerCount);
         List<ActPlan> out = new ArrayList<>(3);
         for (int i = 0; i < ACTS.length; i++) {
-            out.add(planAct(root, i, ACTS[i], defs, maps, snap, affixes, cfg));
+            out.add(planAct(root, i, ACTS[i], defs, maps, snap, cfg));
         }
         return out;
     }
 
     private static ActPlan planAct(SeededRng root, int actIndex, String act, WaveDefinitions defs, MapLibrary maps,
-                                   ScalingConfig.Scaling snap, AffixService affixes, RunConfig cfg) {
+                                   ScalingConfig.Scaling snap, RunConfig cfg) {
         List<MapEntry> avail = maps.maps(act);
         if (avail.isEmpty()) throw new IllegalStateException(act + " 无可用地图");
         SeededRng actRng = root.derive(1_000L + actIndex);
@@ -55,20 +53,20 @@ public final class RunPlanner {
         Set<String> usedWeak = new HashSet<>();
         for (int i = 0; i < cfg.weak(act); i++)
             waves.add(rollWave(root.derive(wavePickSalt(actIndex, "weak", i)), act, "weak",
-                    map, origin, defs, snap, affixes, usedWeak, cfg.weak(act)));
+                    map, origin, defs, snap, usedWeak, cfg.weak(act)));
         Set<String> usedStrong = new HashSet<>();
         for (int i = 0; i < cfg.strong(act); i++)
             waves.add(rollWave(root.derive(wavePickSalt(actIndex, "strong", i)), act, "strong",
-                    map, origin, defs, snap, affixes, usedStrong, cfg.strong(act)));
+                    map, origin, defs, snap, usedStrong, cfg.strong(act)));
         Set<String> usedBoss = new HashSet<>();
         waves.add(rollWave(root.derive(wavePickSalt(actIndex, "boss", 0)), act, "boss",
-                map, origin, defs, snap, affixes, usedBoss, 1));
+                map, origin, defs, snap, usedBoss, 1));
 
         return new ActPlan(map.mapId(), Coords.resolve(origin, map.points().playerSpawn()), waves);
     }
 
     private static WaveSpec rollWave(SeededRng rng, String act, String tier, MapEntry map, Vec3 origin,
-                                     WaveDefinitions defs, ScalingConfig.Scaling snap, AffixService affixes,
+                                     WaveDefinitions defs, ScalingConfig.Scaling snap,
                                      Set<String> used, int need) {
         List<WavesConfig.PoolEntry> base = new ArrayList<>(defs.pool(act, tier));
         base.addAll(map.specialWaves().getOrDefault(tier, List.of()));
@@ -101,19 +99,16 @@ public final class RunPlanner {
                     "刷怪点 " + sc.point() + " 在 " + map.mapId() + "/points.yml 未定义"
                             + (map.points().point("boss") == null ? "且无 boss 可回退" : "且非 boss 点数≥9 不可回退")
                             + "（strategy=" + strat.id() + "，G3）");
-            List<Affix> resolved = affixes.resolve(sc.affixes());
-            Compose.MobScale ms = Compose.compose(sc.coeff(), resolved, snap);
+            Compose.MobScale ms = Compose.compose(sc.coeff(), snap);
             int resolvedCount = ScalingConfig.rollCount(sc.count(), snap.mobCount(), countRng);
-            List<PassengerSpawn> passengerSpawns = buildPassengerTrees(sc.passengers(), affixes, snap, countRng);
-            List<DeathSpawn> onDeath = buildDeathSpawns(sc.onDeath(), affixes, snap, countRng);
+            List<PassengerSpawn> passengerSpawns = buildPassengerTrees(sc.passengers(), snap, countRng);
+            List<DeathSpawn> onDeath = buildDeathSpawns(sc.onDeath(), snap, countRng);
             steps.add(new SpawnStep(
                     Coords.resolve(origin, rel), sc.type(), resolvedCount,
                     ms.hp(), ms.dmg(), ms.speed(),
                     ms.scale(), ms.followRange(),
                     sc.delaySec() * 20,
-                    sc.affixes(),
-                    resolved.stream().flatMap(a -> a.potions().stream()).toList(),
-                    sc.infernal(),
+                    sc.skills(),
                     sc.equipment(),
                     onDeath,
                     passengerSpawns,
@@ -138,24 +133,20 @@ public final class RunPlanner {
     }
 
     private static List<PassengerSpawn> buildPassengerTrees(List<PassengerCfg> configs,
-                                                            AffixService affixes,
                                                             ScalingConfig.Scaling snap,
                                                             SeededRng countRng) {
         if (configs == null || configs.isEmpty()) return List.of();
         List<PassengerSpawn> out = new ArrayList<>();
         for (PassengerCfg pc : configs) {
-            List<Affix> pa = affixes.resolve(pc.affixes());
-            Compose.MobScale pms = Compose.compose(pc.coeff(), pa, snap);
+            Compose.MobScale pms = Compose.compose(pc.coeff(), snap);
             int pcnt = ScalingConfig.rollCount(pc.count(), snap.mobCount(), countRng);
-            List<PassengerSpawn> nested = buildPassengerTrees(pc.passengers(), affixes, snap, countRng);
-            List<DeathSpawn> onDeath = buildDeathSpawns(pc.onDeath(), affixes, snap, countRng);
+            List<PassengerSpawn> nested = buildPassengerTrees(pc.passengers(), snap, countRng);
+            List<DeathSpawn> onDeath = buildDeathSpawns(pc.onDeath(), snap, countRng);
             for (int i = 0; i < pcnt; i++) {
                 out.add(new PassengerSpawn(
                         pc.type(), pms.hp(), pms.dmg(), pms.speed(),
                         pms.scale(), pms.followRange(),
-                        pc.affixes(),
-                        pa.stream().flatMap(a -> a.potions().stream()).toList(),
-                        pc.infernal(),
+                        pc.skills(),
                         pc.equipment(),
                         onDeath,
                         nested,
@@ -168,25 +159,21 @@ public final class RunPlanner {
     }
 
     private static List<DeathSpawn> buildDeathSpawns(List<DeathSpawnCfg> configs,
-                                                     AffixService affixes,
                                                      ScalingConfig.Scaling snap,
                                                      SeededRng countRng) {
         if (configs == null || configs.isEmpty()) return List.of();
         List<DeathSpawn> out = new ArrayList<>();
         for (DeathSpawnCfg dc : configs) {
-            List<Affix> da = affixes.resolve(dc.affixes());
-            Compose.MobScale dms = Compose.compose(dc.coeff(), da, snap);
+            Compose.MobScale dms = Compose.compose(dc.coeff(), snap);
             int dcnt = ScalingConfig.rollCount(dc.count(), snap.mobCount(), countRng);
-            List<PassengerSpawn> passengers = buildPassengerTrees(dc.passengers(), affixes, snap, countRng);
-            List<DeathSpawn> nested = buildDeathSpawns(dc.onDeath(), affixes, snap, countRng);
+            List<PassengerSpawn> passengers = buildPassengerTrees(dc.passengers(), snap, countRng);
+            List<DeathSpawn> nested = buildDeathSpawns(dc.onDeath(), snap, countRng);
             for (int i = 0; i < dcnt; i++) {
                 out.add(new DeathSpawn(
                         dc.type(),
                         dms.hp(), dms.dmg(), dms.speed(),
                         dms.scale(), dms.followRange(),
-                        dc.affixes(),
-                        da.stream().flatMap(a -> a.potions().stream()).toList(),
-                        dc.infernal(),
+                        dc.skills(),
                         dc.equipment(),
                         passengers,
                         nested,

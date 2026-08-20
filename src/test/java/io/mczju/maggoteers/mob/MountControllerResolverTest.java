@@ -1,6 +1,5 @@
 package io.mczju.maggoteers.mob;
 
-import io.mczju.maggoteers.config.InfernalCfg;
 import io.mczju.maggoteers.wave.PassengerSpawn;
 import org.bukkit.entity.EntityType;
 import org.junit.jupiter.api.Test;
@@ -13,8 +12,7 @@ class MountControllerResolverTest {
 
     private static PassengerSpawn node(boolean controller, PassengerSpawn... nested) {
         return new PassengerSpawn(EntityType.ZOMBIE, 1.0, 1.0, 1.0, 1.0, 1.0,
-                List.of(), List.of(), InfernalCfg.NONE, List.of(), List.of(),
-                List.of(nested), null, false, controller);
+                List.of(), List.of(), List.of(), List.of(nested), null, false, controller);
     }
 
     @Test

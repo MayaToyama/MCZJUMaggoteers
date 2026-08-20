@@ -61,7 +61,7 @@ public record WaveSpec(
                             s.point(), s.type(), s.count(),
                             s.hpMult(), s.dmgMult(), s.speedMult(),
                             s.scaleMult(), s.followRangeMult(),
-                            at, s.affixes(), s.potions(), s.infernal(),
+                            at, s.skills(),
                             s.equipment(), s.onDeath(), s.passengers(), 1,
                             s.name(), s.bossBar()));
                 }
