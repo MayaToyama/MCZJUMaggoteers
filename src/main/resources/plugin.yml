@@ -3,7 +3,7 @@ version: '${project.version}'
 main: io.mczju.maggoteers.MaggoteersPlugin
 api-version: '26.2'
 depend: [MCZJUGameCore]
-softdepend: [MCZJUItemCreator, InfernalMobs]
+softdepend: [MCZJUItemCreator]
 commands:
   maggoteers:
     description: 卫戍协议命令（shop 等）

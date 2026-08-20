@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MobDeathListenerTest {
     @Test
-    void finalDropCleanupRunsAfterInfernalNormalListener() throws Exception {
+    void finalDropCleanupRunsAtHighestPriority() throws Exception {
         Method method = MobDeathListener.class.getDeclaredMethod(
                 "onDeath", EntityDeathEvent.class);
         assertEquals(EventPriority.HIGHEST,

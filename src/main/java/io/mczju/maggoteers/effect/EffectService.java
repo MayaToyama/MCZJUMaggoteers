@@ -27,6 +27,7 @@ import org.bukkit.util.Vector;
 import org.bukkit.Bukkit;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -335,13 +336,6 @@ public final class EffectService {
      */
     static void processTriggerEffects(PlayerState ps, Player p, MaggoteersGame game,
                                       Trigger fired, TriggerContext useCtx) {
-        Map<String, CounterSpec> counterByEffectId = new java.util.HashMap<>();
-        for (PlayerEffect e : ps.effects()) {
-            CounterSpec cs = e.params().get(EffectKeys.COUNTER_SPEC);
-            if (cs != null) {
-                counterByEffectId.put(e.id(), cs);
-            }
-        }
         Set<String> touched = new HashSet<>();
         List<String> removed = TriggerFireOrder.run(
                 () -> touched.addAll(dispatchTriggeredEffectsCollecting(p, ps, game, fired, useCtx)),
@@ -356,6 +350,14 @@ public final class EffectService {
                 });
         if (!removed.isEmpty()) {
             resyncDerived(p, ps);
+            // 惰性收集：仅当有效果被移除时才建 counter 反查表（计数器仅在移除时需 unregister，避免热路径空建）
+            Map<String, CounterSpec> counterByEffectId = new HashMap<>();
+            for (PlayerEffect e : ps.effects()) {
+                CounterSpec cs = e.params().get(EffectKeys.COUNTER_SPEC);
+                if (cs != null) {
+                    counterByEffectId.put(e.id(), cs);
+                }
+            }
             for (String removedId : removed) {
                 io.mczju.maggoteers.reward.CollectibleService.remove(p, removedId);
                 BoundEquipService.remove(p, removedId);
