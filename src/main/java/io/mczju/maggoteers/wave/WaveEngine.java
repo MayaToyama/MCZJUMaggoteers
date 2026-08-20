@@ -3,6 +3,7 @@ package io.mczju.maggoteers.wave;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import io.mczju.maggoteers.mob.MobDisplayNames;
 import io.mczju.maggoteers.mob.MobFactory;
+import io.mczju.maggoteers.mob.MobSkillService;
 import io.mczju.maggoteers.mob.MountedSquadAiService;
 import io.mczju.maggoteers.mob.MountedSquadRegistry;
 import net.kyori.adventure.bossbar.BossBar;
@@ -49,6 +50,12 @@ public final class WaveEngine {
 
     public static boolean isTracked(UUID uuid) { return BY_ENTITY.containsKey(uuid); }
 
+    /** UUID → 本局（供 MobSkillListener/MobSkillService 反查）。 */
+    public static AbstractGame gameOfEntity(UUID uuid) {
+        WaveRuntime rt = BY_ENTITY.get(uuid);
+        return rt == null ? null : rt.game;
+    }
+
     /** {@link #handleMobDeath} 移除追踪前对史莱姆/岩浆怪调用；供 {@code SlimeSplitEvent} 取消分裂。 */
     public static boolean consumeSplitCancel(UUID uuid) {
         return PENDING_SPLIT_CANCEL.remove(uuid);
@@ -84,6 +91,7 @@ public final class WaveEngine {
         rt.livingMobs.add(uuid);
         rt.mobProfiles.put(uuid, profile);
         BY_ENTITY.put(uuid, rt);
+        MobSkillService.attach(le, profile.skills());
         boolean wantBar = step != null ? step.bossBar() : (profile != null && profile.bossBar());
         if (wantBar) {
             attachBossBar(game, rt, le);
@@ -115,6 +123,7 @@ public final class WaveEngine {
         if (rt == null) return;
         for (UUID uuid : new HashSet<>(rt.livingMobs)) {
             BY_ENTITY.remove(uuid);
+            MobSkillService.detach(uuid);
         }
         rt.livingMobs.clear();
         rt.mobProfiles.clear();
@@ -129,6 +138,7 @@ public final class WaveEngine {
         for (UUID uuid : new HashSet<>(rt.livingMobs)) {
             var e = Bukkit.getEntity(uuid);
             if (e != null) e.remove();
+            MobSkillService.detach(uuid);
         }
         clearTracking(game);
     }
@@ -142,6 +152,7 @@ public final class WaveEngine {
             var e = Bukkit.getEntity(uuid);
             if (e != null) e.remove();
             BY_ENTITY.remove(uuid);
+            MobSkillService.detach(uuid);
         }
         rt.livingMobs.clear();
         rt.mobProfiles.clear();
@@ -161,6 +172,7 @@ public final class WaveEngine {
         MobSpawnProfile profile = rt.mobProfiles.remove(uuid);
         rt.livingMobs.remove(uuid);
         BY_ENTITY.remove(uuid);
+        MobSkillService.detach(uuid);
         // L3：坐骑死 → squad 移除；其乘客随根实体死亡/删除弹飞，成独立追踪怪继续战斗（原版索敌）
         MountedSquadRegistry.removeByRoot(rt.game, uuid);
         BossBar bar = rt.bossBars.remove(uuid);

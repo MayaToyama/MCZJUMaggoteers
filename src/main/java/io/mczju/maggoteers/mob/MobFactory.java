@@ -175,7 +175,9 @@ public final class MobFactory {
                 new Vec3(loc.getX(), loc.getY(), loc.getZ()),
                 type, 1, hpMult, dmgMult, spdMult, 1.0, 1.0,
                 0, skillIds, List.of(), List.of(), List.of());
-        return spawnMount(loc, fake);
+        LivingEntity le = spawnMount(loc, fake);
+        if (le != null) MobSkillService.attach(le, skillIds);
+        return le;
     }
 
     private static void scheduleNameReassert(LivingEntity le) {

@@ -59,6 +59,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         MenuFacade.registerMenu("maggoteers-revive", io.mczju.maggoteers.menu.ReviveMenu.class);
         MenuFacade.registerMenu("maggoteers-shop", io.mczju.maggoteers.menu.UnlockShopMenu.class);
         getServer().getPluginManager().registerEvents(new MobDeathListener(), this);
+        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.MobSkillListener(), this);
         getServer().getPluginManager().registerEvents(new ItemInteractRouter(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.item.WeaponHeldListener(this), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.effect.EffectListener(), this);
@@ -70,6 +71,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.BoundEquipLockListener(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.GameplayTickListener(), this);
         io.mczju.maggoteers.listener.GameplayTickListener.start();
+        io.mczju.maggoteers.mob.MobSkillService.start(this);
         var mc = getCommand("maggoteers");
         if (mc != null) mc.setExecutor(new io.mczju.maggoteers.command.MaggoteersCommand());
         getLogger().info("Maggoteers (卫戍协议) enabled, game 'maggoteers' registered.");
