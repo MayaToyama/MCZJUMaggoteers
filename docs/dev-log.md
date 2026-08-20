@@ -25,10 +25,12 @@
 
 **遗留 / 待实现期核实**
 - mob_skills.yml 旧 affix 数值语义迁移后的平衡性测试（新补 6 技能 confusing/refrigerate/swap/vengeance/wardenwrath/1up 数值未实测）。
-- **1up 无 cooldown_sec**：KILLED trigger 每次死亡都复活 → 带 1up 的怪等效不朽（waves.yml b_imposter 的 PIGLIN passenger），可能卡波清不空，需全分支 review 定夺（加 cooldown 需先让 fire() 尊重非 TICK trigger 的冷却）。
+- **1up 不朽怪（已解决）**：原担心 KILLED trigger 每次死亡复活卡波清不空——Task 8 最终 review 以**零代码**修复：从 `b2_silent_guard` HOGLIN boss 的 PIGLIN passenger skills 删除 `- 1up`（→ `[molten, ghastly]`）；mob_skills.yml 的 `1up` 定义保留（unused，schema 测试 used⊆defined 仍绿，供未来内容）。**若未来内容重新引用 1up，须先给 fire()/wantsRevive 加 cooldown_sec 或次数上限**。
 - swap/1up 依赖 Task 8 的 TELEPORT 层原点修复（Act2/3）与 1up cancel+setHealth 复活链路，未实测。
 - TELEPORT 的 `outsideMap` 常量半径（160）在正式地图尺寸确认后调整。
 - ItemCreator 版本 / jitpack 坐标（沿用前代）。
+
+**最终 whole-branch review（2026-08-21，fable）**：范围 `b92239f..HEAD` 11 commits + cleanup `9a8f20d`，**PASS** → 进入 finishing；测试基线 **365 pass / 0 fail / 5 skip**。cleanup commit 四项：① `plugin.yml` 删 `softdepend: [InfernalMobs]`（Java 零引用，死声明）；② git rm `wave/PotionSpec.java`（死记录）；③ `MobDeathListenerTest` 测试名去 "InfernalNormalListener" 残留；④ `EffectService.processTriggerEffects` counter map 惰性构建（热路径去空分配）。跨任务硬验证全 PASS（EffectListener 单路径 / skills 接通链 / homing 双端生命周期 / MobCounterRegistry ping-pong 防死锁 / waves block 形态解析）。**唯一遗留 = 服务器实测**（8 项清单见 `.superpowers/sdd/final-review.md` §5，需部署 `E:\MCpaper` 人工验证）：1up 复活血量、swap 层原点传送、vengeance/quicksand 反伤、爆炸怪 KILLED 顺序、homing 手感（TURN_FACTOR=0.35）、TeleportSafety 边界、mob_skills 平衡性、waves 迁移整体跑通。
 
 ## 2026-08-17 — 版本去掉内部测试 rc 标记 → `1.0.0`
 
