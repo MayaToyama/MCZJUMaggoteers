@@ -1,6 +1,7 @@
 package io.mczju.maggoteers.wave;
 
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
+import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.mob.MobDisplayNames;
 import io.mczju.maggoteers.mob.MobFactory;
 import io.mczju.maggoteers.mob.MobSkillService;
@@ -13,6 +14,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 
 import java.util.HashMap;
@@ -54,6 +56,25 @@ public final class WaveEngine {
     public static AbstractGame gameOfEntity(UUID uuid) {
         WaveRuntime rt = BY_ENTITY.get(uuid);
         return rt == null ? null : rt.game;
+    }
+
+    /** 以 loc 为圆心、radius 内最近的本局追踪怪（供 homing 目标选择）。 */
+    public static LivingEntity nearestTrackedMob(Location loc, MaggoteersGame game, double radius) {
+        if (loc == null || game == null || loc.getWorld() == null) return null;
+        WaveRuntime rt = RUNTIMES.get(game);
+        if (rt == null) return null;
+        LivingEntity best = null;
+        double bestSq = radius * radius;
+        for (UUID uuid : rt.livingMobs) {
+            Entity raw = Bukkit.getEntity(uuid);
+            if (!(raw instanceof LivingEntity le) || le.isDead() || !le.isValid()) continue;
+            double d = le.getLocation().distanceSquared(loc);
+            if (d < bestSq) {
+                bestSq = d;
+                best = le;
+            }
+        }
+        return best;
     }
 
     /** {@link #handleMobDeath} 移除追踪前对史莱姆/岩浆怪调用；供 {@code SlimeSplitEvent} 取消分裂。 */

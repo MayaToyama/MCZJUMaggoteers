@@ -94,9 +94,18 @@ public final class GameRegistries {
     public static EntityType entityType(String name) {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("entity type blank");
         String u = name.trim().toUpperCase(Locale.ROOT);
-        EntityType t = Registry.ENTITY_TYPE.get(NamespacedKey.minecraft(u.toLowerCase(Locale.ROOT)));
-        if (t == null) throw new IllegalArgumentException("Unknown entity type: " + name);
-        return t;
+        try {
+            EntityType t = Registry.ENTITY_TYPE.get(NamespacedKey.minecraft(u.toLowerCase(Locale.ROOT)));
+            if (t != null) return t;
+        } catch (RuntimeException | LinkageError ex) {
+            // headless（单元测试）无 RegistryAccess 实现 → 回落枚举查找，保证解析逻辑可单测；运行时有 Registry 不受影响
+            // LinkageError 覆盖首次 ExceptionInInitializerError 与后续 NoClassDefFoundError（Registry.<clinit> 失败后 JVM 行为）
+        }
+        try {
+            return EntityType.valueOf(u);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Unknown entity type: " + name);
+        }
     }
 
     /** 解析 Sound：{@code ENTITY_PLAYER_ATTACK_SWEEP} 或 {@code minecraft:entity.player.attack.sweep}。 */

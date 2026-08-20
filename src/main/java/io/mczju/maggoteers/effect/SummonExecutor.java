@@ -44,7 +44,7 @@ public final class SummonExecutor {
                 tame.setTamed(true);
                 if (entity instanceof Wolf wolf) wolf.setAngry(false);
             }
-            applyProjectile(entity, caster, params);
+            applyProjectile(entity, caster, game, params);
             SummonRegistry.register(game, entity, caster.getUniqueId(),
                     params.cleanup(), params.durationSec(), params.friendlyFire());
             spawned++;
@@ -85,11 +85,15 @@ public final class SummonExecutor {
         }
     }
 
-    private static void applyProjectile(Entity entity, Player caster, SummonParams params) {
+    private static void applyProjectile(Entity entity, Player caster, MaggoteersGame game, SummonParams params) {
         SummonParams.ProjectileParams proj = params.projectile();
         if (!(entity instanceof Projectile projectile)) return;
         projectile.setShooter(caster);
         Vector dir = caster.getLocation().getDirection().normalize().multiply(proj.speed());
         projectile.setVelocity(dir);
+        if (params.homingTarget() != null) {
+            // 玩家右键无触发上下文目标 → initialTarget 传 null
+            ProjectileHomingService.home(game, projectile, null, params.homingTarget());
+        }
     }
 }

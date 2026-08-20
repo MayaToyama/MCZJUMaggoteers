@@ -103,7 +103,8 @@ public final class SummonParamsParser {
         SummonParams.ProjectileParams projectile = parseProjectile(p.get(EffectKeys.PROJECTILE));
 
         return Optional.of(new SummonParams(
-                type, anchor, count, offsetY, cleanup, durationSec, attrs, tamed, friendlyFire, projectile));
+                type, anchor, count, offsetY, cleanup, durationSec, attrs, tamed, friendlyFire, projectile,
+                p.get(EffectKeys.HOMING_TARGET)));
     }
 
     static Optional<String> validateAnchorTrigger(String anchor, Trigger trigger) {

@@ -1,10 +1,15 @@
 package io.mczju.maggoteers.mob;
 
+import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import io.mczju.maggoteers.effect.EffectContext;
 import io.mczju.maggoteers.effect.EffectKeys;
+import io.mczju.maggoteers.effect.SummonParams;
+import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.util.GameRegistries;
 import io.mczju.maggoteers.wave.WaveEngine;
+import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
@@ -12,9 +17,10 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 /**
- * 怪物技能效果执行。SUMMON/TELEPORT 由 Task 7 补（当前 default 跳过）。
+ * 怪物技能效果执行。SUMMON（含 homing 弹道）/TELEPORT（安全传送）均已实现。
  * <p>target 键（EffectKeys.TARGETS）：self（默认，作用于怪自身）| target（触发上下文目标/伤害来源落点）| area（以怪为中心 radius 内敌对）。
  */
 public final class MobEffectExecutor {
@@ -28,8 +34,60 @@ public final class MobEffectExecutor {
             case HEALTH -> applyHealth(mob, es, target);
             case ATTRIBUTE -> applyAttribute(mob, es, target);
             case POTION -> applyPotion(mob, es, target);
-            default -> { }   // SUMMON / TELEPORT：Task 7
+            case SUMMON -> applySummon(mob, es, target, source);
+            case TELEPORT -> applyTeleport(mob, es, target);
+            default -> { }
         }
+    }
+
+    private static void applySummon(LivingEntity mob, MobEffectSpec es,
+                                    LivingEntity target, LivingEntity source) {
+        EffectContext p = es.params();
+        String name = p.get(EffectKeys.ENTITY);
+        if (name == null || name.isBlank()) return;
+        EntityType type = GameRegistries.entityType(name);
+        if (type == null) return;
+        MaggoteersGame game = gameOf(mob.getUniqueId());
+        if (game == null) return;
+        int count = Math.max(1, p.getOrDefault(EffectKeys.COUNT, 1));
+        double offsetY = p.getOrDefault(EffectKeys.OFFSET_Y, 0.0);
+        // mob 侧 SUMMON projectile 形态：顶层 projectile_speed（archer/tosser/molten），或未来 projectile 键
+        if (p.has(EffectKeys.PROJECTILE_SPEED) || p.get(EffectKeys.PROJECTILE) != null) {
+            double speed = p.getOrDefault(EffectKeys.PROJECTILE_SPEED, 1.0);
+            String homing = p.get(EffectKeys.HOMING_TARGET);
+            String h = homing == null ? "" : homing.trim().toLowerCase(Locale.ROOT);
+            // initialTarget 按 homing 预设选触发上下文：attack_target→target；damage_source/killer→source
+            LivingEntity init = null;
+            if ("attack_target".equals(h)) init = target;
+            else if ("damage_source".equals(h) || "killer".equals(h)) init = source;
+            for (int i = 0; i < count; i++) {
+                MobProjectileService.shoot(mob, game, type,
+                        new SummonParams.ProjectileParams(speed), homing, init);
+            }
+            return;
+        }
+        for (int i = 0; i < count; i++) {
+            Location at = mob.getLocation().clone().add(0, offsetY + 0.8 * i, 0);
+            LivingEntity spawned = (LivingEntity) mob.getWorld().spawnEntity(at, type);
+            if (spawned instanceof org.bukkit.entity.Mob mobSpawned) {
+                mobSpawned.setTarget(target instanceof org.bukkit.entity.Mob m ? m : null);
+            }
+        }
+    }
+
+    private static void applyTeleport(LivingEntity mob, MobEffectSpec es, LivingEntity target) {
+        EffectContext p = es.params();
+        String t = p.get(EffectKeys.TARGETS);
+        boolean toTarget = t != null && "target".equalsIgnoreCase(t.trim());
+        LivingEntity anchor = toTarget && target != null ? target : mob;
+        double offsetY = p.getOrDefault(EffectKeys.OFFSET_Y, 2.0);
+        Location dest = TeleportSafety.safeTarget(anchor, offsetY);
+        if (dest != null) mob.teleport(dest);
+    }
+
+    private static MaggoteersGame gameOf(UUID uuid) {
+        AbstractGame g = WaveEngine.gameOfEntity(uuid);
+        return g instanceof MaggoteersGame mg ? mg : null;
     }
 
     private static void applyHealth(LivingEntity mob, MobEffectSpec es, LivingEntity target) {

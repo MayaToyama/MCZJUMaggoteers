@@ -3,6 +3,7 @@ package io.mczju.maggoteers.effect;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SummonParamsParserTest {
@@ -48,6 +49,24 @@ class SummonParamsParserTest {
     void weaponPathValidatePassesWithSelfAnchor() {
         EffectContext ctx = baseSummonCtx();
         assertTrue(SummonParamsParser.validate(ctx, null, true).isEmpty());
+    }
+
+    @Test
+    void parsesProjectileHomingTarget() {
+        EffectContext ctx = baseSummonCtx();
+        EffectContext proj = new EffectContext();
+        proj.put(EffectKeys.PROJECTILE_SPEED, 1.2);
+        ctx.put(EffectKeys.PROJECTILE, proj);
+        ctx.put(EffectKeys.HOMING_TARGET, "nearest_enemy");
+        SummonParams sp = SummonParamsParser.parse(ctx, true).orElseThrow();
+        assertEquals("nearest_enemy", sp.homingTarget());
+        assertEquals(1.2, sp.projectile().speed(), 1e-6);
+    }
+
+    @Test
+    void homingTargetOptionalWithoutProjectile() {
+        SummonParams sp = SummonParamsParser.parse(baseSummonCtx(), true).orElseThrow();
+        assertNull(sp.homingTarget());
     }
 
     private static EffectContext baseSummonCtx() {

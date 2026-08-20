@@ -72,6 +72,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.GameplayTickListener(), this);
         io.mczju.maggoteers.listener.GameplayTickListener.start();
         io.mczju.maggoteers.mob.MobSkillService.start(this);
+        io.mczju.maggoteers.effect.ProjectileHomingService.start(this);
         var mc = getCommand("maggoteers");
         if (mc != null) mc.setExecutor(new io.mczju.maggoteers.command.MaggoteersCommand());
         getLogger().info("Maggoteers (卫戍协议) enabled, game 'maggoteers' registered.");
