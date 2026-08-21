@@ -114,13 +114,13 @@ maggoteers:anacreon:
     - minecraft:impaling: 6
   attributeModifiers:
     -
-      id: maggoteers:anacreon_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 9
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:anacreon_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -198,13 +198,13 @@ maggoteers:blast_unit:
       value: "maggoteers:blast_unit"
   attributeModifiers:
     -
-      id: maggoteers:blast_unit_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 7
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:blast_unit_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -383,13 +383,13 @@ maggoteers:class_guard_spear:
       value: "maggoteers:class_guard_spear"
   attributeModifiers:
     -
-      id: maggoteers:class_guard_spear_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 10
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:class_guard_spear_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -3.0
       operation: ADD_NUMBER
@@ -418,13 +418,13 @@ maggoteers:class_heavy_sword:
       value: "maggoteers:class_heavy_sword"
   attributeModifiers:
     -
-      id: maggoteers:class_heavy_sword_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 6
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:class_heavy_sword_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -458,13 +458,13 @@ maggoteers:class_mage_sword:
       value: "maggoteers:class_mage_sword"
   attributeModifiers:
     -
-      id: maggoteers:class_mage_sword_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 5
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:class_mage_sword_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -526,13 +526,13 @@ maggoteers:class_vanguard_axe:
       value: "maggoteers:class_vanguard_axe"
   attributeModifiers:
     -
-      id: maggoteers:class_vanguard_axe_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 10
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:class_vanguard_axe_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -3.1
       operation: ADD_NUMBER
@@ -570,13 +570,13 @@ maggoteers:eighty_hammer:
       value: "maggoteers:eighty_hammer"
   attributeModifiers:
     -
-      id: maggoteers:eighty_hammer_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 28
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:eighty_hammer_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -3.5
       operation: ADD_NUMBER
@@ -639,13 +639,13 @@ maggoteers:excalibur_a3:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:excalibur_a3_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 12
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:excalibur_a3_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -679,13 +679,13 @@ maggoteers:famed_name:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:famed_name_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 5
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:famed_name_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -719,13 +719,13 @@ maggoteers:frostmourne:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:frostmourne_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 18
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:frostmourne_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -809,13 +809,13 @@ maggoteers:griffon_claw:
     - minecraft:sweeping_edge: 10
   attributeModifiers:
     -
-      id: maggoteers:griffon_claw_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 10
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:griffon_claw_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -875,13 +875,13 @@ maggoteers:heat_cutter_a1:
       value: "maggoteers:heat_cutter_a1"
   attributeModifiers:
     -
-      id: maggoteers:heat_cutter_a1_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 5
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:heat_cutter_a1_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -904,20 +904,20 @@ maggoteers:herafinger:
   customName: "<gold>赫拉芬格"
   lore:
     - "<gray>攻击会使敌人获得1s缓慢X，右键强化自身，下次攻击造成相当于攻击力300%的伤害，并使3格半径内的敌人获得3s缓慢X，冷却10s"
-    - "<dark_gray>"
+    - "<dark_gray>使用巫术打造的,纯粹由冰块制成的武器,重剑无锋是一个谎言"
   unbreakable: true
   maxStackSize: 1
   enchantments:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:herafinger_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 18
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:herafinger_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -3.0
       operation: ADD_NUMBER
@@ -980,7 +980,7 @@ maggoteers:holy_water:
   customName: "<aqua>圣水"
   lore:
     - "<gray>右键恢复10点生命值并净化自身，冷却时间15s"
-    - "<dark_gray为什么我们不把它泼在僵尸身上呢？"
+    - "<dark_gray>为什么我们不把它泼在僵尸身上呢？"
   unbreakable: true
   maxStackSize: 1
   enchantments:
@@ -1023,13 +1023,13 @@ maggoteers:jet_a1:
       value: "maggoteers:jet_a1"
   attributeModifiers:
     -
-      id: maggoteers:jet_a1_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 11
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:jet_a1_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.8
       operation: ADD_NUMBER
@@ -1064,13 +1064,13 @@ maggoteers:door:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:door_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 8
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:door_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -3.2
       operation: ADD_NUMBER
@@ -1112,13 +1112,13 @@ maggoteers:knight_spirit:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:knight_spirit_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 8
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:knight_spirit_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -1157,13 +1157,13 @@ maggoteers:macro_wish:
       value: "maggoteers:macro_wish"
   attributeModifiers:
     -
-      id: maggoteers:macro_wish_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 10
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:macro_wish_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -1203,13 +1203,13 @@ maggoteers:mission_sure:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:mission_sure_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 9
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:mission_sure_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.0
       operation: ADD_NUMBER
@@ -1245,13 +1245,13 @@ maggoteers:molten_flame:
     - minecraft:fire_aspect: 2
   attributeModifiers:
     -
-      id: maggoteers:molten_flame_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 8
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:molten_flame_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -1286,13 +1286,13 @@ maggoteers:mystery_blade:
     - minecraft:smite: 10
   attributeModifiers:
     -
-      id: maggoteers:mystery_blade_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 12
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:mystery_blade_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -1315,7 +1315,7 @@ maggoteers:navigator:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:navigator_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 7
       operation: ADD_NUMBER
@@ -1392,13 +1392,13 @@ maggoteers:past_fine:
       value: "maggoteers:past_fine"
   attributeModifiers:
     -
-      id: maggoteers:past_fine_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 12
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:past_fine_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -3.1
       operation: ADD_NUMBER
@@ -1422,7 +1422,7 @@ maggoteers:phantasm:
   material: GOLDEN_SWORD
   customName: "<blue>幻景"
   lore:
-    - "<gray>8伤害，右键对自己造成4点伤害，赋予自己净化效果，直到下次攻击前获得抗性提升V，冷却20s"
+    - "<gray>右键对自己造成4点伤害，赋予自己沉默和净化效果，直到下次攻击前获得抗性提升V，冷却20s"
     - "<dark_gray>牌烧完了我打什么？"
   unbreakable: true
   maxStackSize: 1
@@ -1430,13 +1430,13 @@ maggoteers:phantasm:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:phantasm_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 8
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:phantasm_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -1448,7 +1448,7 @@ maggoteers:phantasm:
       value: "maggoteers:phantasm"
   use_ability:
     cooldown_sec: 20
-    self_clear_potions: [WITHER, SLOWNESS, WEAKNESS, BLINDNESS, POISON, DARKNESS]
+    self_clear_potions: [WITHER, SLOWNESS, WEAKNESS, BLINDNESS, POISON, DARKNESS, STRENGTH, INVISIBILITY, REGENERATION]
     effects:
       -
         effect: HEAL
@@ -1571,13 +1571,13 @@ maggoteers:shattered_king:
       value: "maggoteers:shattered_king"
   attributeModifiers:
     -
-      id: maggoteers:shattered_king_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 15
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:shattered_king_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -3.1
       operation: ADD_NUMBER
@@ -1610,13 +1610,13 @@ maggoteers:silver_sword:
     - minecraft:smite: 4
   attributeModifiers:
     -
-      id: maggoteers:silver_sword_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 8
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:silver_sword_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -1640,13 +1640,13 @@ maggoteers:spike_wall:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:spike_wall_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 10
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:spike_wall_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.0
       operation: ADD_NUMBER
@@ -1716,13 +1716,13 @@ maggoteers:supreme_art:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:supreme_art_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 4
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:supreme_art_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.0
       operation: ADD_NUMBER
@@ -1847,13 +1847,13 @@ maggoteers:unlit_glory:
     - minecraft:sharpness: 100
   attributeModifiers:
     -
-      id: maggoteers:unlit_glory_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 0
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:unlit_glory_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -3.9
       operation: ADD_NUMBER
@@ -1892,13 +1892,13 @@ maggoteers:valor:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:valor_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 12
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:valor_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.7
       operation: ADD_NUMBER
@@ -1942,7 +1942,7 @@ maggoteers:wedge:
       value: "maggoteers:wedge"
   attributeModifiers:
     -
-      id: maggoteers:wedge_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 6
       operation: ADD_NUMBER
@@ -1971,13 +1971,13 @@ maggoteers:condense:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:condense_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 10
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:condense_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -3.2
       operation: ADD_NUMBER
@@ -2049,13 +2049,13 @@ maggoteers:shimingzi:
     - minecraft:sweeping_edge: 3
   attributeModifiers:
     -
-      id: maggoteers:shimingzi_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 19
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:shimingzi_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -3.3
       operation: ADD_NUMBER
@@ -2087,13 +2087,13 @@ maggoteers:solar_spear:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:solar_spear_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 20
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:solar_spear_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.9
       operation: ADD_NUMBER
@@ -2112,6 +2112,7 @@ maggoteers:solar_spear:
 
 maggoteers:red_blessing:
   material: COPPER_SWORD
+  itemModel: COPPER_SPEAR
   customName: "<red>镀红祝福"
   lore:
     - "<gray>攻击使敌人获得5s凋零II（红色粒子），击杀敌人时对目标周围的敌人造成一次5点伤害，右键获得3s速度III，冷却12s"
@@ -2122,13 +2123,13 @@ maggoteers:red_blessing:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:red_blessing_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 12
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:red_blessing_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.6
       operation: ADD_NUMBER
@@ -2190,13 +2191,13 @@ maggoteers:paragon:
     - minecraft:unbreaking: 10
   attributeModifiers:
     -
-      id: maggoteers:paragon_attack_damage
+      id: minecraft:base_attack_damage
       attribute: "minecraft:attack_damage"
       amount: 12
       operation: ADD_NUMBER
       slot: mainhand
     -
-      id: maggoteers:paragon_attack_speed
+      id: minecraft:base_attack_speed
       attribute: "minecraft:attack_speed"
       amount: -2.4
       operation: ADD_NUMBER
@@ -2226,13 +2227,13 @@ maggoteers:mob_iron_spear:
   enchantments:
     - minecraft:unbreaking: 10
   attributeModifiers:
-    - id: maggoteers:mob_iron_spear_attack_damage
+    - id: minecraft:base_attack_damage
       attribute: minecraft:attack_damage
       amount: 6
       operation: ADD_NUMBER
       slot: mainhand
 
-    - id: maggoteers:mob_iron_spear_attack_speed
+    - id: minecraft:base_attack_speed
       attribute: minecraft:attack_speed
       amount: -2.4
       operation: ADD_NUMBER
@@ -2251,13 +2252,13 @@ maggoteers:mob_gold_spear:
       amount: 2
       operation: ADD_NUMBER
       slot: mainhand
-    - id: maggoteers:mob_gold_spear_attack_damage
+    - id: minecraft:base_attack_damage
       attribute: minecraft:attack_damage
       amount: 5
       operation: ADD_NUMBER
       slot: mainhand
 
-    - id: maggoteers:mob_gold_spear_attack_speed
+    - id: minecraft:base_attack_speed
       attribute: minecraft:attack_speed
       amount: -2.4
       operation: ADD_NUMBER
@@ -2283,7 +2284,7 @@ maggoteers:mob_iron_sword_reach:
       amount: 2
       operation: ADD_NUMBER
       slot: mainhand
-    - id: maggoteers:mob_iron_sword_reach_attack_speed
+    - id: minecraft:base_attack_speed
       attribute: minecraft:attack_speed
       amount: -0.2
       operation: ADD_NUMBER

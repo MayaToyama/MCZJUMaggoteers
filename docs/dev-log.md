@@ -5,6 +5,13 @@
 
 ---
 
+## 2026-08-21 — 实测配置修正批次提交（物品/波次/商店解锁）
+
+服务器实测后沉淀的三处内容配置修正（未改动 Java）：
+- **items/maggoteers.yml**：所有武器 `attributeModifiers` 的 modifier id 由 `maggoteers:<weapon>_attack_damage`/`_attack_speed` 改为 `minecraft:base_attack_damage`/`base_attack_speed`（修复武器伤害不按原版基础属性生效/显示）；幻景 lore 与净化列表扩展（含 STRENGTH/INVISIBILITY/REGENERATION）、红祝福加 `itemModel: COPPER_SPEAR`、冰武器文案修正。
+- **waves.yml**：Boss 血量上调——无主巨像 hp 0.5→2.0、"圣徒" 2.0→15.0、大鲍勃 5.0→10.0，洞穴蜘蛛 hp 0.1→0.25。
+- **rewards.yml**：宏愿/隐身奖励加 `requires_unlock`（80）；复活币改名为"复活石"；herafinger / molten_flame / mission_sure / red_blessing / art_tyrant 移除 `requires_unlock` 转免费。
+
 ## 2026-08-21 — necromancer 凋零头 + storm 玩家处落雷（IM 对齐）
 
 **做了什么**
