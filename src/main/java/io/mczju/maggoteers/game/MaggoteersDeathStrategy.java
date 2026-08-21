@@ -136,14 +136,8 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
         }
         // 不调用 EffectService.resync：旁观者不可接收药水，重施加会失败；残留属性/药水由 cleanupRun 统一剥离。
         p.setGameMode(GameMode.SPECTATOR);
-        // 观战视角：不强制跟随（用户明确不需要）；旁观者可自由飞行观察，SPECTATE 传送由 RunRulesListener 拦截。
+        // 观战视角：不强制跟随、不瞬移（用户明确不要）——观察者留在原地自由飞行；SPECTATE 传送由 RunRulesListener 拦截。
         boolean noneAlive = !PlayerStateManager.isAnyAlive(mg);
-        if (noneAlive) {
-            org.bukkit.Location spawn = io.mczju.maggoteers.wave.WaveScheduler.currentSpawnLocation(mg);
-            if (spawn != null) {
-                p.teleport(spawn.clone().add(0, 40, 0));
-            }
-        }
         p.setSpectatorTarget(null);
         MaggoteersPluginLog.info("转观察者: " + p.getName() + "（复活次数耗尽）");
         mg.sender().warn(MessageService.raw("death.to_spectator", Map.of("player", p.getName())));
