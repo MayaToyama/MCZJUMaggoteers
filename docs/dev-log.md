@@ -5,6 +5,46 @@
 
 ---
 
+## 2026-08-22 — ON_KILL 触发 origin 用击杀目标位置
+
+**做了什么**：`EffectListener.onKill` 构造 `TriggerContext` 时传 `victim.getLocation()`；`TriggerContext.resolveOrigin()` 在无 `eventLocation` 时回退到击杀目标位置（`ON_KILL` + 无 eventLocation 场景）。
+
+**决策与原因**：`ON_KILL` 触发的 `DAMAGE_AREA`/`SUMMON` 等应以**被击杀怪物位置**为原点（如镀红祝福击杀时对目标周围敌人造成伤害），而非玩家位置；此前无 `eventLocation` 时回退玩家位置导致范围伤害以玩家为中心偏移。
+
+**测试**：`TriggerContextTest` 新增 `resolveOriginUsesKillVictimWhenNoEventLocation`；全量 373 green / 0 fail / 5 skip。
+
+**遗留**：无。
+
+## 2026-08-22 — 武器 held_effects 发放后不生效、首次切武器才生效（bug #52 复发）
+
+**做了什么**（`ItemService`）
+- `deliver`（所有发放入口的共同底层：`give`/`giveKind`/`giveInitialEquipment`/奖励应用/GRANT_ITEM 都走它）末尾补 `syncWeaponHeldSoon(player)`：延迟 1 tick 调 `WeaponHeldService.sync`。
+- `spendOneFromMainHand`（消耗主手物品）末尾同样补 sync：主手清空/变更时卸载 `held:*`。
+
+**决策与原因**
+- **根因**：`WeaponHeldService.sync`（挂载/卸载 `held:<itemId>:<n>` 效果）只在 `WeaponHeldListener` 的事件里触发（`PlayerItemHeldEvent`/点击/换手/丢弃/拾取）。而开局发装备、3选1拿武器、职业武器是**代码直接 `addItem` 塞进背包，不产生任何事件** → sync 从未执行 → 主手武器 held_effects 不挂载；直到玩家第一次切物品栏槽位触发 `PlayerItemHeldEvent` 才生效。此 bug 为复发（赫拉芬格、镀红祝福确认受影响）。
+- 所有玩家发物品均收敛于 `ItemService`（G2），在 `deliver` 一层补 sync 即全覆盖，无需逐个发放入口改。
+- 延迟 1 tick 与 `WeaponHeldListener` 既有事件处理（`runTask`）一致：避免在效果/发放链内同步执行 `sync → resyncDerived` 造成重入；发放后 1 tick 内挂载，玩家无感知。
+- `sync` 自身有短路（主手 itemId 与已挂载一致则直接 return），护符/补给等非主手发放路径零开销。
+
+**测试**：全量 373 green / 0 fail / 5 skip。
+
+**遗留**：若还存在其他绕过 `ItemService` 的主手变更代码路径（当前已排查 `MobFactory.setItemInMainHand` 是怪物装备，不影响），需补 sync；必要时可加每秒兜底 sync（GameplayTickListener）。
+
+## 2026-08-22 — 夜视长效化：常驻 ADD_POTION 从 30s 刷新改为 99999 秒（观察者不失效）
+
+**做了什么**
+- `EffectService` 新增常量 `PERMANENT_POTION_TICKS = 20 * 99999`（≈27.7h），`applyPotionPermanent` 与 `refreshPermanentPotions` 的 `20 * 30` 全部替换。
+- `MaggoteersDeathStrategy` 死亡转旁观者前挂的夜视由 24h 统一为同值 `20 * 99999`。
+
+**决策与原因**
+- 用户实测失败变观察者后依旧无夜视。根因链：常态夜视 30s 时长由 `GameplayTickListener` 心跳每 30s 刷新，但心跳对**非存活玩家直接 continue**；观察者收不到刷新，30s 即到期。切模式前挂 24h 仍被用户反馈失效（疑似 `setGameMode(SPECTATOR)` 清理药水）。
+- 采纳用户方案：直接把常态夜视（及其余常驻 ADD_POTION 药水）时长放大到 99999 秒，一次性覆盖整局 + 败局观战，**不再依赖心跳刷新**。对冒险玩家，心跳刷新会把时长重置回 99999（无害）；对观察者，挂着的 99999 秒原生药水自身不会到期。所有常驻 ADD_POTION 一并受益（res_up 抗性等），不改变其"整局持续"语义。
+
+**测试**：全量 373 green / 0 fail / 5 skip。
+
+**遗留**：若 `setGameMode(SPECTATOR)` 确实清理药水，改时长仍不能使观察者获得夜视——需实测确认（vanilla spectator 自带夜视，必要时另查）。
+
 ## 2026-08-22 — 失败观战：移除全灭时 +40 俯瞰传送（观察者留在原地）
 
 **做了什么**（`MaggoteersDeathStrategy` 死亡转旁观者路径）

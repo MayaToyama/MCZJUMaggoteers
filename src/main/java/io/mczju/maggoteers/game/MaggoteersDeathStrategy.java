@@ -129,10 +129,11 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
         io.mczju.maggoteers.effect.AuraService.stripAllFromSource(mg, uuid);
         stabilizeAlive(p);
         // 旁观者无法接收原版药水（LivingEntity.addEffect 对 isSpectator 拒绝；GameplayTickListener 也跳过非存活）：
-        // 切模式前先把长效夜视挂上，切后 resync 只会 strip 掉已有夜视再重施加失败。24h 时长覆盖整局及败局观战。
+        // 切模式前先把长效夜视挂上，切后 resync 只会 strip 掉已有夜视再重施加失败。
+        // 99999 秒（≈27.7h）与 EffectService.PERMANENT_POTION_TICKS 同值，覆盖整局及败局观战、无需心跳刷新。
         if (MaggoteersPlugin.getInstance().getConfig().getBoolean("player.night_vision", true)) {
             p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION,
-                    20 * 60 * 60 * 24, 0, false, true, true));
+                    20 * 99999, 0, false, true, true));
         }
         // 不调用 EffectService.resync：旁观者不可接收药水，重施加会失败；残留属性/药水由 cleanupRun 统一剥离。
         p.setGameMode(GameMode.SPECTATOR);

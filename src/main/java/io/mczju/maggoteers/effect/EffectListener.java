@@ -49,7 +49,8 @@ public final class EffectListener implements Listener {
         MaggoteersGame g = PlayerStateManager.gameOf(killer);
         if (g == null) return;
         LivingEntity victim = e.getEntity();
-        TriggerContext ctx = new TriggerContext(Trigger.ON_KILL, victim, null);
+        TriggerContext ctx = new TriggerContext(
+                Trigger.ON_KILL, victim, null, victim.getLocation().clone());
         EffectService.fireTriggerPlayer(g, killer, Trigger.ON_KILL, ctx);
     }
 

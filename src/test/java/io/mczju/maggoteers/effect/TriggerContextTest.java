@@ -2,6 +2,7 @@ package io.mczju.maggoteers.effect;
 
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.LivingEntity;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
@@ -40,6 +41,53 @@ class TriggerContextTest {
         assertEquals(64, resolved.getY(), 0.01);
         assertEquals(20, resolved.getZ(), 0.01);
         assertTrue(resolved.getWorld() != null);
+    }
+
+    @Test
+    void resolveOriginUsesKillVictimWhenNoEventLocation() {
+        World world = (World) Proxy.newProxyInstance(
+                World.class.getClassLoader(),
+                new Class[]{World.class},
+                (proxy, method, args) -> {
+                    if ("getName".equals(method.getName())) {
+                        return "world";
+                    }
+                    if ("getUID".equals(method.getName())) {
+                        return UUID.randomUUID();
+                    }
+                    Class<?> ret = method.getReturnType();
+                    if (ret.equals(boolean.class)) {
+                        return false;
+                    }
+                    if (ret.isPrimitive()) {
+                        return 0;
+                    }
+                    return null;
+                });
+        LivingEntity victim = (LivingEntity) Proxy.newProxyInstance(
+                LivingEntity.class.getClassLoader(),
+                new Class[]{LivingEntity.class},
+                (proxy, method, args) -> {
+                    if ("getLocation".equals(method.getName())) {
+                        return new Location(world, 3, 70, 9);
+                    }
+                    if ("getWorld".equals(method.getName())) {
+                        return world;
+                    }
+                    Class<?> ret = method.getReturnType();
+                    if (ret.equals(boolean.class)) {
+                        return false;
+                    }
+                    if (ret.isPrimitive()) {
+                        return 0;
+                    }
+                    return null;
+                });
+        TriggerContext ctx = new TriggerContext(Trigger.ON_KILL, victim, null);
+        Location resolved = TriggerContext.resolveOrigin(null, ctx);
+        assertEquals(3, resolved.getX(), 0.01);
+        assertEquals(70, resolved.getY(), 0.01);
+        assertEquals(9, resolved.getZ(), 0.01);
     }
 
     @Test

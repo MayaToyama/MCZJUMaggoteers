@@ -34,6 +34,10 @@ public record TriggerContext(
         if (ctx != null && ctx.eventLocation() != null && ctx.eventLocation().getWorld() != null) {
             return ctx.eventLocation();
         }
+        if (ctx != null && ctx.fired() == Trigger.ON_KILL && ctx.hitTarget() != null
+                && ctx.hitTarget().getWorld() != null) {
+            return ctx.hitTarget().getLocation();
+        }
         return player != null ? player.getLocation() : null;
     }
 

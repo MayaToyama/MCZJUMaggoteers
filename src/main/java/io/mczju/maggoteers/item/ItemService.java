@@ -206,6 +206,19 @@ public final class ItemService {
             if (left == null || left.getType().isAir()) continue;
             player.getWorld().dropItemNaturally(player.getLocation(), left);
         }
+        syncWeaponHeldSoon(player);
+    }
+
+    /** 发放后（延迟 1 tick）同步主手武器 held_effects。
+     *  代码直接 addItem 塞进背包不产生 PlayerItemHeldEvent，WeaponHeldListener 收不到；
+     *  否则开局/3选1/职业武器「持有时不生效、首次切武器才生效」（bug #52）。延迟与事件路径一致，防效果链内重入。 */
+    private static void syncWeaponHeldSoon(Player player) {
+        if (player == null || !player.isOnline()) return;
+        Bukkit.getScheduler().runTask(MaggoteersPlugin.getInstance(), () -> {
+            var game = io.mczju.maggoteers.state.PlayerStateManager.gameOf(player);
+            if (game == null) return;
+            io.mczju.maggoteers.effect.WeaponHeldService.sync(player, game);
+        });
     }
 
     public static boolean giveKind(Player player, ItemKind kind, int amount) {
@@ -256,6 +269,7 @@ public final class ItemService {
         } else {
             hand.setAmount(hand.getAmount() - 1);
         }
+        syncWeaponHeldSoon(player);   // 主手清空/变更，卸载 held_effects（不产生事件）
     }
 
     private static boolean spendOne(Player player, String kindPdc) {

@@ -46,6 +46,9 @@ import java.util.logging.Logger;
 public final class EffectService {
     private static final Logger LOG = Logger.getLogger("Maggoteers");
     private static final AtomicLong KEY_SEQ = new AtomicLong();   // 保证 key 唯一
+    /** 常驻 ADD_POTION 派生药水时长（ticks）。99999 秒 ≈ 27.7h：足够整局 + 败局观战，
+     *  即使观察者收不到 ON_TICK_1S 心跳刷新也不到期（心跳刷新对非存活玩家跳过）。 */
+    private static final int PERMANENT_POTION_TICKS = 20 * 99999;
 
     /** 应用一条效果：merge 进 PlayerState；常驻型立即施加派生视图。 */
     public static void apply(Player p, PlayerEffect incoming) {
@@ -641,6 +644,9 @@ public final class EffectService {
                 List<LivingEntity> targets = TargetResolver.collect(game, p, origin, radius, effect, params);
                 List<BuffPotionSpec> potions = params.get(EffectKeys.POTIONS);
                 List<PotionEffectType> clears = params.get(EffectKeys.CLEAR_POTIONS);
+                EffectContext markFxCtx = params.get(EffectKeys.MARK_FX);
+                MagicUseFx markFx = markFxCtx == null ? null
+                        : MagicFxBuilder.fromContext(markFxCtx, MagicUseFx.defaults());
                 Runnable action = () -> {
                     for (LivingEntity le : targets) {
                         MagicDamage.applyIndependent(le, dmg, p);
@@ -652,6 +658,9 @@ public final class EffectService {
                             for (BuffPotionSpec spec : potions) {
                                 PotionMerge.applyIfNeeded(le, spec.type(), spec.amp(), spec.durationTicks());
                             }
+                        }
+                        if (markFx != null) {
+                            playMarkFx(le, markFx);
                         }
                     }
                 };
@@ -924,7 +933,7 @@ public final class EffectService {
             return;
         }
         // Permanent potions: long duration refreshed by ON_TICK_1S
-        p.addPotionEffect(new PotionEffect(type, 20 * 30, amp, false, false, true));
+        p.addPotionEffect(new PotionEffect(type, PERMANENT_POTION_TICKS, amp, false, false, true));
     }
 
     /**
@@ -949,7 +958,7 @@ public final class EffectService {
                 if (PotionImmunity.isImmune(p, type)) {
                     continue;
                 }
-                p.addPotionEffect(new PotionEffect(type, 20 * 30, amp, false, false, true));
+                p.addPotionEffect(new PotionEffect(type, PERMANENT_POTION_TICKS, amp, false, false, true));
             }
         }
     }
