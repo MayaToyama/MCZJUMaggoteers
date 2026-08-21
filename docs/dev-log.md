@@ -5,6 +5,24 @@
 
 ---
 
+## 2026-08-21 — tosser 技能迁移：拽玩家向怪物（IM RangeTosserSkill）
+
+**做了什么**：tosser 原为 TNT 抛射占位，按本地 IM（`E:\Intellij_Idea\plugins\MCZJUinfernalMobs`）`RangeTosserSkill` 改为正确效果——**把范围内最近的非潜行玩家水平拉向怪物，蹲下可避免**。新增 mob 侧 `DISPLACE` effect 类型（§14 扩展点）。
+
+**查证 IM 源码（RangeTosserSkill）**
+- 目标：RANGE 类对"目标玩家"施加；条件：非潜行、非创造、非旁观。
+- 效果：`toMob = mobLoc - playerLoc`（水平，`setY(0)`）→ `setVelocity(toMob.multiply(force).setY(up))`；`force` 默认 1.2、`upward` 默认 0.2；音效 `ENTITY_BREEZE_JUMP`。
+
+**决策与原因**
+- 新增 effect 而非硬编码：与 §14 扩展点一致（新 Effect 类型 = 写 Java，有模板），skill 侧零 Java。
+- TICK 触发上下文 `target/source` 恒为 null（`MobSkillService.tickAll`）→ DISPLACE 用新 target 模式 `player`：mob 半径内**最近**存活玩家（与 IM 一次拉最近一个一致）；同时兼容 `target: target`（attack 触发拽攻击者）。
+- 豁免内置于效果（蹲下/创造/旁观），与 IM 逐条对齐；`radius` 复用 `EffectKeys.RADIUS`，skill 侧给 24 与 `player_in_radius` 条件一致。
+- 音效内置 `Sound.ENTITY_BREEZE_JUMP`（try-catch 容错）。
+
+**测试**：`MobSkillSpecParserTest` 新增 displace 解析用例（target/radius/force/upward）；全量 371 green / 0 fail / 5 skip。
+
+**遗留 / 待实测**：拉扯手感、蹲下豁免判定、与 homing 箭/其他位移（swap 传送）叠加时的观感——待服务器实测。
+
 ## 2026-08-21 — homing 落地乱飞修复（服务器复测反馈）
 
 **做了什么**：上一条 homing 修复（8ed4a2e）上服复测，新问题：**箭落地插地后仍在追踪玩家乱飞**。逐层排查后在本条修复（仅改 `ProjectileHomingService.homeAll`）。

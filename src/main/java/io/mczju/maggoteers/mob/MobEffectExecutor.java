@@ -10,13 +10,16 @@ import io.mczju.maggoteers.util.GameRegistries;
 import io.mczju.maggoteers.wave.Vec3;
 import io.mczju.maggoteers.wave.WaveEngine;
 import io.mczju.maggoteers.wave.WaveScheduler;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 import java.util.List;
 import java.util.Locale;
@@ -39,6 +42,7 @@ public final class MobEffectExecutor {
             case POTION -> applyPotion(mob, es, target);
             case SUMMON -> applySummon(mob, es, target, source);
             case TELEPORT -> applyTeleport(mob, es, target);
+            case DISPLACE -> applyDisplace(mob, es, target);
             default -> { }
         }
     }
@@ -87,6 +91,52 @@ public final class MobEffectExecutor {
         Vec3 origin = layerOrigin(mob);
         Location dest = TeleportSafety.safeTarget(anchor, offsetY, origin.x(), origin.z());
         if (dest != null) mob.teleport(dest);
+    }
+
+    /**
+     * DISPLACE（参考 IM RangeTosserSkill）：把目标玩家水平拉向怪物。
+     * <p>target 键：target（触发上下文玩家，可 null）| player（缺省/默认：mob 半径内最近玩家）。
+     * 豁免与 IM 一致：蹲下（isSneaking）、创造、旁观。params：radius（默认 8）/ force（默认 1.2）/ upward（默认 0.2）。
+     */
+    private static void applyDisplace(LivingEntity mob, MobEffectSpec es, LivingEntity target) {
+        EffectContext p = es.params();
+        String t = p.get(EffectKeys.TARGETS);
+        Player victim = null;
+        if (t != null && "target".equalsIgnoreCase(t.trim()) && target instanceof Player tp && !tp.isDead()) {
+            victim = tp;
+        } else {
+            double radius = p.getOrDefault(EffectKeys.RADIUS, 8.0);
+            victim = nearestPlayer(mob, radius);
+        }
+        if (victim == null || !victim.isValid() || victim.isDead()) return;
+        if (victim.isSneaking()) return;   // 蹲下豁免（IM）
+        GameMode gm = victim.getGameMode();
+        if (gm == GameMode.CREATIVE || gm == GameMode.SPECTATOR) return;   // 创造/旁观豁免（IM）
+        Vector toMob = mob.getLocation().toVector().subtract(victim.getLocation().toVector()).setY(0);
+        if (toMob.lengthSquared() < 0.01) return;
+        toMob.normalize();
+        double force = p.getOrDefault(EffectKeys.FORCE, 1.2);
+        double up = p.getOrDefault(EffectKeys.UPWARD, 0.2);
+        victim.setVelocity(toMob.multiply(force).setY(up));
+        try {
+            victim.getWorld().playSound(victim.getLocation(), Sound.ENTITY_BREEZE_JUMP, 1f, 0.8f);
+        } catch (IllegalArgumentException ignored) { }
+    }
+
+    /** mob 半径内最近的存活玩家（DISPLACE 用；不带任何豁免，豁免在调用方）。 */
+    private static Player nearestPlayer(LivingEntity mob, double radius) {
+        Player best = null;
+        double bestDist = Double.MAX_VALUE;
+        if (mob.getWorld() == null) return null;
+        for (Entity en : mob.getWorld().getNearbyEntities(mob.getLocation(), radius, radius, radius)) {
+            if (!(en instanceof Player pl) || !pl.isValid() || pl.isDead()) continue;
+            double d = pl.getLocation().distanceSquared(mob.getLocation());
+            if (d < bestDist) {
+                bestDist = d;
+                best = pl;
+            }
+        }
+        return best;
     }
 
     /** 当前层原点（ActPlan.playerSpawn 已叠层原点绝对坐标，Act2/3 非 (0,0)）；无对局/越界回落 (0,0)。 */

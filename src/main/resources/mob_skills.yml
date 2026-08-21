@@ -30,7 +30,7 @@ skills:
   shield:
     trigger: spawn
     effects:
-      - { effect: potion, target: self, potion: absorption, amp: 19, duration_ticks: 99999 }
+      - { effect: potion, target: self, potion: absorption, amp: 9, duration_ticks: 99999 }
   exoskeleton:
     trigger: spawn
     effects:
@@ -78,7 +78,7 @@ skills:
     effects:
       - { effect: attribute, target: self, attr: attack_damage, op: multiply, value: 0.5, duration_ticks: 120 }
   archer:
-    trigger: tick
+    trigger: attack
     cooldown_sec: 6
     condition: { player_in_radius: 24 }
     effects:
@@ -89,7 +89,8 @@ skills:
     cooldown_sec: 7
     condition: { player_in_radius: 24 }
     effects:
-      - { effect: summon, target: self, entity: tnt, count: 1, projectile_speed: 1.2 }
+      # IM RangeTosserSkill：范围内最近的非潜行玩家被水平拉向怪物（蹲下/创造/旁观豁免）
+      - { effect: displace, target: player, radius: 24, force: 1.2, upward: 0.2 }
   storm:
     trigger: tick
     cooldown_sec: 8
@@ -97,12 +98,9 @@ skills:
     effects:
       - { effect: health, target: area, radius: 6, damage: 6 }   # 风暴：目标区域伤害（等效闪电落点）
   molten:
-    trigger: tick
-    cooldown_sec: 7
-    condition: { player_in_radius: 26 }
+    trigger: spawn
     effects:
-      - { effect: summon, target: self, entity: fireball, count: 1, homing_target: nearest_player,
-          projectile_speed: 1.4 }
+      - { effect: potion, target: self, potion: fire_resistance, amp: 255, duration_ticks: 0 }
   necromancer:
     trigger: tick
     cooldown_sec: 9
@@ -114,7 +112,8 @@ skills:
     cooldown_sec: 10
     condition: { player_in_radius: 28 }
     effects:
-      - { effect: summon, target: area, radius: 10, entity: ghast, count: 1 }
+      - { effect: summon, target: self, entity: fireball, count: 1, homing_target: nearest_player,
+          projectile_speed: 1.2 }
 
   # ---- waves.yml 迁移后补齐的 6 个引用 id（原 infernal.affixes 同名）----
   confusing:

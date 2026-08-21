@@ -123,6 +123,25 @@ class MobSkillSpecParserTest {
     }
 
     @Test
+    void parsesDisplaceTosser() {
+        MobSkillSpec s = MobSkillSpecParser.parse(Map.of(
+                "id", "tosser",
+                "trigger", "tick",
+                "cooldown_sec", 7,
+                "condition", Map.of("player_in_radius", 24),
+                "effects", List.of(Map.of(
+                        "effect", "displace", "target", "player",
+                        "radius", 24, "force", 1.2, "upward", 0.2)))).orElseThrow();
+        assertEquals(MobTrigger.TICK, s.trigger());
+        MobEffectSpec es = s.effects().get(0);
+        assertEquals(MobEffect.DISPLACE, es.effect());
+        assertEquals("player", es.params().get(EffectKeys.TARGETS));
+        assertEquals(24.0, es.params().getOrDefault(EffectKeys.RADIUS, 0.0));
+        assertEquals(1.2, es.params().getOrDefault(EffectKeys.FORCE, 0.0));
+        assertEquals(0.2, es.params().getOrDefault(EffectKeys.UPWARD, 0.0));
+    }
+
+    @Test
     void mobConditionCombinators() {
         MobCondition t = MobCondition.TRUE;   // 见实现
         MobCondition f = MobCondition.FALSE;

@@ -6,5 +6,6 @@ public enum MobEffect {
     ATTRIBUTE,   // 对目标/自身属性修改（临时，可虚拟属性）
     POTION,      // 对目标/自身施加药水
     SUMMON,      // 召唤（含追踪投射物 homing）
-    TELEPORT     // 传送（以自身或目标为锚点，防虚空/出图）
+    TELEPORT,    // 传送（以自身或目标为锚点，防虚空/出图）
+    DISPLACE     // 位移：把目标玩家拉向怪物（IM RangeTosserSkill；蹲下/创造/旁观豁免）
 }

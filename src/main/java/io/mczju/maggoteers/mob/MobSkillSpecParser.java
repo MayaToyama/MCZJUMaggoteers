@@ -106,6 +106,8 @@ public final class MobSkillSpecParser {
                 case "count" -> putInt(ctx, EffectKeys.COUNT, v);
                 case "homing_target" -> ctx.put(EffectKeys.HOMING_TARGET, String.valueOf(v));
                 case "projectile_speed" -> putNum(ctx, EffectKeys.PROJECTILE_SPEED, v);
+                case "force" -> putNum(ctx, EffectKeys.FORCE, v);
+                case "upward" -> putNum(ctx, EffectKeys.UPWARD, v);
                 default -> { }
             }
         }

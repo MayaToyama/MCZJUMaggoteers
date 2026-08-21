@@ -61,6 +61,9 @@ public final class EffectKeys {
             new EffectKey<>("items_by_level");
     /** 计数器 id（ON_COUNTER 信号的来源；绑定被动的 params.counter.id 与之匹配）。 */
     public static final EffectKey<String> COUNTER_ID = new EffectKey<>("counter_id");
+    /** DISPLACE（怪拽玩家，IM RangeTosserSkill）：水平拉扯力度 / 上抛幅度。 */
+    public static final EffectKey<Double> FORCE = new EffectKey<>("force");
+    public static final EffectKey<Double> UPWARD = new EffectKey<>("upward");
     public static final EffectKey<CounterSpec> COUNTER_SPEC = new EffectKey<>("counter_spec");
     private EffectKeys() {}
 }
