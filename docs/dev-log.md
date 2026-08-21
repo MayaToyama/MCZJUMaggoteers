@@ -5,6 +5,22 @@
 
 ---
 
+## 2026-08-21 — necromancer 凋零头 + storm 玩家处落雷（IM 对齐）
+
+**做了什么**
+- **necromancer**：召唤 zombie 改为**向玩家发射蓝色凋零头**（`entity: wither_skull` + `homing_target: nearest_player` + `projectile_speed: 1.2`）。**纯配置**——wither_skull 弹道路径已存在，且 WitherSkull 是 Fireball 子类（homing 走 setDirection/setAcceleration 分支自动生效）。注：Paper `EntityType` 无 `BLUE_WITHER_SKULL`，原版"蓝色凋零头"即 `WITHER_SKULL`（Wither 发射的那种）。
+- **storm**：area 伤害改为**在玩家处真实落雷**（对齐本地 IM `DualStormSkill`：`strikeLightning(target.getLocation())`）。
+
+**决策与原因（storm 需小幅 Java，配置表达不了）**
+- 落雷必须 `World.strikeLightning(loc)`；且 `LightningStrike` 不是 `LivingEntity`——若配置 `entity: lightning_bolt` 走现有 `spawnEntity(type)` + 强转，直接 `ClassCastException` 崩服。故 `applySummon` 加两处：
+  1. **target: player 锚点**：`mob` 半径内最近玩家位置（`radius` 默认 8，skill 侧给 18 与 `player_in_radius` 一致）；
+  2. **LIGHTNING_BOLT 分支**：`strikeLightning(at)` 后 `continue`（不走 spawnEntity）。
+- necromancer 的凋零头速度 1.2 与 ghastly 火球一致。
+
+**测试**：`MobSkillSpecParserTest` 新增两技能解析用例（wither_skull homing / player+lightning_bolt）；全量 372 green / 0 fail / 5 skip。
+
+**遗留**：strikeLightning 为真实伤害闪电（劈中玩家掉血），如需降伤另配；待服务器实测凋零头追踪与落雷观感。
+
 ## 2026-08-21 — 军需处商店显示账户积分余额
 
 **做了什么**：局外解锁商店 `UnlockShopMenu`（军需处）顶部中央（slot 4）加只读余额槽——金锭图标 + "当前积分：{balance}"（config `messages.menu.shop.balance`，lore 说明积分来源）。余额取 `MaggoteersPlayerData.balance`（账户货币）。

@@ -78,35 +78,36 @@ skills:
     effects:
       - { effect: attribute, target: self, attr: attack_damage, op: multiply, value: 0.5, duration_ticks: 120 }
   archer:
-    trigger: attack
-    cooldown_sec: 6
+    trigger: damage_taken
+    cooldown_sec: 5
     condition: { player_in_radius: 24 }
     effects:
       - { effect: summon, target: self, entity: arrow, count: 1, homing_target: nearest_player,
           projectile_speed: 1.6 }
   tosser:
     trigger: tick
-    cooldown_sec: 7
+    cooldown_sec: 10
     condition: { player_in_radius: 24 }
     effects:
       # IM RangeTosserSkill：范围内最近的非潜行玩家被水平拉向怪物（蹲下/创造/旁观豁免）
       - { effect: displace, target: player, radius: 24, force: 1.2, upward: 0.2 }
   storm:
     trigger: tick
-    cooldown_sec: 8
+    cooldown_sec: 10
     condition: { player_in_radius: 18 }
     effects:
-      - { effect: health, target: area, radius: 6, damage: 6 }   # 风暴：目标区域伤害（等效闪电落点）
+      - { effect: summon, target: player, entity: lightning_bolt, radius: 18 }   # 玩家处落雷（IM DualStormSkill）
   molten:
     trigger: spawn
     effects:
       - { effect: potion, target: self, potion: fire_resistance, amp: 255, duration_ticks: 0 }
   necromancer:
     trigger: tick
-    cooldown_sec: 9
+    cooldown_sec: 10
     condition: { player_in_radius: 20 }
     effects:
-      - { effect: summon, target: area, radius: 8, entity: zombie, count: 2 }
+      - { effect: summon, target: self, entity: wither_skull, count: 1, homing_target: nearest_player,
+          projectile_speed: 1.2 }   # 蓝色凋零头（WITHER_SKULL），追踪最近玩家
   ghastly:
     trigger: tick
     cooldown_sec: 10

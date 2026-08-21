@@ -142,6 +142,34 @@ class MobSkillSpecParserTest {
     }
 
     @Test
+    void parsesNecromancerSkullAndStormLightning() {
+        // necromancer：向玩家发射蓝色凋零头（wither_skull homing）
+        MobSkillSpec necro = MobSkillSpecParser.parse(Map.of(
+                "id", "necromancer", "trigger", "tick", "cooldown_sec", 10,
+                "condition", Map.of("player_in_radius", 20),
+                "effects", List.of(Map.of(
+                        "effect", "summon", "target", "self", "entity", "wither_skull",
+                        "count", 1, "homing_target", "nearest_player", "projectile_speed", 1.2))))
+                .orElseThrow();
+        MobEffectSpec ne = necro.effects().get(0);
+        assertEquals(MobEffect.SUMMON, ne.effect());
+        assertEquals("wither_skull", ne.params().get(EffectKeys.ENTITY));
+        assertEquals("nearest_player", ne.params().get(EffectKeys.HOMING_TARGET));
+
+        // storm：在玩家处落雷（target: player + lightning_bolt）
+        MobSkillSpec storm = MobSkillSpecParser.parse(Map.of(
+                "id", "storm", "trigger", "tick", "cooldown_sec", 10,
+                "condition", Map.of("player_in_radius", 18),
+                "effects", List.of(Map.of(
+                        "effect", "summon", "target", "player", "entity", "lightning_bolt",
+                        "radius", 18)))).orElseThrow();
+        MobEffectSpec se = storm.effects().get(0);
+        assertEquals("player", se.params().get(EffectKeys.TARGETS));
+        assertEquals("lightning_bolt", se.params().get(EffectKeys.ENTITY));
+        assertEquals(18.0, se.params().getOrDefault(EffectKeys.RADIUS, 0.0));
+    }
+
+    @Test
     void mobConditionCombinators() {
         MobCondition t = MobCondition.TRUE;   // 见实现
         MobCondition f = MobCondition.FALSE;

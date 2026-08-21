@@ -58,7 +58,15 @@ public final class MobEffectExecutor {
         if (game == null) return;
         int count = Math.max(1, p.getOrDefault(EffectKeys.COUNT, 1));
         double offsetY = p.getOrDefault(EffectKeys.OFFSET_Y, 0.0);
-        // mob 侧 SUMMON projectile 形态：顶层 projectile_speed（archer/tosser/molten），或未来 projectile 键
+        // 召唤锚点：target: player → mob 半径内最近玩家位置（storm 落雷用）；否则以 mob 为锚点
+        Player atPlayer = null;
+        String ts = p.get(EffectKeys.TARGETS);
+        if (ts != null && "player".equalsIgnoreCase(ts.trim())) {
+            double pr = p.getOrDefault(EffectKeys.RADIUS, 8.0);
+            atPlayer = nearestPlayer(mob, pr);
+            if (atPlayer == null || atPlayer.isDead() || !atPlayer.isValid()) return;
+        }
+        // mob 侧 SUMMON projectile 形态：顶层 projectile_speed（archer/tosser/molten/necromancer），或未来 projectile 键
         if (p.has(EffectKeys.PROJECTILE_SPEED) || p.get(EffectKeys.PROJECTILE) != null) {
             double speed = p.getOrDefault(EffectKeys.PROJECTILE_SPEED, 1.0);
             String homing = p.get(EffectKeys.HOMING_TARGET);
@@ -74,7 +82,14 @@ public final class MobEffectExecutor {
             return;
         }
         for (int i = 0; i < count; i++) {
-            Location at = mob.getLocation().clone().add(0, offsetY + 0.8 * i, 0);
+            Location at = atPlayer != null
+                    ? atPlayer.getLocation()
+                    : mob.getLocation().clone().add(0, offsetY + 0.8 * i, 0);
+            // 落雷（IM DualStormSkill：玩家处 strikeLightning）：LightningStrike 非 LivingEntity，走独立分支
+            if (type == EntityType.LIGHTNING_BOLT) {
+                mob.getWorld().strikeLightning(at);
+                continue;
+            }
             LivingEntity spawned = (LivingEntity) mob.getWorld().spawnEntity(at, type);
             if (spawned instanceof org.bukkit.entity.Mob mobSpawned) {
                 mobSpawned.setTarget(target instanceof org.bukkit.entity.Mob m ? m : null);
