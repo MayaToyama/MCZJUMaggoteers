@@ -15,10 +15,6 @@ skills:
     trigger: spawn
     effects:
       - { effect: potion, target: self, potion: slowness, amp: 255, duration_ticks: 0 }
-  mechanical:
-    trigger: spawn
-    effects:
-      - { effect: potion, target: self, potion: wither, amp: 255, duration_ticks: 0 }
   fireresistance:
     trigger: spawn
     effects:
@@ -38,9 +34,9 @@ skills:
   infected:
     trigger: spawn            # 纯装饰：无 effects
   blinding:
-    trigger: spawn
+    trigger: damage_taken
     effects:
-      - { effect: potion, target: self, potion: blindness, amp: 0, duration_ticks: 999999 }
+      - { effect: potion, target: target, potion: blindness, amp: 0, duration_ticks: 999999 }
   eternal_curse:
     trigger: spawn
     effects:

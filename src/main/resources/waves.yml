@@ -649,7 +649,6 @@ strategies:
       delay: 0
       boss_bar: true
       skills:
-      - mechanical
       - shield
       - storm
       - molten
@@ -707,7 +706,6 @@ strategies:
         item: maggoteers:mob_iron_sword_reach
       skills:
       - eternal_curse
-      - mechanical
       - necromancer
       - archer
   b1_bandit_chief:
@@ -2951,24 +2949,18 @@ strategies:
           count: 1
           coeff:
             hp: 1.0
-          skills:
-          - mechanical
         - type: PILLAGER
           count: 1
           coeff:
             hp: 1.0
-          skills:
-          - mechanical
         on_death:
         - type: ENDERMITE
           name: 恐卡兹
           count: 4
         skills:
         - infected
-        - mechanical
       skills:
       - infected
-      - mechanical
       - quicksand
     - point: '1'
       type: SLIME
@@ -2988,24 +2980,18 @@ strategies:
           count: 1
           coeff:
             hp: 1.0
-          skills:
-          - mechanical
         - type: PILLAGER
           count: 1
           coeff:
             hp: 1.0
-          skills:
-          - mechanical
         on_death:
         - type: ENDERMITE
           name: 恐卡兹
           count: 4
         skills:
         - infected
-        - mechanical
       skills:
       - infected
-      - mechanical
       - quicksand
     - point: '1'
       type: SLIME
@@ -3025,24 +3011,18 @@ strategies:
           count: 1
           coeff:
             hp: 2.0
-          skills:
-          - mechanical
         - type: PILLAGER
           count: 1
           coeff:
             hp: 2.0
-          skills:
-          - mechanical
         on_death:
         - type: ENDERMITE
           name: 恐卡兹
           count: 4
         skills:
         - infected
-        - mechanical
       skills:
       - infected
-      - mechanical
       - quicksand
     - point: '1'
       type: SLIME
@@ -3062,31 +3042,23 @@ strategies:
           count: 1
           coeff:
             hp: 2.0
-          skills:
-          - mechanical
         - type: PILLAGER
           count: 1
           coeff:
             hp: 2.0
-          skills:
-          - mechanical
         on_death:
         - type: ENDERMITE
           name: 恐卡兹
           count: 4
         skills:
         - infected
-        - mechanical
       skills:
       - infected
-      - mechanical
       - quicksand
     - point: '5'
       type: VINDICATOR
       count: 8
       delay: 10
-      skills:
-      - mechanical
   b3_into_eternal:
     关卡名称: 迈入永恒
     repeat: 1
@@ -3256,6 +3228,7 @@ strategies:
       name: <gold>“无垠回荡，克雷松”</gold>
       count: 1
       coeff:
+        hp: 6.0
         dmg: 2.0
       delay: 10
       boss_bar: true
@@ -3275,8 +3248,8 @@ strategies:
       name: <gold>“伊祖米克，生态泉源”</gold>
       count: 1
       coeff:
-        hp: 20.0
-        scale: 3.0
+        hp: 200.0
+        scale: 2.0
       delay: 0
       boss_bar: true
       skills:
