@@ -15,21 +15,21 @@
 
 **遗留**：无。
 
-## 2026-08-22 — 武器 held_effects 发放后不生效、首次切武器才生效（bug #52 复发）
+## 2026-08-22 — 武器 held_effects 发放后不生效 + 切槽位滞后一个槽位（bug #52 复发）
 
-**做了什么**（`ItemService`）
-- `deliver`（所有发放入口的共同底层：`give`/`giveKind`/`giveInitialEquipment`/奖励应用/GRANT_ITEM 都走它）末尾补 `syncWeaponHeldSoon(player)`：延迟 1 tick 调 `WeaponHeldService.sync`。
-- `spendOneFromMainHand`（消耗主手物品）末尾同样补 sync：主手清空/变更时卸载 `held:*`。
+**做了什么**（`WeaponHeldListener` + `ItemService`）
+- `onHeld`（`PlayerItemHeldEvent`）由**同步** sync 改为**延迟 1 tick** `runTask`，与其它 handler（onClick/onSwap/onDrop/onPickup）一致。
+- `ItemService.deliver`（所有发放入口共同底层）末尾补延迟 1 tick sync；`spendOneFromMainHand` 末尾同样补 sync（主手清空/变更时卸载）。
 
 **决策与原因**
-- **根因**：`WeaponHeldService.sync`（挂载/卸载 `held:<itemId>:<n>` 效果）只在 `WeaponHeldListener` 的事件里触发（`PlayerItemHeldEvent`/点击/换手/丢弃/拾取）。而开局发装备、3选1拿武器、职业武器是**代码直接 `addItem` 塞进背包，不产生任何事件** → sync 从未执行 → 主手武器 held_effects 不挂载；直到玩家第一次切物品栏槽位触发 `PlayerItemHeldEvent` 才生效。此 bug 为复发（赫拉芬格、镀红祝福确认受影响）。
-- 所有玩家发物品均收敛于 `ItemService`（G2），在 `deliver` 一层补 sync 即全覆盖，无需逐个发放入口改。
-- 延迟 1 tick 与 `WeaponHeldListener` 既有事件处理（`runTask`）一致：避免在效果/发放链内同步执行 `sync → resyncDerived` 造成重入；发放后 1 tick 内挂载，玩家无感知。
-- `sync` 自身有短路（主手 itemId 与已挂载一致则直接 return），护符/补给等非主手发放路径零开销。
+- **真正根因（用户精确复现）**：`PlayerItemHeldEvent` 触发时 `getItemInMainHand()` **仍是旧槽位物品**——新槽位在事件处理完成后才应用。`onHeld` 同步调 sync 读到旧武器并挂载，导致 held_effects **永远比实际手持慢一个槽位**：物品栏 A(镀红祝福) B(赫拉芬格) C(空手)，A→B 打人上凋零(挂的还是 A)、B→C 上缓慢(挂的还是 B)、C→B 无效果(挂的还是 C)。此前用户表述"持有不生效、切后才生效"是同一现象的另一观察角度。
+- 延迟 1 tick 后 `getItemInMainHand()` 已返回新槽位，sync 挂载正确武器。
+- 另一独立缺口：代码直接 `addItem` 发装备/3选1/职业武器**不产生任何事件** → sync 从未触发，直到首次切槽。所有发放收敛于 `ItemService`（G2），在 `deliver` 一层补 sync 即全覆盖。
+- 延迟均与既有 `runTask` 风格一致，避免效果/发放链内同步 `sync → resyncDerived` 重入；`sync` 有短路（主手 itemId 与已挂载一致则 return），非主手发放零开销。
 
 **测试**：全量 373 green / 0 fail / 5 skip。
 
-**遗留**：若还存在其他绕过 `ItemService` 的主手变更代码路径（当前已排查 `MobFactory.setItemInMainHand` 是怪物装备，不影响），需补 sync；必要时可加每秒兜底 sync（GameplayTickListener）。
+**遗留**：若存在其他绕过 `ItemService` 的主手变更代码路径（已排查 `MobFactory.setItemInMainHand` 为怪物装备，不影响），需补 sync；必要时可加每秒兜底 sync（GameplayTickListener）。
 
 ## 2026-08-22 — 夜视长效化：常驻 ADD_POTION 从 30s 刷新改为 99999 秒（观察者不失效）
 

@@ -26,7 +26,10 @@ public final class WeaponHeldListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onHeld(PlayerItemHeldEvent e) {
-        syncIfInGame(e.getPlayer());
+        // ⚠️ PlayerItemHeldEvent 触发时 getItemInMainHand() 仍是旧槽位物品（新槽位在事件处理后才应用），
+        // 同步 sync 会挂载「上一把武器」的 held_effects，导致效果比实际手持慢一个槽位
+        // （A→B 上凋零 / B→C 上缓慢 / C→B 无效果，bug #52）。延迟 1 tick 等槽位切换完成后才读主手。
+        Bukkit.getScheduler().runTask(plugin, () -> syncIfInGame(e.getPlayer()));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
