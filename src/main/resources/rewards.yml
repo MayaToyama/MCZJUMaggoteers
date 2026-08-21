@@ -1462,8 +1462,6 @@ reward_pools:
         display: "<gold>破碎君王"
         category: WEAPON
         item: "maggoteers:shattered_king"
-        requires_unlock: true
-        unlock_cost: 55
       -
         id: w_famed_name
         display: "<aqua>显赫声名"
@@ -1803,8 +1801,6 @@ reward_pools:
         display: "<gold>破碎君王"
         category: WEAPON
         item: "maggoteers:shattered_king"
-        requires_unlock: true
-        unlock_cost: 55
       -
         id: w_famed_name
         display: "<aqua>显赫声名"
@@ -2816,36 +2812,26 @@ reward_pools:
         display: "<gold>赫拉芬格"
         category: WEAPON
         item: "maggoteers:herafinger"
-        requires_unlock: true
-        unlock_cost: 90
       -
         id: w_molten_flame
         display: "<red>熔铸火焰"
         category: WEAPON
         item: "maggoteers:molten_flame"
-        requires_unlock: true
-        unlock_cost: 80
       -
         id: w_mission_sure
         display: "<aqua>使命必达"
         category: WEAPON
         item: "maggoteers:mission_sure"
-        requires_unlock: true
-        unlock_cost: 75
       -
         id: w_red_blessing
         display: "<red>镀红祝福"
         category: WEAPON
         item: "maggoteers:red_blessing"
-        requires_unlock: true
-        unlock_cost: 80
       -
         id: w_art_tyrant
         display: "<light_purple>艺术暴君"
         category: WEAPON
         item: "maggoteers:art_tyrant"
-        requires_unlock: true
-        unlock_cost: 95
       -
         id: w_phantasm
         display: "<blue>幻景"

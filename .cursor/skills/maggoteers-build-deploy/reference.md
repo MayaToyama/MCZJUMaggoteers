@@ -16,14 +16,14 @@ JDK：项目 **25**（`.idea/misc.xml` → `project-jdk-name="25"`）。Maven �
 | 项 | 路径 |
 |----|------|
 | 项目根 | `E:/Intellij_Idea/plugins/MCPlugin` |
-| 输出 jar | `target/Maggoteers-1.1.0.jar`（版本以 `pom.xml` 为准） |
+| 输出 jar | `target/Maggoteers-1.1.1.jar`（版本以 `pom.xml` 为准） |
 
 ## 测试服
 
 | 项 | 路径 |
 |----|------|
 | 服务器根 | `E:/MCpaper` |
-| 插件 jar | `E:/MCpaper/plugins/Maggoteers-1.1.0.jar` |
+| 插件 jar | `E:/MCpaper/plugins/Maggoteers-1.1.1.jar` |
 | 插件数据 | `E:/MCpaper/plugins/Maggoteers/` |
 
 ### 默认同步的配置（每次部署）
@@ -49,7 +49,7 @@ $mvn  = "E:/Intellij_Idea/IntelliJ IDEA 2025.3.2/plugins/maven/lib/maven3/bin/mv
 Set-Location $root
 & $mvn test
 & $mvn package -DskipTests
-Copy-Item "$root/target/Maggoteers-1.1.0.jar" "E:/MCpaper/plugins/" -Force
+Copy-Item "$root/target/Maggoteers-1.1.1.jar" "E:/MCpaper/plugins/" -Force
 $data = "E:/MCpaper/plugins/Maggoteers"
 foreach ($f in "config.yml","waves.yml","rewards.yml","mob_skills.yml","collectibles.yml") {
   Copy-Item "$root/src/main/resources/$f" "$data/$f" -Force

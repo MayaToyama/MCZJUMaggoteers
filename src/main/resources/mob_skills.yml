@@ -6,11 +6,11 @@ skills:
   plastic:
     trigger: spawn
     effects:
-      - { effect: potion, target: self, potion: resistance, amp: 4, duration_ticks: 600 }
+      - { effect: potion, target: self, potion: resistance, amp: 4, duration_ticks: 200 }
   cloaked:
     trigger: spawn
     effects:
-      - { effect: potion, target: self, potion: invisibility, amp: 0, duration_ticks: 600 }
+      - { effect: potion, target: self, potion: invisibility, amp: 0, duration_ticks: 300 }
   antifreeze:
     trigger: spawn
     effects:
@@ -31,8 +31,10 @@ skills:
     trigger: spawn
     effects:
       - { effect: potion, target: self, potion: resistance, amp: 1, duration_ticks: 99999 }
-  infected:
-    trigger: spawn            # 纯装饰：无 effects
+  harden:
+    trigger: damage_taken
+    effects:
+      - { effect: potion, target: self, potion: resistance, amp: 4, duration_ticks: 100 }  # 抗性 V，5s
   blinding:
     trigger: damage_taken
     effects:
@@ -41,6 +43,8 @@ skills:
     trigger: spawn
     effects:
       - { effect: potion, target: self, potion: slowness, amp: 255, duration_ticks: 10 }
+  infected:
+    trigger: spawn            # 纯装饰：无 effects（waves 大量引用；允许空 effects）
 
   # ---- IM 战斗技能迁移（waves.yml infernal.affixes 引用同名 id）----
   lifesteal:
@@ -89,7 +93,7 @@ skills:
       - { effect: displace, target: player, radius: 24, force: 1.2, upward: 0.2 }
   storm:
     trigger: tick
-    cooldown_sec: 10
+    cooldown_sec: 20
     condition: { player_in_radius: 18 }
     effects:
       - { effect: summon, target: player, entity: lightning_bolt, radius: 18 }   # 玩家处落雷（IM DualStormSkill）
@@ -124,7 +128,8 @@ skills:
     effects:
       - { effect: potion, target: target, potion: slowness, amp: 0, duration_ticks: 100 }
   swap:
-    trigger: attack
+    # 被打时传送（DAMAGE_TAKEN，设计意图见 plan1.1 手动验证第 4 条）；target: target = 传送到攻击者身边
+    trigger: damage_taken
     cooldown_sec: 8
     effects:
       - { effect: teleport, target: target, offset_y: 0 }
@@ -143,3 +148,4 @@ skills:
     trigger: killed
     effects:
       - { effect: health, target: self, amount: 99999 }
+  

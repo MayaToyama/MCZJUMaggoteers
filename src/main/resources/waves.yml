@@ -387,7 +387,7 @@ strategies:
       type: CAMEL_HUSK
       count: 1
       coeff:
-        speed: 2.0
+        speed: 0.8
       delay: 0
       passengers:
       - type: HUSK
@@ -410,7 +410,7 @@ strategies:
       type: CAMEL_HUSK
       count: 1
       coeff:
-        speed: 2.0
+        speed: 0.8
       delay: 0
       passengers:
       - type: HUSK
@@ -433,7 +433,7 @@ strategies:
       type: CAMEL_HUSK
       count: 1
       coeff:
-        speed: 2.0
+        speed: 0.8
       delay: 0
       passengers:
       - type: HUSK
@@ -456,7 +456,7 @@ strategies:
       type: CAMEL_HUSK
       count: 1
       coeff:
-        speed: 2.0
+        speed: 0.8
       delay: 0
       passengers:
       - type: HUSK
@@ -643,7 +643,7 @@ strategies:
       name: <gold>无主的巨像</gold>
       count: 1
       coeff:
-        hp: 2.0
+        hp: 1.0
         speed: 1.3
         scale: 1.2
       delay: 0
@@ -691,7 +691,7 @@ strategies:
       boss_bar: true
       name: <gold>“圣徒”</gold>
       coeff:
-        hp: 15.0
+        hp: 10.0
       delay: 15
       equipment:
       - slot: HEAD
@@ -737,25 +737,20 @@ strategies:
         name: 塑料坐骑
         count: 1
         passengers:
-        - type: MAGMA_CUBE
-          name: 塑料坐骑
+        - type: PILLAGER  
+          name: <gold>飞天大盗</gold>
           count: 1
-          passengers:
-          - type: PILLAGER
-            name: <gold>飞天大盗</gold>
-            count: 1
-            boss_bar: true
-            coeff:
-              hp: 3.0
-              speed: 2.2
-            equipment:
-            - slot: HAND
-              item: maggoteers:mob_crossbow_power3
-            skills:
-            - ghastly
-            - weakness
+          boss_bar: true
+          coeff:
+            hp: 3.0
+            speed: 2.2
+          equipment:
+          - slot: HAND
+            item: maggoteers:mob_crossbow_power3
           skills:
-          - plastic
+          - ghastly
+          - weakness
+          boss_bar: true
         skills:
         - plastic
       skills:
@@ -816,6 +811,7 @@ strategies:
       count: 1
       coeff:
         speed: 1.5
+        hp: 0.4
       delay: 5
       equipment:
       - slot: HAND
@@ -826,6 +822,7 @@ strategies:
       count: 1
       coeff:
         speed: 1.5
+        hp: 0.4
       delay: 5
       equipment:
       - slot: HAND
@@ -834,7 +831,7 @@ strategies:
       type: ZOMBIE
       count: 1
       coeff:
-        hp: 0.5
+        hp: 0.2
         speed: 2.0
       delay: 20
       equipment:
@@ -850,7 +847,7 @@ strategies:
         count: 1
         coeff:
           hp: 2.0
-          speed: 2.0
+          speed: 1.0
           scale: 1.3
         equipment:
         - slot: HAND
@@ -1005,6 +1002,9 @@ strategies:
         scale: 4.0
       delay: 20
       boss_bar: true
+      on_death:
+      - type: ENDERMITE
+        count: 9
       skills:
       - necromancer
       - withering
@@ -1455,7 +1455,7 @@ strategies:
       type: ZOGLIN
       count: 2
       coeff:
-        speed: 2
+        speed: 1.5
       delay: 30
       passengers:
       - type: BREEZE
@@ -1814,7 +1814,7 @@ strategies:
       repeat: 10
       count: 1
       coeff:
-        hp: 2.0
+        hp: 4.0
       delay: 2
       equipment:
       - slot: HEAD
@@ -1830,7 +1830,7 @@ strategies:
       repeat: 10
       count: 1
       coeff:
-        hp: 2.0
+        hp: 4.0
       delay: 2
       equipment:
       - slot: HEAD
@@ -1845,7 +1845,7 @@ strategies:
       type: PIGLIN
       count: 2
       coeff:
-        hp: 2.0
+        hp: 4.0
       delay: 0
       equipment:
       - slot: HEAD
@@ -1882,13 +1882,13 @@ strategies:
       name: <gold>“猪灵将军”</gold>
       coeff:
         hp: 2.0
-        speed: 2.5
+        speed: 1.5
       delay: 0
       passengers:
       - type: PIGLIN
         count: 1
         coeff:
-          hp: 5.0
+          hp: 10.0
           speed: 0.5
         equipment:
         - slot: HAND
@@ -2295,7 +2295,7 @@ strategies:
         hp: 2.0
       equipment:
       - slot: HAND
-        item: maggoteers:mob_crossbow_flame
+        item: maggoteers:mob_crossbow
       skills:
       - molten
     - point: '2'
@@ -2306,7 +2306,7 @@ strategies:
       delay: 8
       equipment:
       - slot: HAND
-        item: maggoteers:mob_crossbow_flame
+        item: maggoteers:mob_crossbow
       skills:
       - molten
     - point: '3'
@@ -2317,7 +2317,7 @@ strategies:
       delay: 0
       equipment:
       - slot: HAND
-        item: maggoteers:mob_crossbow_flame_quick
+        item: maggoteers:mob_crossbow
       skills:
       - molten
     - point: '4'
@@ -2328,7 +2328,7 @@ strategies:
       delay: 5
       equipment:
       - slot: HAND
-        item: maggoteers:mob_crossbow_flame_quick
+        item: maggoteers:mob_crossbow
       skills:
       - molten
     - point: '5'
@@ -2340,7 +2340,7 @@ strategies:
       delay: 10
       equipment:
       - slot: HAND
-        item: maggoteers:mob_crossbow_flame
+        item: maggoteers:mob_crossbow
       skills:
       - molten
     - point: '5'
@@ -2352,7 +2352,7 @@ strategies:
       delay: 2
       equipment:
       - slot: HAND
-        item: maggoteers:mob_crossbow_flame
+        item: maggoteers:mob_crossbow
       skills:
       - molten
   s3_out_of_control:
@@ -2492,6 +2492,8 @@ strategies:
     - point: '3'
       type: PIGLIN
       count: 1
+      coeff:
+        hp: 2.0
       delay: 5
     - point: '3'
       type: PIGLIN_BRUTE
@@ -2701,6 +2703,8 @@ strategies:
     - point: '2'
       type: PIGLIN
       count: 1
+      coeff:
+        hp: 2.0
       delay: 0
       equipment:
       - slot: HAND
@@ -2714,6 +2718,8 @@ strategies:
     - point: '4'
       type: PIGLIN
       count: 1
+      coeff:
+        hp: 2.0
       delay: 0
       equipment:
       - slot: HAND
@@ -2721,6 +2727,8 @@ strategies:
     - point: '1'
       type: PIGLIN
       count: 1
+      coeff:
+        hp: 2.0
       delay: 10
       equipment:
       - slot: HAND
@@ -2734,6 +2742,8 @@ strategies:
     - point: '3'
       type: PIGLIN
       count: 1
+      coeff:
+        hp: 2.0
       delay: 0
       equipment:
       - slot: HAND
@@ -2753,6 +2763,8 @@ strategies:
     - point: '2'
       type: PIGLIN
       count: 1
+      coeff:
+        hp: 2.0
       delay: 0
       equipment:
       - slot: HAND
@@ -2766,6 +2778,8 @@ strategies:
     - point: '4'
       type: PIGLIN
       count: 1
+      coeff:
+        hp: 2.0
       delay: 0
       equipment:
       - slot: HAND
@@ -2773,6 +2787,8 @@ strategies:
     - point: '1'
       type: PIGLIN
       count: 1
+      coeff:
+        hp: 2.0
       delay: 10
       equipment:
       - slot: HAND
@@ -2786,6 +2802,8 @@ strategies:
     - point: '3'
       type: PIGLIN
       count: 1
+      coeff:
+        hp: 2.0
       delay: 0
       equipment:
       - slot: HAND
@@ -3095,6 +3113,8 @@ strategies:
       type: PIGLIN
       repeat: 4
       count: 3
+      coeff:
+        hp: 2.0
       delay: 10
       equipment:
       - slot: HAND
@@ -3105,7 +3125,7 @@ strategies:
       name: <gold>“路加萨尔古斯，万王之王”</gold>
       boss_bar: true
       coeff:
-        hp: 25.0
+        hp: 50.0
         dmg: 3.0
         speed: 1.3
       delay: 30
@@ -3163,9 +3183,6 @@ strategies:
       coeff:
         hp: 6.0
       delay: 4
-      equipment:
-      - slot: HAND
-        item: maggoteers:mob_trident
     - point: '2'
       type: DROWNED
       repeat: 15
@@ -3228,7 +3245,6 @@ strategies:
       name: <gold>“无垠回荡，克雷松”</gold>
       count: 1
       coeff:
-        hp: 6.0
         dmg: 2.0
       delay: 10
       boss_bar: true
@@ -3236,6 +3252,7 @@ strategies:
       - cloaked
       - swap
       - tosser
+      - harden
   b3_human_radiance:
     关卡名称: 人之光辉
     repeat: 1
