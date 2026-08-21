@@ -202,6 +202,8 @@ public final class RewardService {
 
     public static boolean apply(Player player, RewardOption opt, AbstractGame game, String poolId) {
         if (opt == null || game == null) return false;
+        LOG.info("[Reward] apply " + player.getName() + " (" + player.getUniqueId()
+                + ") option=" + opt.id() + " pool=" + poolId + " bundle=" + opt.isBundle());
         PlayerState ps = PlayerStateManager.get(game, player.getUniqueId());
         if (ps == null) {
             LOG.warning("RewardService.apply: 无 PlayerState option=" + opt.id() + " uuid=" + player.getUniqueId());

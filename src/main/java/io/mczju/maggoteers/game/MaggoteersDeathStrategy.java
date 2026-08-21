@@ -3,6 +3,7 @@ package io.mczju.maggoteers.game;
 import com.github.mczjuops.mczjugamecore.game.AbstractGame;
 import com.github.mczjuops.mczjugamecore.player.PlayerExt;
 import com.github.mczjuops.mczjugamecore.player.strategy.AbstractPlayerDeathStrategy;
+import io.mczju.maggoteers.MaggoteersPlugin;
 import io.mczju.maggoteers.config.MessageService;
 import io.mczju.maggoteers.effect.EffectService;
 import io.mczju.maggoteers.effect.Trigger;
@@ -14,6 +15,8 @@ import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.Map;
 import java.util.Set;
@@ -125,11 +128,27 @@ public class MaggoteersDeathStrategy extends AbstractPlayerDeathStrategy {
         st.markDown();
         io.mczju.maggoteers.effect.AuraService.stripAllFromSource(mg, uuid);
         stabilizeAlive(p);
+        // 旁观者无法接收原版药水（LivingEntity.addEffect 对 isSpectator 拒绝；GameplayTickListener 也跳过非存活）：
+        // 切模式前先把长效夜视挂上，切后 resync 只会 strip 掉已有夜视再重施加失败。24h 时长覆盖整局及败局观战。
+        if (MaggoteersPlugin.getInstance().getConfig().getBoolean("player.night_vision", true)) {
+            p.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION,
+                    20 * 60 * 60 * 24, 0, false, true, true));
+        }
+        // 不调用 EffectService.resync：旁观者不可接收药水，重施加会失败；残留属性/药水由 cleanupRun 统一剥离。
         p.setGameMode(GameMode.SPECTATOR);
+        // 观战视角：不强制跟随（用户明确不需要）；旁观者可自由飞行观察，SPECTATE 传送由 RunRulesListener 拦截。
+        boolean noneAlive = !PlayerStateManager.isAnyAlive(mg);
+        if (noneAlive) {
+            org.bukkit.Location spawn = io.mczju.maggoteers.wave.WaveScheduler.currentSpawnLocation(mg);
+            if (spawn != null) {
+                p.teleport(spawn.clone().add(0, 40, 0));
+            }
+        }
+        p.setSpectatorTarget(null);
         MaggoteersPluginLog.info("转观察者: " + p.getName() + "（复活次数耗尽）");
         mg.sender().warn(MessageService.raw("death.to_spectator", Map.of("player", p.getName())));
 
-        if (!PlayerStateManager.isAnyAlive(mg)) {
+        if (noneAlive) {
             MaggoteersPluginLog.info("全员倒下，markDefeated(): " + p.getName());
             mg.markDefeated();
         }

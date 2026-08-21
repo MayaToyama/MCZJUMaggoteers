@@ -224,7 +224,8 @@ public final class MobEffectExecutor {
         int amp = p.getOrDefault(EffectKeys.AMP, 0);
         int dur = p.getOrDefault(EffectKeys.DURATION_TICKS, 0);
         if (dur <= 0) dur = 20 * 60 * 60;   // 旧词缀 dur 0 语义=常驻；用 1 小时近似
-        victim.addPotionEffect(new PotionEffect(type, dur, amp));
+        // ⚠️ 必须显式 ambient=false（Paper 26.2 起 3 参构造器默认 ambient=true，粒子会变成信标淡色且辅助 mod 不可见）
+        victim.addPotionEffect(new PotionEffect(type, dur, amp, false, true));
     }
 
     private static boolean isArea(EffectContext p) {

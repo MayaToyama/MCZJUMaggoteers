@@ -50,6 +50,8 @@ public final class CollectibleService {
 
     public static boolean grant(Player player, String rewardId, int level) {
         if (player == null || rewardId == null) return false;
+        LOG.info("[Collectible] grant " + player.getName() + " (" + player.getUniqueId()
+                + ") rewardId=" + rewardId + " level=" + level);
         Optional<String> itemId = CollectibleRegistry.resolveItemId(rewardId, level);
         if (itemId.isEmpty()) {
             LOG.warning("CollectibleService.grant: no item for " + rewardId + " level " + level);
@@ -73,6 +75,8 @@ public final class CollectibleService {
 
     public static int remove(Player player, String rewardId) {
         if (player == null || rewardId == null) return 0;
+        LOG.info("[Collectible] remove " + player.getName() + " (" + player.getUniqueId()
+                + ") rewardId=" + rewardId);
         int removed = 0;
         var inv = player.getInventory();
         for (int i = 0; i < inv.getSize(); i++) {

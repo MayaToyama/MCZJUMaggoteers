@@ -36,9 +36,11 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 public class MaggoteersGame extends AbstractGame {
 
@@ -50,6 +52,11 @@ public class MaggoteersGame extends AbstractGame {
     private volatile boolean wavesStarted = false;
     /** 本局是否已走完 cleanupRun（幂等 + 异步/延迟启动任务的存活信号）。 */
     private volatile boolean cleanedUp = false;
+    /**
+     * 本局参与玩家 UUID（开局时记录）。结算遍历用——失败结算在「全员 leave 后」才触发（finishGame），
+     * 此刻 getPlayers() 已被 leaveGame 清空，遍历它会把中途死亡/退出的玩家全漏掉、积分发不出去。
+     */
+    private final List<UUID> runPlayerUuids = new ArrayList<>();
 
     @Override public String getId() { return "maggoteers"; }
 
@@ -150,6 +157,7 @@ public class MaggoteersGame extends AbstractGame {
     protected boolean onGameInit() {
         planReady = false;
         wavesStarted = false;
+        runPlayerUuids.clear();   // 新局重置（防上一局快照串进本局结算）
         return true;
     }
 
@@ -170,9 +178,14 @@ public class MaggoteersGame extends AbstractGame {
         int lives = MaggoteersPlugin.getInstance().getConfig().getInt("lives.default", 2);
         ClassSelectGate.reset(this);
         for (PlayerExt pe : getPlayers()) {
-            // 先清空再 switchProfile：让 capture 把空物品栏写进 maggoteers profile，从源头清除上局残留快照
-            pe.player().getInventory().clear();
+            runPlayerUuids.add(pe.player().getUniqueId());   // 结算快照：开局玩家全量记录
+            // ⚠️ 必须先 switchProfile 再清空（bug #1 跨局残留根因）：
+            //  switchProfile 的 capture 捕获「切换前」的 lobby 存档（若先 clear 会清空 lobby 永久污染大厅物品），
+            //  然后 apply 载入 maggoteers 快照——该快照对中途退出的玩家保留着退局时刻的物品栏/末影箱
+            //  （含护符/货币/武器）。故在 switchProfile 之后 clear 主物品栏 + 末影箱，清掉上局残留再发本局装备。
             pe.switchProfile(this.getId());
+            pe.player().getInventory().clear();
+            pe.player().getEnderChest().clear();
             pe.player().setGameMode(GameMode.ADVENTURE);
             PlayerStateManager.init(this, pe.player().getUniqueId(), lives);
         }
@@ -279,7 +292,9 @@ public class MaggoteersGame extends AbstractGame {
         if (cleanedUp) return;
         cleanedUp = true;
 
-        // 结算：按 outcome 发账户货币（D4）
+        // 结算：按 outcome 发账户货币（D4）。
+        // ⚠️ 失败结算在「全员 leave 后」才触发（finishGame），此刻 getPlayers() 已被 leaveGame 清空——
+        // 必须遍历开局快照 runPlayerUuids，否则中途死亡/退出的玩家（乃至整个败局）都拿不到积分。
         {
             int winFlat = MaggoteersPlugin.getInstance().getConfig().getInt("settlement.win_flat", 100);
             int failPerAct = MaggoteersPlugin.getInstance().getConfig().getInt("settlement.fail_per_act", 25);
@@ -289,12 +304,17 @@ public class MaggoteersGame extends AbstractGame {
                     outcome, prog[0], prog[1]);
             int grant = io.mczju.maggoteers.persist.Settlement.grant(input, winFlat, failPerAct, failPerWave);
             if (grant > 0) {
-                for (var pe : getPlayers()) {
-                    var data = pe.getData(io.mczju.maggoteers.persist.MaggoteersPlayerData.class);
-                    if (data != null) {
-                        data.grant(grant);
-                        sender().info(MessageService.raw("game.settlement_grant", Map.of(
-                                "player", pe.player().getName(),
+                var pdm = MCZJUGameCore.getPlayerDataManager();
+                for (UUID uid : runPlayerUuids) {
+                    var data = pdm.getPlayerData(uid.toString(), io.mczju.maggoteers.persist.MaggoteersPlayerData.class);
+                    if (data == null) continue;
+                    data.grant(grant);
+                    // 已退玩家不在 getPlayers()，MGC 仅在退出/定时自动保存；这里显式保存确保 grant 落盘。
+                    pdm.savePlayerDataAsync(uid.toString());
+                    Player pl = Bukkit.getPlayer(uid);
+                    if (pl != null) {
+                        pl.sendMessage(MessageService.component("game.settlement_grant", Map.of(
+                                "player", pl.getName(),
                                 "grant", String.valueOf(grant))));
                     }
                 }
@@ -304,6 +324,9 @@ public class MaggoteersGame extends AbstractGame {
         for (var pe : getPlayers()) {
             var pl = pe.player();
             pl.getInventory().clear();
+            // 末影箱是玩家全局持久数据（局内可正常使用），对局结束必须清空，
+            // 且在 switchProfile(null) 之前清——让 capture 把空末影箱写进 maggoteers profile 快照，根除跨局残留。
+            pl.getEnderChest().clear();
             EffectService.removeAll(pl);
             io.mczju.maggoteers.item.CooldownService.clear(pl.getUniqueId());
             io.mczju.maggoteers.reward.RewardService.clearDraws(pl.getUniqueId());

@@ -70,6 +70,7 @@ public final class MaggoteersPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.RunItemGuardListener(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.BoundEquipLockListener(), this);
         getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.GameplayTickListener(), this);
+        getServer().getPluginManager().registerEvents(new io.mczju.maggoteers.listener.RunRulesListener(), this);
         io.mczju.maggoteers.listener.GameplayTickListener.start();
         io.mczju.maggoteers.mob.MobSkillService.start(this);
         io.mczju.maggoteers.effect.ProjectileHomingService.start(this);

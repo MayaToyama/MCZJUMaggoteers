@@ -187,7 +187,8 @@ public final class WaveEngine {
         WaveRuntime rt = BY_ENTITY.get(uuid);
         if (rt == null) return false;
         var dead = Bukkit.getEntity(uuid);
-        if (dead instanceof org.bukkit.entity.Slime) {
+        // 26.2 起 MagmaCube 不再继承 Slime；AbstractCubeMob 统一史莱姆/岩浆怪（否则岩浆怪分裂不再被取消）
+        if (dead instanceof org.bukkit.entity.AbstractCubeMob) {
             PENDING_SPLIT_CANCEL.add(uuid);
         }
         MobSpawnProfile profile = rt.mobProfiles.remove(uuid);

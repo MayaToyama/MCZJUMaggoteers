@@ -93,6 +93,7 @@ public final class MobSkillService {
         if (mob == null) return;
         List<MobSkillSpec> specs = BY_ENTITY.get(mob.getUniqueId());
         if (specs == null || specs.isEmpty()) return;
+        long now = System.currentTimeMillis();
 
         for (String cid : MobCounterRegistry.signal(mob, t, target, source)) {
             for (MobSkillSpec spec : specs) {
@@ -107,7 +108,10 @@ public final class MobSkillService {
         for (MobSkillSpec spec : specs) {
             if (spec.trigger() != t || spec.trigger() == MobTrigger.SPAWN) continue;
             if (spec.condition() != null && !spec.condition().evaluate(game, mob, target, source)) continue;
+            // cooldown_sec 对 attack/damage_taken/killed 同样生效（原实现只对 tick 生效，冷却形同虚设）
+            if (!cooldownElapsed(mob.getUniqueId(), spec.id(), now, spec.cooldownSec())) continue;
             execute(game, mob, spec, target, source);
+            if (spec.cooldownSec() > 0) markFired(mob.getUniqueId(), spec.id(), now);
         }
     }
 

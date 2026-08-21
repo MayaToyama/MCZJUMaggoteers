@@ -101,10 +101,11 @@ class MobSkillSpecParserTest {
         assertEquals(MobTrigger.ATTACK, confusing.trigger());
 
         MobSkillSpec swap = MobSkillSpecParser.parse(Map.of(
-                "id", "swap", "trigger", "attack", "cooldown_sec", 8,
+                "id", "swap", "trigger", "damage_taken", "cooldown_sec", 8,
                 "effects", List.of(Map.of(
                         "effect", "teleport", "target", "target", "offset_y", 0)))).orElseThrow();
         assertEquals(MobEffect.TELEPORT, swap.effects().get(0).effect());
+        assertEquals(MobTrigger.DAMAGE_TAKEN, swap.trigger());   // 被打时传送到攻击者身边
 
         MobSkillSpec wardenwrath = MobSkillSpecParser.parse(Map.of(
                 "id", "wardenwrath", "trigger", "tick", "cooldown_sec", 6,

@@ -13,7 +13,7 @@ import org.bukkit.entity.Hoglin;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.PiglinAbstract;
-import org.bukkit.entity.Slime;
+import org.bukkit.entity.AbstractCubeMob;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
@@ -205,8 +205,9 @@ public final class MobFactory {
 
     /** Size≤1 不伤人；局内一律至少 Size 2。分裂由 {@code SlimeSplitEvent} 取消。 */
     private static void ensureCombatSlimeSize(LivingEntity le) {
-        if (le instanceof Slime slime && slime.getSize() < 2) {
-            slime.setSize(2);
+        // 26.2 起 MagmaCube 不再继承 Slime；AbstractCubeMob 统一史莱姆/岩浆怪
+        if (le instanceof AbstractCubeMob cube && cube.getSize() < 2) {
+            cube.setSize(2);
         }
     }
 

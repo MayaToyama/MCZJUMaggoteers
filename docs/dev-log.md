@@ -5,6 +5,81 @@
 
 ---
 
+## 2026-08-22 — 败局/中途死亡玩家结算积分发不出（getPlayers 已空）
+
+**做了什么**（`MaggoteersGame`）
+- 新增本局参与玩家 UUID 快照 `runPlayerUuids`：`startInWorld` 开局时记录全员，`onGameInit` 新局重置。
+- `cleanupRun` 结算循环从「遍历 `getPlayers()`」改为「遍历 `runPlayerUuids`」：对每个 UUID 用 `PlayerDataManager.getPlayerData(uuid, MaggoteersPlayerData.class)` 取数据 → `grant` → 显式 `savePlayerDataAsync(uuid)` 落盘；在线玩家各自 `sendMessage(component("game.settlement_grant", …))`（不再 `sender()` 广播，避免全员 leave 后广播无对象 / 多人时 N×N 刷屏）。
+
+**决策与原因**
+- **根因**：失败结算在「全员 `/mgc leave` 后才 `finishGame` → `endGame` → `onGameEnd` → `cleanupRun`」。而 MGC `DefaultPlayerManager.leaveGame` 先 `playerGameMap.remove(player)` 再调 quit 策略；最后一名 leave 时 `getPlayers().isEmpty()` → `finishGame`。因此 `cleanupRun` 执行时 `getPlayers()` 已是**空列表**——原结算循环空转，失败积分（含中途死亡转观察者的玩家）**一个都发不出**。胜利路径玩家仍在房间所以正常，故表象是「中途死亡拿不到积分」。
+- 已退玩家数据**仍缓存在 MGC `PlayerDataManager`**（`savePlayerDataAsync` 只写文件不清缓存；`solveGameEnd.removeAllPlayer` 只清 playerGameMap），故按 UUID 能取到同一对象；但 MGC 仅在玩家退出/定时保存数据，cleanupRun 里 grant 后必须显式 `savePlayerDataAsync` 否则内存修改不落盘。
+- 行为变化：中途**退出**的玩家也按最终进度结算（失败 `fail_per_act × 已过层数 + fail_per_wave × 已过波数`；未打过波则 grant=0 不拿）。与「通关/失败都给」的设计语义一致，且结算额小，无「开局即退刷分」风险（进度 0 → 0 积分）。
+
+**测试**：全量 372 green / 0 fail / 5 skip。
+
+**遗留**：中途退出玩家按「对局最终进度」而非「退出时刻进度」结算（简化；如需按退出时刻快照另做进度快照）。
+
+## 2026-08-22 — 旁观者夜视修复（切模式前挂长效夜视）+ 移除强制跟随
+
+**做了什么**（`MaggoteersDeathStrategy` 死亡转旁观者路径）
+- **夜视根因修复**：不再在切旁观者后调用 `EffectService.resync(p)`；改为**切模式前**先 `addPotionEffect` 挂 **24h 长效 NIGHT_VISION**（受 `config.player.night_vision` 门控），再 `setGameMode(SPECTATOR)`。
+- **移除强制跟随**：删掉「锁定最近存活玩家 `setSpectatorTarget(anchor)`」逻辑与 `nearestAlivePlayer` 辅助方法（用户明确不需要跟随）。旁观者可自由飞行观察；全灭时才统一传送到当前层出生点上方俯瞰；SPECTATE 传送拦截（`RunRulesListener`）保留。
+
+**决策与原因**
+- 旁观者夜视失效是**两个独立缺陷叠加**：
+  1. `LivingEntity.addEffect` 对 `isSpectator()` 拒绝——切旁观者后再 `addPotionEffect`/`resync` 重施加一律失败；而 `resync` 的 `stripDerived` 会先 `removePotionEffect(NIGHT_VISION)`，等于**主动剥掉**玩家还挂着的夜视再重施加失败。旧修复（切后 resync）方向就错了。
+  2. `GameplayTickListener` 心跳 `!ps.isAlive()` 跳过旁观者——常驻药水 30s 刷新永不执行，即使重施加成功也会在 30s 后自然到期。
+- 因此唯一可行路径是**切模式前**（仍是冒险模式、`addEffect` 有效）挂超长效夜视；24h 覆盖整局 + 败局观战，无需依赖心跳刷新。
+- 不调 `resync` 的取舍：旁观者残留的属性/药水派生视图对观战无影响，且 `cleanupRun` 的 `EffectService.removeAll` 会统一剥离；复活币救回时 `revivePlayer` 会 `clearAllActivePotions` + `resync`（此时已回冒险模式），长效夜视被清但 `run_night_vision` 常驻效果经 resync 正确恢复 30s 刷新版。
+
+**测试**：全量 372 green / 0 fail / 5 skip。
+
+**遗留**：败局观战若超过 24h（现实中不会）夜视到期；`setGameMode` 不清药水的 vanilla 行为依赖已验证（切模式无效果清理路径）。
+
+## 2026-08-22 — 末影箱改为「局内可用 + 对局结束清除」方案
+
+**做了什么**（推翻旧「禁止打开末影箱」做法）
+- `RunRulesListener` 移除 `onEnderChestOpen` 拦截：局内（含等待/观战）**恢复可正常打开末影箱**，支持地图里放置末影箱作为关卡元素/补给点。
+- `MaggoteersGame.cleanupRun` 在 `switchProfile(null)` **之前** `getEnderChest().clear()`：让 MGC capture 把**空末影箱**写进 maggoteers profile 快照，根除局内存取跨局带出；同时清掉玩家当前全局末影箱。
+- 删除 `config.yml` 死消息 `game.ender_chest_denied`。
+
+**决策与原因**
+- 末影箱是玩家全局持久数据，但地图里需要放末影箱——旧做法「一禁了之」牺牲玩法。正确做法是**允许用 + 结束时清**：局内存进末影箱的内容随对局结束销毁，不带进 lobby/下一局。
+- 中途退出玩家由既有机制覆盖：MGC `leaveGame` 切回 lobby 时 capture 把退局末影箱存进 maggoteers 快照（大厅末影箱不受局内污染）；该快照残留由 `startInWorld` 开局 `getEnderChest().clear()` 清除。
+- 顺序约束：清除必须在 `switchProfile(null)` 之前，否则 capture 仍会把局内残留写进快照。
+
+**测试**：全量 372 green / 0 fail / 5 skip。
+
+**遗留**：中途退出玩家的 maggoteers 快照会暂存退局末影箱内容（下局开局清除）；若该玩家永不加入下一局，快照残留不落玩家大厅，无污染。
+
+## 2026-08-22 — 怪物技能药水 ambient 粒子修复（Paper 26.2 API 变更）
+
+**做了什么**：`MobEffectExecutor.applyPotion`（怪物技能 POTION 效果的唯一施加路径）改用显式 `new PotionEffect(type, dur, amp, false, true)`——**ambient=false**。
+
+**决策与原因**
+- **根因是 Paper 26.2 的 API 行为变更**：`javap` 反汇编 `paper-api-26.2.build.62-beta` 的 `PotionEffect` 构造器链确认——3 参构造器 `(type, dur, amp)` 委托链最终把 **ambient 置为 true**（3 参→4 参传 true→5 参 (true,true)→6 参 ambient=true）。经典 Bukkit 语义里 3 参默认 ambient=false。怪物技能一直裸用 3 参 → 全部技能药水（plastic 抗性/cloaked 隐身/weakness/poisonous 等，含作用到玩家身上的）都成了**信标式淡粒子**，辅助 mod 不可见。
+- 修复采用 5 参 `(type, dur, amp, false, true)`，与 `EffectService`/`PotionMerge` 既有风格一致。全库 grep 复核：其余 `new PotionEffect(`（AuraService 6 参 / EffectService / PotionMerge）均已显式 ambient=false，不受此变更影响。
+
+**测试**：全量 372 green / 0 fail / 5 skip。
+
+**遗留**：无。
+
+## 2026-08-22 — 哨兵 Boss swap 传送不触发 + 战斗技能冷却强制
+
+**做了什么**
+- **swap 技能 trigger 修正**（`mob_skills.yml`）：`trigger: attack` → `trigger: damage_taken`。原配置只在守卫者**攻击玩家**时触发，而预期是**玩家攻击守卫者**时触发（受击闪现到攻击者身边）——`MobSkillListener` 只在攻击者身上分发 `ATTACK`、在受害者身上分发 `DAMAGE_TAKEN`，故玩家砍 Boss 时 swap 永不触发。设计意图见 plan1.1 手动验证第 4 条。
+- **战斗技能冷却强制**（`MobSkillService.fire()`）：`cooldown_sec` 原只对 `tick` 生效，`attack`/`damage_taken`/`killed` 技能冷却形同虚设（每次触发都放）。现 `fire()` 对非 SPAWN/COUNTER 技能走 `cooldownElapsed` + `markFired`——lifesteal/weakness/quicksand/poisonous/sprint/berserk/swap 等全部按声明冷却生效（`cooldownSec <= 0` 的技能如 harden/blinding 不受影响）。
+- **waves.yml 清理**：移除 68 处悬空 `- infected` 引用（mob_skills.yml 已无该无操作技能定义，schema 测试 `WaveSkillSchemaTest` 校验会红）。`MobYamlParser` 对空 `skills:` 走 `instanceof List` 判定回落空列表，运行时不破。
+
+**决策与原因**
+- swap 的 `target: target` 语义不变：守卫者传送到攻击者身边（TeleportSafety 防虚空/出图），仅触发时机修正。
+- 冷却强制是行为修正：config 里每个战斗技能都写了 `cooldown_sec`，设计意图明确，只是运行时从未兑现；本次一并补齐避免 swap 修复后 Boss 被近战缠住时每次受击都闪现。
+
+**测试**：`MobSkillSpecParserTest` swap 用例改 `damage_taken` 并补 trigger 断言；全量 372 green / 0 fail / 5 skip。
+
+**遗留**：swap 修复后的实际手感（8s 一次闪现是否合适）待服务器实测；`harden`/`blinding` 等无冷却受击技能仍每次触发，如需节流另加 `cooldown_sec`。
+
 ## 2026-08-21 — 实测配置修正批次提交（物品/波次/商店解锁）
 
 服务器实测后沉淀的三处内容配置修正（未改动 Java）：
