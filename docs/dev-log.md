@@ -5,6 +5,24 @@
 
 ---
 
+## 2026-08-21 — homing 弹道命中率修复（服务器实测反馈）
+
+**做了什么**：测试服实测发现怪物 homing 弹道（archer 箭 / molten 火球）很难命中玩家。逐层排查 `ProjectileHomingService` / `MobProjectileService` / `MobEffectExecutor` / `SummonExecutor` 后确认两个独立缺陷并修复（仅改 `ProjectileHomingService.java`，另加 5 个纯函数单测）：
+
+1. **Fireball 系列 homing 完全无效**：`Fireball`/`SmallFireball`/`WitherSkull` 由 `setDirection()`/`setAcceleration()` 驱动（Paper javadoc + SPIGOT-6993 实证 `setVelocity` 会被归一化并客户端预测抖动），原 `homeAll` 每 tick 只 `setVelocity()` → 火球沿初始方向直线飞、不追踪。
+2. **Arrow 等 velocity 驱动弹道追踪过弱**：`TURN_FACTOR=0.35` 每 tick 只转 35% + 恒速不减速收束 + 无目标预测（每 tick 追当前位置而非"将到位置"）→ 移动中的玩家（跑/跳/横移）易脱靶。
+
+**决策与原因**
+- 修复方向符合 plan 原意（§3344"参考 IM 原追踪箭/火球/凋零头能力，但纯原版实现"）——**就是要能追踪**，原实现偏离了设计意图。
+- Fireball 分支：`proj instanceof Fireball` → 额外 `fb.setDirection(next)` + `fb.setAcceleration(next)`（`next` 已含转向后速度向量，direction 取方向即可）；velocity 仍设置以兼容。
+- 目标预测 `aimWithLead()`：lead tick = `dist/speed - 0.5`，弹道朝"目标将到位置"瞄准（目标速度近零时回落当前位置）。
+- `TURN_FACTOR` 0.35 → **0.75**（接近 IM 追踪强度；可配置调优：0.6 弱 / 0.9 更强）。
+- 转向逻辑提取为 `steer()` 纯函数（不修改入参，`cur.clone()` 防污染实体内部 velocity），便于 headless 单测。
+
+**遗留 / 待实现期核实**
+- **修复本身未经服务器实测**（headless 无法验证）：需在 `E:\MCpaper` 复测——`/maggoteers debug spawnmob SKELETON archer`（箭）+ molten 火球怪，确认能否跟上跑动玩家；若命中率仍低调高 TURN_FACTOR，若过强（玩家无法躲避）回调至 0.6。
+- 客户端对 fireball 非默认速度/加速度的预测抖动（Paper 已知限制，MC-80142）在实测时观察。
+
 ## 2026-08-20 — 怪物技能系统 1.1：计数器 + 计时器合一 + 怪物技能（plan）
 
 按 `docs/superpowers/plans/2026-08-20-maggoteers-1.1-counters-mob-skills.md` 完成 1.1 三部分：

@@ -7,6 +7,7 @@ import io.mczju.maggoteers.wave.WaveEngine;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -27,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ProjectileHomingService {
 
     private static final Map<UUID, HomingEntry> ACTIVE = new ConcurrentHashMap<>();
-    private static final double TURN_FACTOR = 0.35;   // 每 tick 目标方向权重（越小越平滑）
+    private static final double TURN_FACTOR = 0.75;   // 每 tick 目标方向权重（越小越平滑；0.35 实测脱靶，0.75 接近 IM 追踪强度）
 
     private record HomingEntry(MaggoteersGame game, String target, LivingEntity initial, double speed) {}
 
@@ -71,14 +72,38 @@ public final class ProjectileHomingService {
             if (target == null || target.isDead() || !target.isValid()) {
                 continue;   // 无目标则保持当前速度（不再转向）
             }
-            Vector dir = target.getLocation().toVector()
-                    .subtract(proj.getLocation().toVector()).normalize();
-            Vector cur = proj.getVelocity();
-            Vector next = cur.multiply(1 - TURN_FACTOR)
-                    .add(dir.multiply(TURN_FACTOR * entry.speed()))
-                    .normalize().multiply(entry.speed());
+            Vector aim = aimWithLead(proj.getLocation(), target, entry.speed());
+            Vector dir = aim.subtract(proj.getLocation().toVector()).normalize();
+            Vector next = steer(proj.getVelocity(), dir, entry.speed(), TURN_FACTOR);
+            if (proj instanceof Fireball fb) {
+                // Fireball 系列由 direction/acceleration 驱动，setVelocity 不可靠（Paper 会归一化并抖动）
+                fb.setDirection(next);
+                fb.setAcceleration(next);
+            }
             proj.setVelocity(next);
         }
+    }
+
+    /**
+     * 单 tick 转向：当前速度向目标方向混合 {@code factor} 权重，保持 {@code speed} 大小不变。
+     * 纯函数（不修改入参），供 {@link #homeAll} 使用；单独可测。
+     */
+    static Vector steer(Vector cur, Vector dir, double speed, double factor) {
+        return cur.clone().multiply(1 - factor)
+                .add(dir.clone().multiply(factor * speed))
+                .normalize().multiply(speed);
+    }
+
+    /** 目标预测：朝"目标将到位置"瞄准，而非当前位置（追踪移动中玩家）。lead = 距离/速度 的 tick 数。 */
+    private static Vector aimWithLead(Location projLoc, LivingEntity target, double speed) {
+        Location t = target.getLocation();
+        double dist = projLoc.distance(t);
+        double leadTicks = Math.max(0.0, dist / speed - 0.5);
+        Vector vel = target.getVelocity();
+        if (vel == null || vel.lengthSquared() < 1e-4) {
+            return t.toVector();
+        }
+        return t.toVector().clone().add(vel.clone().multiply(leadTicks));
     }
 
     private static LivingEntity resolve(Location loc, HomingEntry entry) {
