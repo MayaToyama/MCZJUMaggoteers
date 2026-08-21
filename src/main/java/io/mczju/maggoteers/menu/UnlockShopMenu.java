@@ -43,6 +43,9 @@ public class UnlockShopMenu extends Menu {
         Player p = player.player();
         var pe = new PlayerExt(p);
         var data = pe.getData(MaggoteersPlayerData.class);
+        // 顶部中央只读余额槽（购买后菜单 reopen 自动刷新，无需实时更新）
+        int balance = data == null ? 0 : data.balance;
+        setSlot(4, balanceIcon(balance));
         Map<String, RewardOption> byId = new LinkedHashMap<>();
         for (String poolId : RewardService.allPoolIds()) {
             var pool = RewardService.pool(poolId);
@@ -86,6 +89,21 @@ public class UnlockShopMenu extends Menu {
                 }).open();
             });
         }
+    }
+
+    /** 顶部余额只读槽：金锭 + 当前账户积分（config messages.menu.shop.balance）。 */
+    private static ItemStack balanceIcon(int balance) {
+        ItemStack s = new ItemStack(Material.GOLD_NUGGET);
+        ItemMeta m = s.getItemMeta();
+        if (m != null) {
+            m.displayName(MessageService.component("menu.shop.balance",
+                            Map.of("balance", String.valueOf(balance)))
+                    .decoration(TextDecoration.ITALIC, false));
+            m.lore(List.of(MessageService.component("menu.shop.balance_lore", Map.of())
+                    .decoration(TextDecoration.ITALIC, false)));
+            s.setItemMeta(m);
+        }
+        return s;
     }
 
     private static ItemStack icon(RewardOption o, Player viewer, int cost, boolean owned) {

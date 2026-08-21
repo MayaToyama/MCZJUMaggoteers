@@ -1,5 +1,5 @@
 wait:
-  min_players: 1   # 内部测试可 1 人开局；正式服可改 2–4
+  min_players: 1
 lives:
   default: 2
 
@@ -228,7 +228,9 @@ messages:
       head_down: "<red>{name}（倒下）"
       head_alive: "<green>{name}（存活）"
     shop:
-      title: "<gold>卫戍商店 · 解锁"
+      title: "<red>军需处"
+      balance: "<yellow>当前积分：<gold>{balance}"
+      balance_lore: "<gray>通关/失败结算获得，用于解锁商店内物品"
       already_owned: "<gray>已拥有：{display}"
       not_enough: "<red>点数不足（需 {cost}）"
       unlocked: "<green>已解锁：{display}"

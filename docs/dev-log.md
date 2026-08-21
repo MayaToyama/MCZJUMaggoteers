@@ -5,6 +5,17 @@
 
 ---
 
+## 2026-08-21 — 军需处商店显示账户积分余额
+
+**做了什么**：局外解锁商店 `UnlockShopMenu`（军需处）顶部中央（slot 4）加只读余额槽——金锭图标 + "当前积分：{balance}"（config `messages.menu.shop.balance`，lore 说明积分来源）。余额取 `MaggoteersPlayerData.balance`（账户货币）。
+
+**决策与原因**
+- 只读槽用 MGC `Menu.setSlot(int, ItemStack)` 两参重载（无点击行为）。
+- 刷新：购买后已有 `closeInventory()` + `MenuFacade.open("maggoteers-shop")` 重开逻辑 → 余额随重开自动刷新，无需实时心跳。
+- 图标用 `Material.GOLD_NUGGET`（与 config `items.currency_normal` 金币语义一致），不依赖 ItemCreator。
+
+**测试**：全量 371 green / 0 fail / 5 skip。
+
 ## 2026-08-21 — tosser 技能迁移：拽玩家向怪物（IM RangeTosserSkill）
 
 **做了什么**：tosser 原为 TNT 抛射占位，按本地 IM（`E:\Intellij_Idea\plugins\MCZJUinfernalMobs`）`RangeTosserSkill` 改为正确效果——**把范围内最近的非潜行玩家水平拉向怪物，蹲下可避免**。新增 mob 侧 `DISPLACE` effect 类型（§14 扩展点）。
