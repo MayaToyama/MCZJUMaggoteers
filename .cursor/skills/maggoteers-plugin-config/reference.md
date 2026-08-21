@@ -1,6 +1,6 @@
-# Maggoteers 配置 reference
+# Maggoteers 配置 reference（1.1）
 
-解析/校验权威类：`RewardLoadValidator`、`UpgradeLevelCaps`、`WeaponEffectValidator`、`SummonParamsParser`、`EffectParamsParser`、`ItemAbilityRegistry`、`WeaponHeldRegistry`。
+解析/校验权威类：`RewardLoadValidator`、`UpgradeLevelCaps`、`WeaponEffectValidator`、`SummonParamsParser`、`CounterSpecParser`、`MobSkillSpecParser`、`MobSkillRegistry`、`EffectParamsParser`、`ItemAbilityRegistry`、`WeaponHeldRegistry`。
 
 ## config.yml
 
@@ -12,17 +12,18 @@
 
 | 键 | 说明 |
 |----|------|
-| `mob_attributes.scale` / `.follow_range` | 全局体型/索敌倍率（再乘 waves/affix） |
+| `mob_attributes.scale` / `.follow_range` | 全局体型/索敌倍率（再乘 waves coeff；**无 affix 层**） |
+| `mob_attributes.squad_*` | 骑乘小队追击/移速相关 |
 | `rewards.upgrade_level_cap_default` | UPGRADE_LEVEL 默认上限（默认 4） |
 | `wait.min_players` / `lives.default` / `initial_equipment` / `class_select.timeout_sec` | 等待、复活、开局装、职业超时 |
 | `items.<key>` | 券种：`item_id`, `kind`, `material`, `name`, `lore`, `glint` |
-| `act_origins` / `waves_per_act` / `rest` / `settlement` / `scaling` | 层原点、波数、休整、结算、人数缩放 |
+| `act_origins` / `waves_per_act` / `rest` / `settlement` / `scaling` | 层原点、波数、休整、结算、人数缩放（`mob_hp`/`mob_damage`/`mob_speed`/`mob_count`；**无** `currency_drop`） |
 | `world.*` / `player.night_vision` / `act_enter.prep_sec` | 昼夜、夜视、进层准备 |
 | `aura.carrier_fx` / `magic_fx` | AURA 粒子间隔、武器 FX 默认 |
 
 ## waves.yml
 
-文件头注释为权威摘要：`coeff.scale`、`equipment`、`on_death`、`passengers`、`infernal`。
+文件头注释为权威摘要：`coeff`、`equipment`、`on_death`、`passengers`、**`skills`**（1.1 替代 affixes/infernal）。
 
 ### strategies.<id> → steps[]
 
@@ -30,21 +31,24 @@
 |------|------|
 | `point` | `"1"`…`"9"` 或 `boss` |
 | `type` / `count` | EntityType + 数量 |
-| `name` | 可选 MiniMessage 头顶名；省略/空白=无自定义名（本插件刷怪会清掉 IM 名） |
-| `boss_bar` | 可选布尔，默认 false；**仅 `true` 挂 Maggoteers Adventure BossBar**（废除旧 hp≥6 启发式） |
+| `name` | 可选 MiniMessage 头顶名；省略/空白=无自定义名 |
+| `boss_bar` | 可选布尔，默认 false；**仅 `true` 挂 Maggoteers Adventure BossBar** |
 | `coeff` | 见下表 |
-| `affixes` | 原生词缀 id（`affixes.yml`） |
-| `infernal` | `{ level: 1–100, affixes: [IM技能…] }`；与原生独立、不继承 |
+| **`skills`** | `mob_skills.yml` 技能 id 列表（定义唯一处） |
 | `delay` | 秒，相对**同 point**上一刷怪时刻（该点尚无事件则相对本轮起点）；不同 point 并行 |
 | `repeat` | 可选，默认 1：该 step 在同 point 时间轴上按 `delay` 再刷几次（≠ strategy 顶层 `repeat`） |
-| `equipment` / `on_death` / `passengers` | 见下；`name`/`boss_bar` 也可写在 passenger / on_death 节点 |
+| `equipment` / `on_death` / `passengers` | 见下；`name`/`boss_bar`/`skills` 也可写在 passenger / on_death 节点 |
+
+**加载 fallback（仅兼容旧文件）**：无 `skills` 时可读旧 `affixes:` 或 `infernal.affixes` 列表，**当作 skill id**。新内容**只写 `skills:`**。已删除字段：`potions`（出生药水改 SPAWN 技能）。
 
 ### coeff
 
 | 键 | 叠乘 |
 |----|------|
-| `hp` / `dmg` / `speed` / `drop` | × affix × **人数 scaling** |
-| `scale` / `follow_range` | × affix × **`mob_attributes.*`**（不乘人数） |
+| `hp` / `dmg` / `speed` | × **人数 scaling**（`Compose`；**不再**乘 affix） |
+| `scale` / `follow_range` | × **`mob_attributes.*`**（`MobFactory`；不乘人数） |
+
+**无 `drop`**（货币仅来自清波 `clearReward`）。
 
 ### equipment[]
 
@@ -58,13 +62,74 @@ slot 别名：`HEAD`/`HELMET`, `CHEST`/`CHESTPLATE`, `LEGS`/`LEGGINGS`, `FEET`/`
 
 ### passengers / on_death（mob 条目）
 
-与 step 共享字段（无 `point`/`delay`）；嵌套最深 **8**。`on_death` 生成点计入本波 `livingMobs`。`infernal` 各节点独立。
+与 step 共享字段（无 `point`/`delay`）；嵌套最深 **8**。`on_death` 生成点计入本波 `livingMobs`。各节点独立 `skills`。
 
-刷怪顺序：原生 stats/affixes → IM mechanize → 显式 `equipment`。禁用 IM：`morph`/`mama`/`mounted`/`vexsummoner`/`ghost`。
+刷怪顺序：stats（coeff×scaling）→ `MobSkillService.attach(skills)` → 显式 `equipment`。
 
-## affixes.yml
+## mob_skills.yml
 
-`hp`/`dmg`/`speed`/`drop`/`scale`/`follow_range`、`potions[]`（出生施加）、`display`。无战斗 `on:`；战斗技能用 waves `infernal:`。
+定义唯一处。结构：
+
+```yaml
+skills:
+  plastic:
+    trigger: spawn
+    effects:
+      - { effect: potion, target: self, potion: resistance, amp: 4, duration_ticks: 600 }
+  archer:
+    trigger: tick
+    cooldown_sec: 6
+    condition: { player_in_radius: 24 }
+    effects:
+      - { effect: summon, target: self, entity: arrow, count: 1,
+          homing_target: nearest_player, projectile_speed: 1.6 }
+  invisible:
+    trigger: spawn
+    invisible: true          # LivingEntity.setInvisible + 玻璃瓶盔；勿用隐身药水
+  infected:
+    trigger: spawn           # effects 可空（纯装饰）
+```
+
+| 字段 | 规则 |
+|------|------|
+| map key | = skill id（parser 缺 `id` 时注入） |
+| `trigger` | `spawn` / `attack` / `damage_taken` / `killed` / `tick` / `counter` |
+| `cooldown_sec` | `tick` **必须 >0**；其它可选 |
+| `counter` | `trigger: counter` **必填**；见下 |
+| `condition` | `player_in_radius` / `hold_item_pdc` / `and`/`or`/`not`（以怪为中心） |
+| `invisible` | 布尔；可与 effects 并用 |
+| `effects[]` | 可空 |
+
+### MobEffect（effects[].effect）
+
+| effect | 常用 params（顶层或 `params:` 子块） |
+|--------|--------------------------------------|
+| `health` | `amount`（治疗）或 `damage`；`target` + 可选 `radius`（area） |
+| `attribute` | `attr`, `op`（如 `multiply`）, `value`, `duration_ticks` |
+| `potion` | `potion`, `amp`, `duration_ticks`（**允许 amp 255**；非 rewards 假 255 规则） |
+| `summon` | `entity`, `count`；弹道：`projectile_speed` + 可选 `homing_target` |
+| `teleport` | `target: self\|target`；`offset_y` **当前 parser 未读**（执行默认约 2.0） |
+
+`target`：`self` | `target`（攻击/受击上下文）| `area`（需 `radius`）。
+
+### 怪物计数器
+
+```yaml
+counter:
+  id: every_5_hits
+  count: damage_taken    # MobTrigger 名：attack/damage_taken/killed/spawn/tick/counter
+  amount: 5
+  reset: wave_clear      # 可选
+  condition: { ... }     # 可选
+```
+
+出生加载、死亡卸载；`count: counter` 可串联（跳过自身防自环）。
+
+### homing_target（怪物 SUMMON）
+
+`nearest_player` | `attack_target` | `damage_source` | `killer` | `none`/缺省=不追踪。有 `projectile_speed`（或 projectile 块）才走弹道。
+
+**禁用旧 IM 技能名空间**（不再 mechanize）：内容侧用原生 `summon`/`teleport`/`health` 等表达。
 
 ## rewards.yml
 
@@ -88,7 +153,7 @@ reward_pools:
 | `item` / `amount` | WEAPON/SUPPLY | ItemCreator id |
 | `grants` | BUNDLE | 嵌套 option 列表 |
 | `effect` / `params` | STAT | 见 Effect 表 |
-| `trigger` | STAT | 缺省=常驻；GRANT_ITEM/SUMMON/**多数战斗型必填** |
+| `trigger` | STAT | 缺省=常驻；GRANT_ITEM/SUMMON/**多数战斗型必填**；计数器用 `ON_COUNTER` |
 | `expiry` | STAT | `{ trigger, charges }`；**禁止** `ON_INTERACT` |
 | `stack` | STAT | `ADD` / `UPGRADE_LEVEL` / `REFRESH` / `REPLACE` / `IGNORE` |
 | `upgrade_max` | STAT | 该 option 的 UPGRADE_LEVEL 上限（>0 时优先） |
@@ -115,11 +180,49 @@ option.upgrade_max (>0) → pool.upgrade_level_cap (>0) → config rewards.upgra
 ### fireTrigger 白名单（`RewardLoadValidator`）
 
 **一般 STAT**（可省略=常驻）：  
-`ON_KILL` | `ON_DAMAGE_DEALT` | `ON_DAMAGE_TAKEN` | `ON_DEATH` | `ON_WAVE_CLEAR`
+`ON_KILL` | `ON_DAMAGE_DEALT` | `ON_DAMAGE_TAKEN` | `ON_DEATH` | `ON_WAVE_CLEAR` | **`ON_COUNTER`**
 
-**仅 GRANT_ITEM / SUMMON** 另加：`ON_ACT_ENTER`（且 **必须** 有 trigger）
+**仅 GRANT_ITEM / SUMMON**（**必须**有 trigger）：  
+`ON_WAVE_CLEAR` | `ON_ACT_ENTER` | `ON_KILL` | `ON_DAMAGE_DEALT` | `ON_DAMAGE_TAKEN` | `ON_DEATH`  
+→ **不含** `ON_COUNTER`
 
 **禁止**（奖励 fire）：`ON_TICK_1S`、`ON_INTERACT`、`ON_GAME_END`、`ON_REVIVE`；非 grant/summon 也禁止 `ON_ACT_ENTER`。
+
+### 玩家计数器（`params.counter`）
+
+```yaml
+- id: every_5_melee_burst
+  category: STAT
+  trigger: ON_COUNTER
+  effect: DAMAGE_AREA
+  params:
+    counter: { id: melee5, count: attack, amount: 5 }
+    radius: 4.0
+    damage: 6.0
+    targets: enemies
+  unique: true
+  stack: IGNORE
+
+# 计时器 = count: tick（每秒 +1，amount=N 秒）
+- id: aura_pulse_heal
+  category: STAT
+  trigger: ON_COUNTER
+  effect: HEAL
+  params:
+    counter: { id: tick5, count: tick, amount: 5 }
+    amount: 1.0
+  unique: true
+```
+
+| 键 | 说明 |
+|----|------|
+| `id` | 计满信号来源；被动须匹配 |
+| `count` | `tick` \| `attack` \| `damage_taken` \| `kill` \| `wave_clear` \| `on_counter` |
+| `amount` | 计满阈值（默认 1） |
+| `reset` | 可选，玩家 `Trigger` 名 |
+| `condition` | `hold_item_pdc` / `player_in_radius` / and/or/not |
+
+`ON_COUNTER` **必须**有可解析的 `params.counter`。无独立 `ON_TIMER`。
 
 ### Effect（STAT）
 
@@ -150,7 +253,7 @@ option.upgrade_max (>0) → pool.upgrade_level_cap (>0) → config rewards.upgra
   unique: true
   stack: IGNORE
 
-# SUMMON — 命中火球
+# SUMMON — 命中火球 + 追踪
 - id: hit_fireball
   category: STAT
   trigger: ON_DAMAGE_DEALT
@@ -161,6 +264,7 @@ option.upgrade_max (>0) → pool.upgrade_level_cap (>0) → config rewards.upgra
     cleanup: duration
     duration_sec: 5
     projectile: { speed: 0.8, toward: look }
+    homing_target: nearest_enemy
   unique: true
 
 # BUFF_AREA — 命中上毒
@@ -190,7 +294,7 @@ option.upgrade_max (>0) → pool.upgrade_level_cap (>0) → config rewards.upgra
   stack: ADD
 ```
 
-> **禁止假 255**：`rewards.yml` / `items/*.yml` 中 `amp: 255` 且 `duration_ticks` ∈ `{0,1}` 且非 `immunity: true` → **硬失败**加载。清除用 `clear_potions` / `self_clear_potions`；免疫用 `immunity: true`。`affixes.yml` 不受此规则约束。
+> **禁止假 255**：`rewards.yml` / `items/*.yml` 中 `amp: 255` 且 `duration_ticks` ∈ `{0,1}` 且非 `immunity: true` → **硬失败**加载。清除用 `clear_potions` / `self_clear_potions`；免疫用 `immunity: true`。**`mob_skills.yml` 出生/免疫药水 amp 255 合法**（不在此规则内）。
 
 ### SUMMON params
 
@@ -202,6 +306,7 @@ option.upgrade_max (>0) → pool.upgrade_level_cap (>0) → config rewards.upgra
 | `count` / `offset_y` / `tamed` / `friendly_fire` | 可选 |
 | `attributes` | `{ ATTR_NAME: double }` |
 | `projectile` | `{ speed, toward }`（投射物） |
+| `homing_target` | 玩家侧常用 `nearest_enemy`；`none`/缺省=不追踪 |
 
 **武器路径**：仅 `anchor: self`（其它会被强制/校验失败）。
 
@@ -272,10 +377,6 @@ use_ability:
 
 **清除**：`params.clear_potions` 或 `self_clear_potions`；CD 仅在 `executeAbility` **成功**后计入。
 
-**静默行为**：`eighty_hammer`（单 `DISABLE_AI`+`expiry`）合入后无需改 YAML 即变为下次近战眩晕。
-
-**作者待改内容**（框架已就绪）：`emp`（沉默+DISABLE_AI）、`herafinger`（两步延期+held 普攻缓慢）、`thunder_rod`（BEAM+hit_target 眩晕）、`mission_sure`（治疗+速度）。
-
 完整设计：`docs/superpowers/specs/2026-08-13-multi-use-ability-design.md`。
 
 ### held_effects
@@ -287,6 +388,13 @@ held_effects:
   - effect: HEAL
     trigger: ON_KILL
     params: { amount: 2.0 }
+  - effect: DAMAGE_AREA
+    trigger: ON_COUNTER
+    params:
+      counter: { id: held_atk3, count: attack, amount: 3 }
+      radius: 3.0
+      damage: 4.0
+      targets: enemies
   - effect: AURA
     params:
       radius: 12.0
@@ -299,7 +407,7 @@ held_effects:
 | 生命周期 | 主手持有；卸载删 `held:<itemId>:` 前缀（含 `:grant`） |
 | 禁止 | `expiry`、`UPGRADE_LEVEL`、`GRANT_ITEM`、`SUMMON`、`REVOKE_GRANTS` |
 | 常驻 effect | `ADD_ATTRIBUTE` / `ADD_POTION` / `AURA` |
-| 触发 trigger | `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN` / `ON_KILL` |
+| 触发 trigger | `ON_DAMAGE_DEALT` / `ON_DAMAGE_TAKEN` / `ON_KILL` / **`ON_COUNTER`**（须 `params.counter`） |
 | 触发 ADD_POTION | `duration_ticks > 0` |
 
 校验类：`WeaponEffectValidator`。
@@ -321,10 +429,11 @@ AURA 重播间隔：`config aura.carrier_fx`。
 ## 跨文件引用
 
 ```
-affixes scale/follow_range ──► Compose ──► SpawnStep / DeathSpawn / PassengerSpawn
+mob_skills.yml ──► waves skills[] ──► MobSkillService.attach
 waves equipment[].item ──► ItemService
 rewards STAT id ──► collectibles.yml ──► items/collectibles.yml
 items use_ability / held_effects ──► ItemAbilityRegistry / WeaponHeldRegistry
+params.counter ──► CounterService（玩家）/ MobCounterRegistry（怪）
 config mob_attributes ──► MobFactory
 waves on_death ──► WaveEngine（计本波怪数）
 ```
@@ -333,14 +442,16 @@ waves on_death ──► WaveEngine（计本波怪数）
 
 | 阶段 | 典型 |
 |------|------|
-| onEnable / load | 未知 strategy；rewards 校验失败 skip+warn；passengers/on_death >8；held/use_ability 校验失败 |
-| RunPlanner | 刷怪点；未知 affix |
-| 刷怪/死亡 | 装备 item 不存在；死亡召唤 type 无效 |
-| 交互 | CD 中拦截；IM 未装跳过 mechanize |
+| onEnable / load | 未知 strategy；skill id 不在 registry；rewards 校验失败 skip+warn；passengers/on_death >8；held/use_ability 校验失败；mob_skills 解析失败跳过 |
+| RunPlanner | 刷怪点缺失 |
+| 刷怪/死亡 | 装备 item 不存在；死亡召唤 type 无效；attach/detach 泄漏（须死亡/清波 detach） |
+| 交互 | CD 中拦截 |
 
 ## 配置注意
 
 - **SLIME** 可能原版分裂；只要 `on_death` 时慎用。
 - 史莱姆/岩浆怪坐骑可能 `setSize` 与 `coeff.scale` 叠观感。
-- Boss 条：单根、无乘客、`hpMult ≥ 6` 等规则不变。
+- Boss 条：仅 `boss_bar: true`（无旧 hp≥6 启发式）。
 - `config.yml` 旧注释若写「池优先于 option」以代码为准（option 优先）。
+- **1up**（`trigger: killed` 满血）勿挂在会卡波的乘客上；引用前须 cooldown/次数上限策略。
+- 测试服：**同步 `mob_skills.yml`**；删除服上残留 `affixes.yml`（可选清理）；`saveResource(false)` 不覆盖已有 YAML。

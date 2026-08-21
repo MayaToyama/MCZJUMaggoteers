@@ -16,14 +16,14 @@ JDK：项目 **25**（`.idea/misc.xml` → `project-jdk-name="25"`）。Maven �
 | 项 | 路径 |
 |----|------|
 | 项目根 | `E:/Intellij_Idea/plugins/MCPlugin` |
-| 输出 jar | `target/Maggoteers-0.1.0-SNAPSHOT.jar`（版本以 `pom.xml` 为准） |
+| 输出 jar | `target/Maggoteers-1.1.0.jar`（版本以 `pom.xml` 为准） |
 
 ## 测试服
 
 | 项 | 路径 |
 |----|------|
 | 服务器根 | `E:/MCpaper` |
-| 插件 jar | `E:/MCpaper/plugins/Maggoteers-0.1.0-SNAPSHOT.jar` |
+| 插件 jar | `E:/MCpaper/plugins/Maggoteers-1.1.0.jar` |
 | 插件数据 | `E:/MCpaper/plugins/Maggoteers/` |
 
 ### 默认同步的配置（每次部署）
@@ -33,7 +33,7 @@ JDK：项目 **25**（`.idea/misc.xml` → `project-jdk-name="25"`）。Maven �
 - `config.yml`
 - `waves.yml`
 - `rewards.yml`
-- `affixes.yml`
+- `mob_skills.yml`（1.1 怪物技能；**替代**已删除的 `affixes.yml`）
 - `collectibles.yml`
 - **`items/*.yml`**（含 `items/maggoteers.yml`——沉默/净化等武器配置；**必须**与 jar 同发，否则服上旧假 amp-255 会被硬失败拦下）
 
@@ -49,9 +49,9 @@ $mvn  = "E:/Intellij_Idea/IntelliJ IDEA 2025.3.2/plugins/maven/lib/maven3/bin/mv
 Set-Location $root
 & $mvn test
 & $mvn package -DskipTests
-Copy-Item "$root/target/Maggoteers-0.1.0-SNAPSHOT.jar" "E:/MCpaper/plugins/" -Force
+Copy-Item "$root/target/Maggoteers-1.1.0.jar" "E:/MCpaper/plugins/" -Force
 $data = "E:/MCpaper/plugins/Maggoteers"
-foreach ($f in "config.yml","waves.yml","rewards.yml","affixes.yml","collectibles.yml") {
+foreach ($f in "config.yml","waves.yml","rewards.yml","mob_skills.yml","collectibles.yml") {
   Copy-Item "$root/src/main/resources/$f" "$data/$f" -Force
 }
 New-Item -ItemType Directory -Force -Path "$data/items" | Out-Null

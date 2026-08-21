@@ -79,7 +79,7 @@ try {
         }
 
     New-Item -ItemType Directory -Force -Path $ServerData | Out-Null
-    foreach ($f in @("config.yml", "waves.yml", "rewards.yml", "affixes.yml", "collectibles.yml")) {
+    foreach ($f in @("config.yml", "waves.yml", "rewards.yml", "mob_skills.yml", "collectibles.yml")) {
         $src = Join-Path $ResRoot $f
         if (Test-Path $src) {
             Copy-Item $src (Join-Path $ServerData $f) -Force
