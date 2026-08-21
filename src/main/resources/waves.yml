@@ -1930,7 +1930,6 @@ strategies:
       name: <gold>“邪魔的利刃”</gold>
       count: 1
       coeff:
-        hp: 0.2
         speed: 0.4
         dmg: 0.4
       delay: 30
@@ -2916,7 +2915,7 @@ strategies:
       repeat: 4
       count: 1
       coeff:
-        speed: 6.0
+        speed: 2.0
       delay: 10
       passengers:
       - type: BLAZE
@@ -2928,7 +2927,7 @@ strategies:
       repeat: 4
       count: 1
       coeff:
-        speed: 6.0
+        speed: 2.0
       delay: 10
       passengers:
       - type: BLAZE

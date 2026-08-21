@@ -2206,7 +2206,7 @@ maggoteers:red_blessing:
   itemModel: COPPER_SPEAR
   customName: "<red>镀红祝福"
   lore:
-    - "<gray>攻击使敌人获得5s凋零II（红色粒子），击杀敌人时对目标周围的敌人造成一次5点伤害，右键获得3s速度III，冷却12s"
+    - "<gray>攻击使敌人获得5s凋零II，击杀敌人时对目标周围的敌人造成一次5点伤害，右键获得3s速度III，冷却12s"
     - "<dark_gray>年轻的血魔刚拿到这柄长枪时，它还不是通体赤红的"
   unbreakable: true
   maxStackSize: 1
@@ -2250,6 +2250,7 @@ maggoteers:red_blessing:
     -
       effect: BUFF_AREA
       trigger: ON_DAMAGE_DEALT
+      stack: IGNORE
       params:
         targets: hit_target
         potions:
@@ -2257,17 +2258,22 @@ maggoteers:red_blessing:
             potion: WITHER
             amp: 1
             duration_ticks: 100
+        mark_on: hit_target
         mark_fx:
           preset: DOT_ABOVE
           particle: CRIMSON_SPORE
     -
       effect: DAMAGE_AREA
       trigger: ON_KILL
+      stack: IGNORE
       params:
         damage: 5.0
         radius: 4.0
         targets: enemies
         enemy_scope: tracked
+        mark_fx:
+          preset: DOT_ABOVE
+          particle: CRIMSON_SPORE
 
 maggoteers:paragon:
   material: COPPER_SWORD
