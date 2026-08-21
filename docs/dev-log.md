@@ -5,6 +5,23 @@
 
 ---
 
+## 2026-08-21 — homing 落地乱飞修复（服务器复测反馈）
+
+**做了什么**：上一条 homing 修复（8ed4a2e）上服复测，新问题：**箭落地插地后仍在追踪玩家乱飞**。逐层排查后在本条修复（仅改 `ProjectileHomingService.homeAll`）。
+
+**根因调查（查证本地 IM `E:\Intellij_Idea\plugins\MCZJUinfernalMobs`）**
+- **本地 IM 无弹道 homing**：所有远程技能一次性直射，射出后不再转向——`DualArcherSkill`（`spawnArrow` 朝目标直射带随机散布）、`RangeGhastlySkill`（火球只设初始 `direction`）。故 IM 不存在"落地弹道仍在追踪"状态。
+- **IM 的兜底 = 绝对寿命**：`RangeGhastlySkill.scheduleProjectileLifetime` 给火球 `entity-lifetime-ticks`（默认 **100t = 5s**）到期 `entity.remove()`，绝不无限存活。
+- 我们的 `homeAll` 只检查 `isValid()/isDead()`，缺两个守卫：① **Arrow 插地**（`Arrow` 落地后实体仍 valid）→ 每 tick `setVelocity` 把它从地里拽起乱飞；② **无寿命上限** → 追不上目标的弹道无限追踪。
+
+**决策与原因**
+- 守卫一：`proj instanceof Arrow arrow && arrow.isInBlock()`（Paper `AbstractArrow.isInBlock()`，26.2 已 javap 验证）→ 移除 homing 条目，箭安静插在原地（可被拾取）。Arrow 是唯一会"插地存留"的 Projectile（火球/雪球/凋零头命中方块会自行爆炸/消失）。
+- 守卫二：homing 绝对寿命 `MAX_HOMING_AGE_TICKS = 120t`（借鉴 IM 100t；`ageAtHome` 在 `home()` 注册时记 `getTicksLived()`）→ 到期移除条目并 `proj.remove()`，弹道必然结束（1.6 speed × 120t ≈ 192 格，足够穿越整层）。
+
+**测试**：全量 370 green / 0 fail / 5 skip。守卫不破坏既有 `steer`/`aimWithLead` 纯函数单测。
+
+**遗留**：仍待服务器复测确认落地箭安静插地、fireball 撞墙爆炸即止。
+
 ## 2026-08-21 — homing 弹道命中率修复（服务器实测反馈）
 
 **做了什么**：测试服实测发现怪物 homing 弹道（archer 箭 / molten 火球）很难命中玩家。逐层排查 `ProjectileHomingService` / `MobProjectileService` / `MobEffectExecutor` / `SummonExecutor` 后确认两个独立缺陷并修复（仅改 `ProjectileHomingService.java`，另加 5 个纯函数单测）：

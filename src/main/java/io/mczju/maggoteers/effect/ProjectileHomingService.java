@@ -6,6 +6,7 @@ import io.mczju.maggoteers.game.MaggoteersGame;
 import io.mczju.maggoteers.wave.WaveEngine;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.LivingEntity;
@@ -29,8 +30,11 @@ public final class ProjectileHomingService {
 
     private static final Map<UUID, HomingEntry> ACTIVE = new ConcurrentHashMap<>();
     private static final double TURN_FACTOR = 0.75;   // 每 tick 目标方向权重（越小越平滑；0.35 实测脱靶，0.75 接近 IM 追踪强度）
+    // homing 绝对寿命（tick）：借鉴 IM RangeGhastlySkill entity-lifetime-ticks 默认 100t（5s），取 120t（6s）。
+    // 兜底"永远追不上"的弹道：到期停止追踪并移除实体，绝不无限追踪（1.6 speed × 120t = 192 格，足够穿越整层）。
+    private static final int MAX_HOMING_AGE_TICKS = 120;
 
-    private record HomingEntry(MaggoteersGame game, String target, LivingEntity initial, double speed) {}
+    private record HomingEntry(MaggoteersGame game, String target, LivingEntity initial, double speed, int ageAtHome) {}
 
     private ProjectileHomingService() {}
 
@@ -45,7 +49,7 @@ public final class ProjectileHomingService {
         String t = homingTarget == null ? null : homingTarget.trim().toLowerCase(Locale.ROOT);
         if (t == null || t.isEmpty() || "none".equals(t)) return;
         ACTIVE.put(proj.getUniqueId(),
-                new HomingEntry(game, t, initialTarget, proj.getVelocity().length()));
+                new HomingEntry(game, t, initialTarget, proj.getVelocity().length(), proj.getTicksLived()));
     }
 
     public static void stop(UUID projectileUuid) {
@@ -66,6 +70,17 @@ public final class ProjectileHomingService {
             // 弹道不在 WaveEngine.BY_ENTITY（那里只追踪怪）→ 改查发起对局状态：对局已结束则停 homing
             if (entry.game() == null || entry.game().getState() == GameState.END) {
                 it.remove();
+                continue;
+            }
+            // Arrow 插地（未命中落墙/落地）：停止追踪，让箭安静插在原地——否则每 tick setVelocity 会把它从地里拽起来乱飞
+            if (proj instanceof Arrow arrow && arrow.isInBlock()) {
+                it.remove();
+                continue;
+            }
+            // 寿命兜底（借鉴 IM）：追不上目标的弹道到期即止——停止追踪并移除实体，绝不无限追踪
+            if (proj.getTicksLived() - entry.ageAtHome() > MAX_HOMING_AGE_TICKS) {
+                it.remove();
+                proj.remove();
                 continue;
             }
             LivingEntity target = resolve(proj.getLocation(), entry);
